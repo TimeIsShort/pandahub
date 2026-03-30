@@ -859,3 +859,15 @@
 - `public/index.html` - 举报弹窗 HTML
 - `public/js/app.js` - openReportModal / submitReport / selectReportReason 函数
 - `public/admin-login.html` - 举报管理 Tab + loadReports / dismissReport / actionReport 函数
+
+### P2 评论楼内回复嵌套展示优化 ✅
+- ✅ 重构评论渲染为树形结构（`buildCommentTree` 构建嵌套）
+- ✅ 层级缩进：root（无缩进）→ direct reply（缩进20px+左边框）→ deeper（再缩进16px+淡边框）
+- ✅ 竖线连接：不同层级用不同粗细/颜色的左边框模拟嵌套线
+- ✅ 深层回复按需展开：depth≥3 的回复默认隐藏，点击「💬 查看 N 条更多回复 ↓」按钮展开
+- ✅ `expandReplies(commentId)` 函数利用已加载评论数据，无需重复请求
+- ✅ CSS：`.comment-depth-1` / `.comment-depth-2` / `.reply-expand-btn` / `.depth-expanded` 新样式
+
+### 涉及文件
+- `public/js/app.js` - buildCommentTree / renderCommentItem / expandReplies 重构
+- `public/css/style.css` - 嵌套评论 CSS 样式（depth-1 / depth-2 / expand button）

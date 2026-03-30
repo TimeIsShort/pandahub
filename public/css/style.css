@@ -3614,3 +3614,53 @@ select:focus-visible {
   box-shadow: 0 4px 14px rgba(93,109,255,.35);
   transform: translateY(-1px);
 }
+
+/* ========== Markdown Editor Toolbar ========== */
+.md-editor-wrap {
+  border: 1.5px solid #d5ddff;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color .2s, box-shadow .2s;
+  background: #fafbff;
+}
+.md-editor-wrap:focus-within {
+  border-color: #8294ff;
+  box-shadow: 0 0 0 3px rgba(93,109,255,.12);
+  background: #fff;
+}
+.md-toolbar {
+  display: flex;
+  gap: 2px;
+  padding: 7px 10px;
+  background: #f0f2ff;
+  border-bottom: 1px solid #dce5ff;
+  flex-wrap: wrap;
+}
+.md-tool-btn {
+  padding: 4px 9px;
+  font-size: 13px;
+  border: 1px solid #d5ddff;
+  border-radius: 6px;
+  background: #fff;
+  color: #4a5a9a;
+  cursor: pointer;
+  transition: all .18s;
+  font-family: inherit;
+  font-weight: 600;
+  min-width: 30px;
+  text-align: center;
+}
+.md-tool-btn:hover {
+  background: linear-gradient(135deg, #5d6dff, #7e5ad6);
+  color: #fff;
+  border-color: transparent;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(93,109,255,.3);
+}
+#content {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  resize: none;
+}

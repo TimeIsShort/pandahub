@@ -2804,6 +2804,31 @@ async function loadFollowStatus(targetId) {
 
 window.toggleFollow = toggleFollow;
 
+async function loadFollowStatus(targetId) {
+  try {
+    var res = await api('/follow/status/' + targetId);
+    if (res.error) return;
+    followCache[targetId] = {
+      isFollowing: res.is_following,
+      followers_count: res.followers_count,
+      following_count: res.following_count
+    };
+    var btn = document.getElementById('btn-follow');
+    if (btn) {
+      btn.textContent = res.is_following ? '已关注 ✓' : '+ 关注';
+      btn.style.background = res.is_following ? 'linear-gradient(135deg,#10b981,#059669)' : '';
+      btn.style.color = res.is_following ? '#fff' : '';
+      btn.style.borderColor = res.is_following ? 'transparent' : '';
+    }
+    var fcEl = document.getElementById('follower-count');
+    if (fcEl) fcEl.textContent = res.followers_count + ' 粉丝';
+    var fingEl = document.getElementById('following-count');
+    if (fingEl) fingEl.textContent = res.following_count + ' 关注';
+  } catch (e) {}
+}
+
+window.loadFollowStatus = loadFollowStatus;
+
 // ============ Messages ============
 let currentMsgPartner = null;
 

@@ -498,3 +498,20 @@
 - `public/css/style.css` - .btn-follow 样式
 - `models/database.js` - follows 表（建表）
 
+
+---
+
+## v1.2 开发记录（续）
+
+### P1.1 富文本编辑器 ✅
+- ✅ Markdown 工具栏（加粗/斜体/行内代码/代码块/链接/标题/列表/引用）
+- ✅ Tab 键缩进代码块
+- ✅ Ctrl+B 加粗 / Ctrl+I 斜体 快捷键
+- ✅ Markdown 工具栏样式（悬停渐变色、紫色主题）
+- ✅ 发帖框获得焦点时边框高亮（和现有设计语言一致）
+
+### 涉及文件
+- `public/index.html` - 发帖弹窗 textarea → md-editor-wrap + md-toolbar
+- `public/js/app.js` - mdInsert / mdHandleTab（Ctrl+B/I/Tab）函数
+- `public/css/style.css` - .md-editor-wrap / .md-toolbar / .md-tool-btn 样式
+

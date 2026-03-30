@@ -508,6 +508,20 @@ db.exec(`
   )
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS point_transfers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_user_id INTEGER NOT NULL,
+    to_user_id INTEGER NOT NULL,
+    amount INTEGER NOT NULL CHECK(amount > 0),
+    status TEXT NOT NULL DEFAULT 'completed' CHECK(status IN ('completed', 'pending', 'rejected')),
+    note TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (from_user_id) REFERENCES users(id),
+    FOREIGN KEY (to_user_id) REFERENCES users(id)
+  )
+`);
+
 module.exports.getUserLevel = getUserLevel;
 module.exports.LEVELS = LEVELS;
 module.exports.POINT_COST = POINT_COST;

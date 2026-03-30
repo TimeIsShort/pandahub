@@ -350,6 +350,28 @@
             <div id="checkin-history-panel" style="display:none;"><div id="checkin-history-body"></div></div>
           </div>
         </div>
+
+        <!-- Transfer Card -->
+        <div class="form-card" style="margin-top:16px;">
+          <h2 style="margin:0 0 14px;">💸 积分转账</h2>
+          <div style="font-size:13px;color:#627582;margin-bottom:12px;">向其他用户转账积分（转账即时到账，不可撤回）</div>
+          <div class="form-group">
+            <label>对方用户名</label>
+            <input type="text" id="transfer-username" placeholder="输入对方用户名或昵称">
+          </div>
+          <div class="form-group">
+            <label>转账积分（正整数）</label>
+            <input type="number" id="transfer-amount" placeholder="输入转账积分数量" min="1" style="width:100%;padding:10px 12px;border:1.5px solid #d5ddff;border-radius:10px;font-size:14px;box-sizing:border-box;">
+          </div>
+          <div class="form-group">
+            <label>备注（选填）</label>
+            <input type="text" id="transfer-note" placeholder="转账备注，如：辛苦费">
+          </div>
+          <div id="transfer-result" style="margin-bottom:10px;"></div>
+          <button class="btn-primary" onclick="submitTransfer()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#f97316);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">确认转账</button>
+
+          <div id="transfer-records" style="margin-top:16px;"></div>
+        </div>
       </div>
     </main>
   </div>

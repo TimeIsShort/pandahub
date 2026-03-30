@@ -613,11 +613,127 @@ function goProfile() {
   loadProfile(user.id);
 }
 
+// ============ Points Transfer ============
+async function submitTransfer() {
+  var user = getUser();
+  if (!user) { showToast('请先登录', 'error'); return; }
+
+  var username = document.getElementById('transfer-username').value.trim();
+  var amount = document.getElementById('transfer-amount').value.trim();
+  var note = document.getElementById('transfer-note').value.trim();
+  var resultEl = document.getElementById('transfer-result');
+
+  if (!username) { showToast('请输入对方用户名', 'error'); return; }
+  if (!amount || parseInt(amount) <= 0) { showToast('请输入正确的转账积分', 'error'); return; }
+
+  try {
+    var res = await api('/points/transfer', {
+      method: 'POST',
+      body: JSON.stringify({ to_username: username, amount: parseInt(amount), note: note })
+    });
+    if (res.error) {
+      resultEl.innerHTML = '<div style="color:#ef4444;font-size:13px;padding:8px 0;">' + res.error + '</div>';
+      showToast(res.error, 'error');
+      return;
+    }
+    resultEl.innerHTML = '<div style="color:#10b981;font-size:13px;padding:8px 0;">转账成功！已向 ' + escapeHtml(username) + ' 转账 ' + amount + ' 积分</div>';
+    document.getElementById('transfer-username').value = '';
+    document.getElementById('transfer-amount').value = '';
+    document.getElementById('transfer-note').value = '';
+    // Reload profile to update displayed points
+    loadSettings();
+    loadTransferRecords();
+    // Refresh current view if on profile
+    if (typeof loadProfile === 'function' && window._currentProfileUserId) {
+      loadProfile(window._currentProfileUserId);
+    }
+  } catch (e) {
+    resultEl.innerHTML = '<div style="color:#ef4444;font-size:13px;padding:8px 0;">转账失败，请稍后重试</div>';
+  }
+}
+
+async function loadTransferRecords() {
+  var el = document.getElementById('transfer-records');
+  if (!el) return;
+  var user = getUser();
+  if (!user) { el.innerHTML = ''; return; }
+
+  try {
+    var res = await api('/points/transfers');
+    if (res.error) { el.innerHTML = ''; return; }
+
+    var sent = res.sent || [];
+    var received = res.received || [];
+
+    var html = '<div style="margin-top:12px;">';
+    html += '<div style="display:flex;gap:0;background:#f0f2ff;border-radius:10px;padding:3px;margin-bottom:10px;">';
+    html += '<button id="tab-sent-btn" class="checkin-sub-tab active" onclick="switchTransferTab(\'sent\')" style="flex:1;padding:6px;border:none;border-radius:7px;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:#667eea;">📤 我转出的</button>';
+    html += '<button id="tab-received-btn" class="checkin-sub-tab" onclick="switchTransferTab(\'received\')" style="flex:1;padding:6px;border:none;border-radius:7px;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:#94a3b8;">📥 我收到的</button>';
+    html += '</div>';
+    html += '<div id="transfer-sent-list"></div>';
+    html += '<div id="transfer-received-list" style="display:none;"></div>';
+    html += '</div>';
+
+    el.innerHTML = html;
+
+    renderTransferList('sent', sent);
+    renderTransferList('received', received);
+  } catch (e) {
+    el.innerHTML = '';
+  }
+}
+
+function renderTransferList(type, records) {
+  var el = document.getElementById('transfer-' + type + '-list');
+  if (!records || records.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;font-size:13px;">暂无记录</div>';
+    return;
+  }
+  el.innerHTML = records.map(function(r) {
+    var otherName = type === 'sent' ? (r.to_nickname || r.to_username) : (r.from_nickname || r.from_username);
+    var otherAvatar = type === 'sent' ? r.to_avatar : r.from_avatar;
+    var lvl = { color: '#667eea' };
+    var avatar = otherAvatar
+      ? '<img src="' + otherAvatar + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">'
+      : '<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;">' + ((otherName || '?')[0] || '?').toUpperCase() + '</div>';
+    var sign = type === 'sent' ? '-' : '+';
+    var color = type === 'sent' ? '#ef4444' : '#10b981';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f4f8;">' +
+      avatar +
+      '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:#1e3a5f;">' + escapeHtml(otherName) + '</div><div style="font-size:11px;color:#94a3b8;">' + formatDate(r.created_at) + (r.note ? ' · ' + escapeHtml(r.note) : '') + '</div></div>' +
+      '<div style="font-size:14px;font-weight:800;color:' + color + ';">' + sign + r.amount + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function switchTransferTab(tab) {
+  var sentList = document.getElementById('transfer-sent-list');
+  var receivedList = document.getElementById('transfer-received-list');
+  var sentBtn = document.getElementById('tab-sent-btn');
+  var receivedBtn = document.getElementById('tab-received-btn');
+  if (tab === 'sent') {
+    sentList.style.display = '';
+    receivedList.style.display = 'none';
+    sentBtn.style.background = 'transparent'; sentBtn.style.color = '#667eea'; sentBtn.classList.add('active');
+    receivedBtn.style.background = 'transparent'; receivedBtn.style.color = '#94a3b8'; receivedBtn.classList.remove('active');
+  } else {
+    sentList.style.display = 'none';
+    receivedList.style.display = '';
+    receivedBtn.style.background = 'transparent'; receivedBtn.style.color = '#667eea'; receivedBtn.classList.add('active');
+    sentBtn.style.background = 'transparent'; sentBtn.style.color = '#94a3b8'; sentBtn.classList.remove('active');
+  }
+}
+
+window.submitTransfer = submitTransfer;
+window.loadTransferRecords = loadTransferRecords;
+window.switchTransferTab = switchTransferTab;
+
 function goSettings() {
   const user = getUser();
   if (!user) return showLogin();
   showView('settings');
   loadSettings();
+  loadTransferRecords();
 }
 
 function goApply() {

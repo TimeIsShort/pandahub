@@ -1458,61 +1458,113 @@ async function viewPost(id) {
     }
 
     const comments = Array.isArray(res.comments) ? res.comments : [];
-    const rootComments = comments.filter(c => !c.parent_id);
-    const replies = comments.filter(c => c.parent_id);
 
-    // Flat replies under each root comment - all at same level
-    const renderComment = (comment) => {
-      const replyToName = comment.reply_to_nickname || comment.reply_to_username;
-      const replyLine = replyToName ? `<span class="comment-reply-to">回复 <b>${escapeHtml(replyToName)}</b></span>` : '';
+    // Build comment tree
+    function buildCommentTree(flat) {
+      var map = {};
+      var roots = [];
+      flat.forEach(function(c) { map[c.id] = { ...c, replies: [] }; });
+      flat.forEach(function(c) {
+        if (c.parent_id && map[c.parent_id]) {
+          map[c.parent_id].replies.push(map[c.id]);
+        } else if (!c.parent_id) {
+          roots.push(map[c.id]);
+        }
+      });
+      return roots;
+    }
 
-      // Get direct replies to this comment (only one level deep)
-      const directReplies = replies
-        .filter(r => Number(r.parent_id) === Number(comment.id))
-        .map(r => `
-          <div class="comment-item comment-reply" data-comment-id="${r.id}">
-            <div class="comment-header">
-              <span class="avatar-small">${r.avatar ? `<img src="${r.avatar}" alt="avatar">` : (r.nickname || r.username)[0].toUpperCase()}</span>
-              <span class="comment-author">${escapeHtml(r.nickname || r.username)}</span>
-              ${(r.reply_to_nickname || r.reply_to_username) ? `<span class="comment-reply-to">回复 <b>${escapeHtml(r.reply_to_nickname || r.reply_to_username)}</b></span>` : ''}
-              <span class="comment-time">${formatDate(r.created_at)}</span>
-            </div>
-            <div class="comment-content">${escapeHtml(r.content)}</div>
-            <div class="comment-actions">
-              <button class="comment-action-btn comment-like-btn" id="clike-btn-${r.id}" onclick="voteComment(${r.id})" style="color:#94a3b8;">
-                👍 <span id="clike-count-${r.id}">${r.like_count || 0}</span>
-              </button>
-              ${user && user.id !== r.user_id ? `<button class="comment-action-btn" onclick="openReportModal('comment', ${r.id})" style="color:#94a3b8;">🚩 举报</button>` : ''}
-              ${user ? `<button class="comment-action-btn" onclick="startReply(${r.id}, ${r.user_id}, '${escapeHtml(r.nickname || r.username)}')">回复</button>` : ''}
-            </div>
-          </div>`).join('');
+    // Count all descendants
+    function countReplies(comment) {
+      var count = comment.replies ? comment.replies.length : 0;
+      if (comment.replies) {
+        comment.replies.forEach(function(r) { count += countReplies(r); });
+      }
+      return count;
+    }
 
-      return `
-        <div class="comment-item" data-comment-id="${comment.id}">
-          <div class="comment-header">
-            <span class="avatar-small">${comment.avatar ? `<img src="${comment.avatar}" alt="avatar">` : (comment.nickname || comment.username)[0].toUpperCase()}</span>
-            <span class="comment-author">${escapeHtml(comment.nickname || comment.username)}</span>
-            ${replyLine}
-            <span class="comment-time">${formatDate(comment.created_at)}</span>
-          </div>
-          <div class="comment-content">${escapeHtml(comment.content)}</div>
-          <div class="comment-actions">
-            <button class="comment-action-btn comment-like-btn" id="clike-btn-${comment.id}" onclick="voteComment(${comment.id})" title="赞一个" style="color:#94a3b8;">
-              👍 <span id="clike-count-${comment.id}">${comment.like_count || 0}</span>
-            </button>
-            ${user && user.id !== comment.user_id ? `<button class="comment-action-btn" onclick="openReportModal('comment', ${comment.id})" style="color:#94a3b8;">🚩 举报</button>` : ''}
-            ${user ? `<button class="comment-action-btn" onclick="startReply(${comment.id}, ${comment.user_id}, '${escapeHtml(comment.nickname || comment.username)}')">回复</button>` : ''}
-          </div>
-          ${directReplies ? `<div class="reply-list">${directReplies}</div>` : ''}
-        </div>`;
-    };
+    // Render a single comment item
+    function renderCommentItem(comment, depth) {
+      var indentClass = depth === 0 ? 'comment-depth-root' : depth === 1 ? 'comment-depth-1' : 'comment-depth-2';
+      var replyLine = comment.reply_to_nickname || comment.reply_to_username
+        ? '<span class="comment-reply-to">回复 <b>' + escapeHtml(comment.reply_to_nickname || comment.reply_to_username) + '</b></span>'
+        : '';
+      var avatar = comment.avatar
+        ? '<img src="' + comment.avatar + '" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+        : (comment.nickname || comment.username)[0].toUpperCase();
+
+      var actionsHtml = '<div class="comment-actions">' +
+        '<button class="comment-action-btn comment-like-btn" id="clike-btn-' + comment.id + '" onclick="voteComment(' + comment.id + ')" title="赞一个" style="color:#94a3b8;">' +
+        '👍 <span id="clike-count-' + comment.id + '">' + (comment.like_count || 0) + '</span></button>' +
+        (user && user.id !== comment.user_id ? '<button class="comment-action-btn" onclick="openReportModal(\'comment\', ' + comment.id + ')" style="color:#94a3b8;">🚩 举报</button>' : '') +
+        (user ? '<button class="comment-action-btn" onclick="startReply(' + comment.id + ', ' + comment.user_id + ', \'' + escapeHtml(comment.nickname || comment.username) + '\')">回复</button>' : '') +
+        '</div>';
+
+      var repliesHtml = '';
+      if (comment.replies && comment.replies.length > 0) {
+        if (depth === 0) {
+          // Root: render direct replies (depth 1), collect deeper for collapse
+          var directReplies = comment.replies;
+          var deeperReplies = [];
+          directReplies.forEach(function(r) {
+            if (r.replies && r.replies.length > 0) {
+              deeperReplies = deeperReplies.concat(r.replies);
+            }
+          });
+          var directHtml = directReplies.map(function(r) { return renderCommentItem(r, 1); }).join('');
+          repliesHtml = '<div class="reply-list">' + directHtml + '</div>';
+          if (deeperReplies.length > 0) {
+            repliesHtml += '<div class="reply-collapsed" id="reply-collapsed-' + comment.id + '">' +
+              '<button class="reply-expand-btn" onclick="expandReplies(' + comment.id + ')">' +
+              '💬 查看 ' + deeperReplies.length + ' 条更多回复 ↓</button></div>';
+            repliesHtml += '<div id="reply-expanded-' + comment.id + '" style="display:none;"></div>';
+          }
+        } else if (depth === 1) {
+          // Depth 1: collect ALL deeper replies for collapse
+          var allDeeper = [];
+          function collectDeeper(c) {
+            if (c.replies) {
+              c.replies.forEach(function(r) {
+                allDeeper.push(r);
+                collectDeeper(r);
+              });
+            }
+          }
+          collectDeeper(comment);
+          var directHtml = comment.replies.map(function(r) { return renderCommentItem(r, 2); }).join('');
+          repliesHtml = '<div class="reply-list depth-1">' + directHtml + '</div>';
+          if (allDeeper.length > 0) {
+            repliesHtml += '<div class="reply-collapsed" id="reply-collapsed-' + comment.id + '">' +
+              '<button class="reply-expand-btn" onclick="expandReplies(' + comment.id + ')">' +
+              '💬 查看 ' + allDeeper.length + ' 条更多回复 ↓</button></div>';
+            repliesHtml += '<div id="reply-expanded-' + comment.id + '" style="display:none;"></div>';
+          }
+        }
+      }
+
+      return '<div class="comment-item ' + indentClass + '" data-comment-id="' + comment.id + '">' +
+        '<div class="comment-header">' +
+        '<span class="avatar-small">' + avatar + '</span>' +
+        '<span class="comment-author">' + escapeHtml(comment.nickname || comment.username) + '</span>' +
+        replyLine +
+        '<span class="comment-time">' + formatDate(comment.created_at) + '</span>' +
+        '</div>' +
+        '<div class="comment-content">' + escapeHtml(comment.content) + '</div>' +
+        actionsHtml +
+        repliesHtml +
+        '</div>';
+    }
+
+    var commentTree = buildCommentTree(comments);
+    var renderedComments = commentTree.map(function(c) { return renderCommentItem(c, 0); }).join('');
 
     if (commentsListEl) {
-      commentsListEl.innerHTML = rootComments.length
-        ? rootComments.map(c => renderComment(c)).join('')
+      commentsListEl.innerHTML = renderedComments
+        ? renderedComments
         : '<div style="color:#888;padding:20px;text-align:center;">暂无评论</div>';
     }
     loadCommentVoteStatus();
+    window._commentsFlatData = comments; // expose for expandReplies
   } catch (e) {
     console.error(e);
     showToast('加载失败', 'error');
@@ -3683,6 +3735,72 @@ async function voteComment(commentId) {
     showToast('操作失败', 'error');
   }
 }
+
+// Expand hidden deep replies
+function expandReplies(commentId) {
+  var btn = document.getElementById('reply-collapsed-' + commentId);
+  var container = document.getElementById('reply-expanded-' + commentId);
+  if (!container) return;
+
+  var flat = window._commentsFlatData || [];
+  var commentMap = {};
+  flat.forEach(function(c) { commentMap[c.id] = c; });
+
+  // Collect all descendants of commentId (depth 2+)
+  var allDescendants = [];
+  function collectDescendants(parentId) {
+    flat.forEach(function(c) {
+      if (Number(c.parent_id) === Number(parentId)) {
+        allDescendants.push(c);
+        collectDescendants(c.id);
+      }
+    });
+  }
+  collectDescendants(commentId);
+
+  // Remove direct depth-1 replies already shown in .reply-list
+  var directIds = {};
+  flat.forEach(function(c) {
+    if (Number(c.parent_id) === Number(commentId)) directIds[c.id] = true;
+  });
+  var hiddenOnes = allDescendants.filter(function(c) { return !directIds[c.id]; });
+
+  // Render all hidden ones with depth-2 styling (already at depth 2 or deeper in the chain)
+  if (hiddenOnes.length === 0) {
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+
+  var html = '<div class="reply-list depth-expanded">' +
+    hiddenOnes.map(function(r) {
+      var lvl = r.points !== undefined ? getUserLevel(r.points || 0) : { color: '#667eea' };
+      var avatar = r.avatar
+        ? '<img src="' + r.avatar + '" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+        : (r.nickname || r.username)[0].toUpperCase();
+      var replyTo = r.reply_to_nickname || r.reply_to_username
+        ? '<span class="comment-reply-to">回复 <b>' + escapeHtml(r.reply_to_nickname || r.reply_to_username) + '</b></span>'
+        : '';
+      var levelColor = r.level_color || '#667eea';
+      return '<div class="comment-item comment-depth-2" data-comment-id="' + r.id + '">' +
+        '<div class="comment-header">' +
+        '<span class="avatar-small" style="background:linear-gradient(135deg,' + levelColor + ',#764ba2);color:#fff;font-weight:700;">' + avatar + '</span>' +
+        '<span class="comment-author">' + escapeHtml(r.nickname || r.username) + '</span>' +
+        replyTo +
+        '<span class="comment-time">' + formatDate(r.created_at) + '</span>' +
+        '</div>' +
+        '<div class="comment-content">' + escapeHtml(r.content) + '</div>' +
+        '<div class="comment-actions">' +
+        '<button class="comment-action-btn comment-like-btn" id="clike-btn-' + r.id + '" onclick="voteComment(' + r.id + ')" style="color:#94a3b8;">👍 <span id="clike-count-' + r.id + '">' + (r.like_count || 0) + '</span></button>' +
+        '</div></div>';
+    }).join('') +
+    '</div>';
+
+  container.innerHTML = html;
+  container.style.display = '';
+  if (btn) btn.style.display = 'none';
+}
+
+window.expandReplies = expandReplies;
 
 // Load comment vote status after comments are rendered
 async function loadCommentVoteStatus() {

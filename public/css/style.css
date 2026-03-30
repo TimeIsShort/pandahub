@@ -1672,6 +1672,83 @@ main.container {
   margin-left: 0;
 }
 
+/* ============ Nested Comments ============ */
+.comment-depth-root {
+  /* Root comment: normal style */
+}
+
+.comment-depth-1 {
+  /* Direct reply to root: indent + left border */
+  margin-left: 20px;
+  border-left: 3px solid #c5d5e8;
+  padding-left: 14px;
+  background: rgba(245, 248, 252, 0.6);
+  border-radius: 0 8px 8px 0;
+}
+
+.comment-depth-2 {
+  /* Deeper reply: more indent, lighter border */
+  margin-left: 16px;
+  border-left: 2px solid #dde5ed;
+  padding-left: 12px;
+  background: rgba(250, 252, 255, 0.5);
+  border-radius: 0 6px 6px 0;
+}
+
+.comment-depth-1 > .comment-content,
+.comment-depth-2 > .comment-content {
+  margin-left: 0;
+}
+
+.comment-depth-1 > .comment-actions,
+.comment-depth-2 > .comment-actions {
+  margin-left: 0;
+}
+
+/* Reply list (direct replies container) */
+.reply-list {
+  margin-top: 4px;
+}
+
+.reply-list.depth-1 {
+  margin-left: 0;
+  border-left: 3px solid #b8cfe0;
+  padding-left: 10px;
+  border-radius: 0 0 0 8px;
+}
+
+/* "查看更多回复" button */
+.reply-collapsed {
+  margin-left: 20px;
+  margin-top: 4px;
+}
+
+.reply-expand-btn {
+  background: none;
+  border: 1.5px dashed #c5d5e8;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: #5a8fa8;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.reply-expand-btn:hover {
+  background: #f0f7fb;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.reply-list.depth-expanded {
+  margin-left: 20px;
+  border-left: 2px solid #dde5ed;
+  padding-left: 10px;
+  border-radius: 0 0 0 8px;
+}
+
 /* Post view sticky header */
 .view-post-sticky-header {
   position: sticky;

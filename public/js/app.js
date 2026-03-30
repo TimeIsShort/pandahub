@@ -3497,9 +3497,37 @@ window.toggleLeaderboard = function() {
 
 async function loadLeaderboard() {
   var el = document.getElementById('leaderboard-list');
+  var myRankEl = document.getElementById('lb-my-rank-mini');
   if (!el) return;
   leaderboardLoaded = true;
   el.innerHTML = '<div style="text-align:center;padding:16px;color:#94a3b8;">加载中...</div>';
+
+  var currentUser = getUser();
+  var myUserId = currentUser ? currentUser.id : null;
+
+  // Load my rank if logged in
+  if (myRankEl) {
+    if (myUserId) {
+      try {
+        var myRankRes = await api('/leaderboard/me');
+        if (!myRankRes.error && myRankRes.rank) {
+          var lvl = getUserLevel(myRankRes.points || 0);
+          var isTop = myRankRes.rank <= 10;
+          myRankEl.innerHTML = '<div style="background:' + (isTop ? 'linear-gradient(135deg,#667eea22,#764ba222)' : 'rgba(255,255,255,0.7)') + ';border:1.5px solid ' + (isTop ? '#667eea' : '#e2e8f0') + ';border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:10px;font-size:12px;cursor:pointer;" onclick="window.open(\'/leaderboard.html\',\'_blank\')" title="查看完整排名">' +
+            '<span style="font-weight:800;color:#667eea;min-width:28px;">' + (myRankRes.rank <= 3 ? ['🥇','🥈','🥉'][myRankRes.rank-1] : '#' + myRankRes.rank) + '</span>' +
+            '<span style="flex:1;color:#1e3a5f;font-weight:600;">我的排名</span>' +
+            '<span style="color:#f59e0b;font-weight:800;">' + myRankRes.points + ' 积分</span>' +
+            (isTop ? '<span style="color:#667eea;font-size:11px;">查看完整榜单 →</span>' : '') +
+            '</div>';
+        } else {
+          myRankEl.innerHTML = '';
+        }
+      } catch(e) { myRankEl.innerHTML = ''; }
+    } else {
+      myRankEl.innerHTML = '';
+    }
+  }
+
   try {
     var res = await api('/leaderboard?limit=10');
     var users = res.users || [];
@@ -3511,12 +3539,13 @@ async function loadLeaderboard() {
       var name = u.nickname || u.username;
       var rank = u.rank;
       var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank + 'th';
-      var bg = rank <= 3 ? 'background:linear-gradient(135deg,#fef3c7,#fde68a);border-color:#f59e0b;' : 'background:#fff;border-color:#e2e8f0;';
+      var isMe = myUserId && u.id === myUserId;
+      var bg = isMe ? 'background:linear-gradient(135deg,#667eea22,#764ba222);border-color:#667eea;' : rank <= 3 ? 'background:linear-gradient(135deg,#fef3c7,#fde68a);border-color:#f59e0b;' : 'background:#fff;border-color:#e2e8f0;';
       var levelColor = u.level_color || '#667eea';
       return '<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1.5px solid;' + bg + '">' +
         '<span style="font-size:18px;width:28px;text-align:center;">' + medal + '</span>' +
         '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,' + levelColor + ',#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;">' + (u.avatar ? '<img src="' + u.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' : name[0].toUpperCase()) + '</div>' +
-        '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:#1e3a5f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div><div style="font-size:11px;color:' + levelColor + ';">' + u.level_icon + ' ' + u.level_name + '</div></div>' +
+        '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:#1e3a5f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + (isMe ? ' <span style="background:#667eea22;color:#667eea;font-size:10px;font-weight:700;padding:1px 5px;border-radius:6px;">我</span>' : '') + '</div><div style="font-size:11px;color:' + levelColor + ';">' + u.level_icon + ' ' + u.level_name + '</div></div>' +
         '<div style="text-align:right;"><div style="font-size:14px;font-weight:800;color:#f59e0b;">' + u.points + '</div><div style="font-size:10px;color:#94a3b8;">积分</div></div></div>';
     }).join('');
   } catch (e) {

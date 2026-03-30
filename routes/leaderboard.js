@@ -7,28 +7,70 @@ const router = express.Router();
 // Get leaderboard (top users by points)
 router.get('/', (req, res) => {
   try {
-    const { limit = 10 } = req.query;
+    const { limit = 10, offset = 0 } = req.query;
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.page_size) || 20;
+    const calcOffset = (page - 1) * pageSize;
 
     const users = db.prepare(`
       SELECT id, username, nickname, avatar, points, checkin_streak, created_at
       FROM users
       ORDER BY points DESC
-      LIMIT ?
-    `).all(Number(limit));
+      LIMIT ? OFFSET ?
+    `).all(Number(limit) || 20, Number(offset) || calcOffset);
 
     // Add level info to each user
     users.forEach((u, idx) => {
       const level = getUserLevel(u.points);
-      u.rank = idx + 1;
+      u.rank = (Number(offset) || calcOffset) + idx + 1;
       u.level_name = level.name;
       u.level_icon = level.icon;
       u.level_color = level.color;
     });
 
-    res.json({ users });
+    // Total count
+    const total = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
+
+    res.json({ users, total, page, page_size: pageSize });
   } catch (err) {
     console.error('[Leaderboard]', err);
     res.status(500).json({ error: '获取排行榜失败' });
+  }
+});
+
+// Get current user's rank
+router.get('/me', (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: '未登录' });
+    }
+    const jwt = require('jsonwebtoken');
+    const { JWT_SECRET } = require('../middleware/auth');
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    // Get user's rank: count users with more points + 1
+    const user = db.prepare('SELECT id, username, nickname, avatar, points FROM users WHERE id = ?').get(decoded.id);
+    if (!user) return res.status(404).json({ error: '用户不存在' });
+
+    const rank = db.prepare('SELECT COUNT(*) as c FROM users WHERE points > ?').get(user.points).c + 1;
+    const level = getUserLevel(user.points);
+
+    res.json({
+      rank,
+      id: user.id,
+      username: user.username,
+      nickname: user.nickname,
+      avatar: user.avatar,
+      points: user.points,
+      level_name: level.name,
+      level_icon: level.icon,
+      level_color: level.color
+    });
+  } catch (err) {
+    console.error('[Leaderboard /me]', err);
+    res.status(500).json({ error: '获取排名失败' });
   }
 });
 

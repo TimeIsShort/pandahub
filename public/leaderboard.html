@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>积分排行榜 - 熊猫社区</title>
+  <link rel="stylesheet" href="/css/style.css?v=20260331">
+  <style>
+    body { background: var(--bg-gradient-c); min-height: 100vh; }
+    .lb-page { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
+    .lb-header { text-align: center; margin-bottom: 24px; }
+    .lb-header h1 { font-size: 26px; color: var(--text); margin-bottom: 6px; }
+    .lb-header p { color: var(--text-muted); font-size: 14px; }
+    .lb-back { display: inline-flex; align-items: center; gap: 6px; color: #667eea; font-size: 14px; text-decoration: none; margin-bottom: 16px; }
+    .lb-back:hover { text-decoration: underline; }
+
+    /* My rank card */
+    .lb-my-rank { background: linear-gradient(135deg, #667eea22, #764ba222); border: 1.5px solid #d5ddff; border-radius: 16px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
+    .lb-my-rank .rank-num { font-size: 22px; font-weight: 800; color: #667eea; min-width: 40px; text-align: center; }
+    .lb-my-rank .rank-medal { font-size: 28px; }
+    .lb-my-rank .lb-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 700; flex-shrink: 0; overflow: hidden; }
+    .lb-my-rank .lb-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .lb-my-rank .lb-info { flex: 1; min-width: 0; }
+    .lb-my-rank .lb-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .lb-my-rank .lb-level { font-size: 12px; margin-top: 2px; }
+    .lb-my-rank .lb-points { text-align: right; }
+    .lb-my-rank .lb-points .pts { font-size: 18px; font-weight: 800; color: #f59e0b; }
+    .lb-my-rank .lb-points .lbl { font-size: 11px; color: var(--text-muted); }
+    .lb-my-rank.not-in-top { opacity: 0.75; }
+
+    /* Top 3 special cards */
+    .lb-top3 { display: flex; align-items: flex-end; justify-content: center; gap: 8px; margin-bottom: 24px; }
+    .lb-top3-card { flex: 1; max-width: 200px; background: #fff; border-radius: 16px; padding: 16px 12px; text-align: center; border: 2px solid transparent; }
+    .lb-top3-card.rank-1 { border-color: #f59e0b; background: linear-gradient(180deg, #fef3c7, #fff); order: 2; margin-bottom: 0; }
+    .lb-top3-card.rank-2 { border-color: #94a3b8; background: linear-gradient(180deg, #f1f5f9, #fff); order: 1; margin-bottom: 12px; }
+    .lb-top3-card.rank-3 { border-color: #cd7f32; background: linear-gradient(180deg, #fff8f0, #fff); order: 3; margin-bottom: 12px; }
+    .lb-top3-card .top-avatar { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: #fff; overflow: hidden; }
+    .lb-top3-card.rank-1 .top-avatar { background: linear-gradient(135deg, #f59e0b, #d97706); width: 64px; height: 64px; font-size: 28px; }
+    .lb-top3-card.rank-2 .top-avatar { background: linear-gradient(135deg, #94a3b8, #64748b); }
+    .lb-top3-card.rank-3 .top-avatar { background: linear-gradient(135deg, #cd7f32, #a05c1e); }
+    .lb-top3-card .top-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .lb-top3-card .top-medal { font-size: 26px; margin-bottom: 4px; }
+    .lb-top3-card .top-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-top3-card .top-points { font-size: 13px; color: #f59e0b; font-weight: 700; }
+    .lb-top3-card .top-level { font-size: 11px; margin-top: 2px; }
+
+    /* Rank list */
+    .lb-list { display: flex; flex-direction: column; gap: 8px; }
+    .lb-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--surface-solid, #fff); border-radius: 12px; border: 1.5px solid var(--border, #e2e8f0); transition: box-shadow 0.2s; }
+    .lb-item:hover { box-shadow: 0 4px 16px rgba(17,33,47,0.1); }
+    .lb-item.is-me { border-color: #667eea; background: linear-gradient(135deg, #667eea11, #764ba211); }
+    .lb-item .rank-badge { font-size: 16px; font-weight: 800; color: var(--text-muted); min-width: 32px; text-align: center; }
+    .lb-item .rank-badge.top3 { color: #f59e0b; }
+    .lb-item .lb-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; font-weight: 700; flex-shrink: 0; overflow: hidden; }
+    .lb-item .lb-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .lb-item .lb-info { flex: 1; min-width: 0; }
+    .lb-item .lb-name { font-size: 14px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-item .lb-level { font-size: 11px; margin-top: 1px; }
+    .lb-item .lb-pts { text-align: right; flex-shrink: 0; }
+    .lb-item .lb-pts .pts { font-size: 14px; font-weight: 800; color: #f59e0b; }
+    .lb-item .lb-pts .lbl { font-size: 10px; color: var(--text-muted); display: block; }
+    .lb-item .me-tag { background: #667eea22; color: #667eea; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; margin-left: 4px; }
+
+    /* Pagination */
+    .lb-pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 24px; flex-wrap: wrap; }
+    .lb-pagination button { padding: 8px 16px; border-radius: 10px; border: 1.5px solid var(--border, #e2e8f0); background: #fff; cursor: pointer; font-size: 13px; color: var(--text); transition: all 0.2s; }
+    .lb-pagination button:hover:not(:disabled) { background: #667eea22; border-color: #667eea; color: #667eea; }
+    .lb-pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .lb-pagination button.active { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border-color: transparent; }
+    .lb-pagination .page-info { font-size: 13px; color: var(--text-muted); padding: 0 8px; }
+
+    .lb-loading { text-align: center; padding: 48px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="lb-page">
+    <a href="/" class="lb-back">← 返回首页</a>
+    <div class="lb-header">
+      <h1>🏆 积分排行榜</h1>
+      <p>每份耕耘都会被看见，你的每一次互动都在积累价值</p>
+    </div>
+
+    <!-- My rank -->
+    <div id="lb-my-rank"></div>
+
+    <!-- Top 3 podium -->
+    <div id="lb-top3" class="lb-top3"></div>
+
+    <!-- Full list -->
+    <div id="lb-list" class="lb-list"></div>
+    <div id="lb-pagination" class="lb-pagination"></div>
+  </div>
+
+  <script src="/js/app.js?v=20260331"></script>
+  <script>
+    var API_BASE = '';
+    var currentPage = 1;
+    var totalPages = 1;
+    var myUserId = null;
+    var myRank = null;
+
+    function getUser() {
+      try {
+        var token = localStorage.getItem('token');
+        if (!token) return null;
+        var payload = JSON.parse(atob(token.split('.')[1]));
+        return payload;
+      } catch(e) { return null; }
+    }
+
+    function getLevelColor(points) {
+      if (points === undefined) return '#667eea';
+      if (points <= 100) return '#22c55e';
+      if (points <= 500) return '#84cc16';
+      if (points <= 1000) return '#10b981';
+      if (points <= 3000) return '#f97316';
+      return '#ef4444';
+    }
+
+    function getLevelInfo(points) {
+      if (points === undefined) return { name: '新手上路', icon: '🌱', color: '#22c55e' };
+      if (points <= 100) return { name: '萌新', icon: '🌱', color: '#22c55e' };
+      if (points <= 500) return { name: '入门', icon: '🌿', color: '#84cc16' };
+      if (points <= 1000) return { name: '进阶', icon: '🌳', color: '#10b981' };
+      if (points <= 3000) return { name: '老鸟', icon: '🔥', color: '#f97316' };
+      return { name: '大佬', icon: '⭐', color: '#ef4444' };
+    }
+
+    function avatarHtml(u, size) {
+      size = size || 38;
+      if (u.avatar) {
+        return '<img src="' + u.avatar + '" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      }
+      var lvl = getLevelInfo(u.points);
+      return '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:linear-gradient(135deg,' + lvl.color + ',#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:' + Math.round(size * 0.4) + 'px;font-weight:700;flex-shrink:0;">' + ((u.nickname || u.username)[0] || '?').toUpperCase() + '</div>';
+    }
+
+    function renderMyRank(data) {
+      var el = document.getElementById('lb-my-rank');
+      if (!data || data.error) {
+        el.innerHTML = '';
+        return;
+      }
+      var isTop = data.rank <= 10;
+      var medal = data.rank === 1 ? '🥇' : data.rank === 2 ? '🥈' : data.rank === 3 ? '🥉' : '';
+      var lvl = getLevelInfo(data.points);
+      el.innerHTML = '<div class="lb-my-rank' + (isTop ? '' : ' not-in-top') + '">' +
+        '<div class="rank-num"><span class="rank-medal">' + medal + '</span></div>' +
+        '<div class="lb-avatar">' + avatarHtml(data, 44) + '</div>' +
+        '<div class="lb-info"><div class="lb-name">' + (data.nickname || data.username) + '</div><div class="lb-level" style="color:' + lvl.color + ';">' + lvl.icon + ' ' + lvl.name + '</div></div>' +
+        '<div class="lb-points"><div class="pts">' + data.points + '</div><div class="lbl">积分 · 第' + data.rank + '名</div></div>' +
+        '</div>';
+    }
+
+    function renderTop3(users) {
+      var el = document.getElementById('lb-top3');
+      if (!users || users.length === 0) { el.innerHTML = ''; return; }
+      var ranks = [1, 0, 2]; // Display order: 2nd, 1st, 3rd
+      var labels = ['rank-2', 'rank-1', 'rank-3'];
+      el.innerHTML = ranks.map(function(r, i) {
+        var u = users[r];
+        if (!u) return '';
+        var medal = r === 0 ? '🥈' : r === 1 ? '🥇' : '🥉';
+        var lvl = getLevelInfo(u.points);
+        return '<div class="lb-top3-card ' + labels[i] + '">' +
+          '<div class="top-avatar" style="background:linear-gradient(135deg,' + lvl.color + ',#764ba2);">' + avatarHtml(u, 56) + '</div>' +
+          '<div class="top-medal">' + medal + '</div>' +
+          '<div class="top-name">' + (u.nickname || u.username) + '</div>' +
+          '<div class="top-points">' + u.points + ' 积分</div>' +
+          '<div class="top-level" style="color:' + lvl.color + ';">' + lvl.icon + ' ' + lvl.name + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function renderList(users) {
+      var el = document.getElementById('lb-list');
+      if (!users || users.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">暂无数据</div>';
+        return;
+      }
+      el.innerHTML = users.map(function(u) {
+        var isMe = myUserId && u.id === myUserId;
+        var lvl = getLevelInfo(u.points);
+        var rankClass = u.rank <= 3 ? 'top3' : '';
+        return '<div class="lb-item' + (isMe ? ' is-me' : '') + '">' +
+          '<div class="rank-badge ' + rankClass + '">' + (u.rank <= 3 ? ['🥇','🥈','🥉'][u.rank-1] : u.rank) + '</div>' +
+          '<div class="lb-avatar">' + avatarHtml(u, 38) + '</div>' +
+          '<div class="lb-info"><div class="lb-name">' + (u.nickname || u.username) + (isMe ? '<span class="me-tag">我</span>' : '') + '</div><div class="lb-level" style="color:' + lvl.color + ';">' + lvl.icon + ' ' + lvl.name + '</div></div>' +
+          '<div class="lb-pts"><div class="pts">' + u.points + '</div><span class="lbl">积分</span></div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function renderPagination() {
+      var el = document.getElementById('lb-pagination');
+      if (totalPages <= 1) { el.innerHTML = ''; return; }
+      var btns = [];
+      btns.push('<button ' + (currentPage <= 1 ? 'disabled' : '') + ' onclick="goPage(' + (currentPage - 1) + ')">上一页</button>');
+      // Show up to 5 page buttons
+      var start = Math.max(1, currentPage - 2);
+      var end = Math.min(totalPages, start + 4);
+      if (end - start < 4) start = Math.max(1, end - 4);
+      if (start > 1) btns.push('<button onclick="goPage(1)">1</button>');
+      if (start > 2) btns.push('<span style="color:#94a3b8;">...</span>');
+      for (var i = start; i <= end; i++) {
+        btns.push('<button class="' + (i === currentPage ? 'active' : '') + '" onclick="goPage(' + i + ')">' + i + '</button>');
+      }
+      if (end < totalPages) {
+        if (end < totalPages - 1) btns.push('<span style="color:#94a3b8;">...</span>');
+        btns.push('<button onclick="goPage(' + totalPages + ')">' + totalPages + '</button>');
+      }
+      btns.push('<button ' + (currentPage >= totalPages ? 'disabled' : '') + ' onclick="goPage(' + (currentPage + 1) + ')">下一页</button>');
+      el.innerHTML = btns.join('') + '<span class="page-info">第' + currentPage + '/' + totalPages + '页 · 共' + total + '人</span>';
+    }
+
+    async function loadLeaderboard(page) {
+      page = page || 1;
+      currentPage = page;
+      var listEl = document.getElementById('lb-list');
+      listEl.innerHTML = '<div class="lb-loading">加载中...</div>';
+      try {
+        var res = await fetch(API_BASE + '/api/leaderboard?page=' + page + '&page_size=20');
+        var data = await res.json();
+        if (data.error) { listEl.innerHTML = '<div class="lb-loading">加载失败</div>'; return; }
+        total = data.total;
+        totalPages = Math.ceil(data.total / data.page_size);
+        var users = data.users || [];
+
+        // My rank
+        if (myRank !== null) {
+          document.getElementById('lb-my-rank').style.display = '';
+          renderMyRank(myRank);
+        } else {
+          document.getElementById('lb-my-rank').style.display = 'none';
+        }
+
+        renderTop3(users.slice(0, 3));
+        renderList(users);
+        renderPagination();
+      } catch(e) {
+        listEl.innerHTML = '<div class="lb-loading">加载失败，请刷新重试</div>';
+      }
+    }
+
+    function goPage(p) {
+      if (p < 1 || p > totalPages) return;
+      loadLeaderboard(p);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Init
+    (function() {
+      var user = getUser();
+      myUserId = user ? user.id : null;
+
+      // Load my rank if logged in
+      if (myUserId) {
+        fetch(API_BASE + '/api/leaderboard/me', {
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+        }).then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (!data.error) {
+              myRank = data;
+              renderMyRank(data);
+            }
+          }).catch(function() {});
+      }
+
+      loadLeaderboard(1);
+    })();
+  </script>
+</body>
+</html>

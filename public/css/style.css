@@ -3767,3 +3767,46 @@ select:focus-visible {
   background: transparent !important;
   resize: none;
 }
+
+.checkin-sub-tab { font-family: inherit; }
+.checkin-sub-tab.active { background: #667eea !important; color: #fff !important; }
+
+
+/* Search Filters */
+.search-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+.filter-group { display: flex; gap: 4px; }
+.filter-btn {
+  padding: 4px 10px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 20px;
+  background: #fff;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .18s;
+  white-space: nowrap;
+}
+.filter-btn:hover { border-color: #667eea; color: #667eea; }
+.filter-btn.active {
+  background: linear-gradient(135deg,#667eea,#764ba2);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* Activity Heatmap */
+#activity-heatmap {
+  font-family: inherit;
+}
+#activity-heatmap > div {
+  overflow-x: auto;
+}
+

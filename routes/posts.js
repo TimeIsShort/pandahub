@@ -17,20 +17,36 @@ function canViewUnapprovedPost(user, post) {
 // Get all posts (with pagination and filtering) - only approved posts
 router.get('/', optionalAuth, (req, res) => {
   try {
-    const { tag_id, page = 1, limit = 20, search } = req.query;
+    const { tag_id, page = 1, limit = 20, search, sort = 'newest', time_range } = req.query;
     const offset = (page - 1) * limit;
-    
+
     let where = "p.status = 'approved'";
     const params = [];
-    
+
     if (tag_id) {
       where += ' AND p.tag_id = ?';
       params.push(tag_id);
     }
-    
+
     if (search) {
       where += ' AND (p.title LIKE ? OR p.content LIKE ?)';
       params.push(`%${search}%`, `%${search}%`);
+    }
+
+    // Time range filter
+    if (time_range === 'day') {
+      where += " AND p.created_at >= datetime('now', 'start of day')";
+    } else if (time_range === 'week') {
+      where += " AND p.created_at >= datetime('now', '-7 days')";
+    } else if (time_range === 'month') {
+      where += " AND p.created_at >= datetime('now', '-30 days')";
+    }
+
+    // Sort order
+    let orderBy = 'p.created_at DESC';
+    if (sort === 'hot') {
+      // Hot = views + likes + comments weighted
+      orderBy = '(p.views + COALESCE(p.like_count, 0) * 5 + COALESCE(p.dislike_count, 0) * -3 + (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) * 3) DESC';
     }
 
     const countResult = db.prepare(`
@@ -45,11 +61,11 @@ router.get('/', optionalAuth, (req, res) => {
       LEFT JOIN users u ON p.user_id = u.id
       LEFT JOIN tags t ON p.tag_id = t.id
       WHERE ${where}
-      ORDER BY p.created_at DESC
+      ORDER BY ${orderBy}
       LIMIT ? OFFSET ?
     `).all(...params, Number(limit), Number(offset));
 
-    res.json({ 
+    res.json({
       posts,
       total: countResult.total,
       page: Number(page),

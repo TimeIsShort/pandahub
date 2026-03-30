@@ -1255,6 +1255,9 @@ function filterByTag(tagId, color) {
   loadPosts();
 }
 
+let currentSort = 'newest';
+let currentTimeRange = '';
+
 function handleSearch(e) {
   if (e.key === 'Enter') searchPosts();
 }
@@ -1263,6 +1266,25 @@ function searchPosts() {
   currentPage = 1;
   loadPosts();
 }
+
+function setSearchSort(sort) {
+  currentSort = sort;
+  document.getElementById('sort-newest').classList.toggle('active', sort === 'newest');
+  document.getElementById('sort-hot').classList.toggle('active', sort === 'hot');
+  searchPosts();
+}
+
+function setSearchTime(range) {
+  currentTimeRange = range;
+  ['time-all', 'time-day', 'time-week', 'time-month'].forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (btn) btn.classList.toggle('active', id === 'time-' + (range || 'all'));
+  });
+  searchPosts();
+}
+
+window.setSearchSort = setSearchSort;
+window.setSearchTime = setSearchTime;
 
 function renderPostsLoading() {
   const container = document.getElementById('post-list');
@@ -1281,8 +1303,9 @@ function renderPostsLoading() {
 
 async function loadPosts() {
   renderPostsLoading();
-  const params = new URLSearchParams({ page: currentPage, limit: 20 });
+  const params = new URLSearchParams({ page: currentPage, limit: 20, sort: currentSort });
   if (currentTagId) params.set('tag_id', currentTagId);
+  if (currentTimeRange) params.set('time_range', currentTimeRange);
   const search = document.getElementById('search-input')?.value.trim();
   if (search) params.set('search', search);
 
@@ -2246,7 +2269,7 @@ function renderImagePreviews() {
 async function loadCheckinStatus() {
   try {
     const res = await api('/checkin/status');
-    const container = document.getElementById('checkin-status');
+    const container = document.getElementById('checkin-sign-panel');
     if (!container) return;
 
     const bonuses = res.streakBonuses || { 1: 5, 2: 8, 3: 10, 4: 12, 5: 15, 6: 18, 7: 25 };
@@ -2337,10 +2360,11 @@ async function loadCheckinStatus() {
     }
   } catch (e) {
     console.error(e);
-    const container = document.getElementById('checkin-status');
+    const container = document.getElementById('checkin-sign-panel');
     if (container) container.innerHTML = '<div style="color:#888;">签到加载失败</div>';
   }
 }
+
 
 async function doCheckin() {
   const btn = document.querySelector('.checkin-action button');
@@ -2367,7 +2391,78 @@ async function doCheckin() {
   }
 }
 
-// ============ SETTINGS ============
+function switchCheckinTab(tab) {
+  var signBtn = document.getElementById('tab-sign-btn');
+  var histBtn = document.getElementById('tab-history-btn');
+  if (tab === 'sign') {
+    if (signBtn) { signBtn.classList.add('active'); signBtn.style.color = '#667eea'; }
+    if (histBtn) { histBtn.classList.remove('active'); histBtn.style.color = '#94a3b8'; }
+    var sp = document.getElementById('checkin-sign-panel');
+    var hp = document.getElementById('checkin-history-panel');
+    if (sp) sp.style.display = '';
+    if (hp) hp.style.display = 'none';
+  } else {
+    if (signBtn) { signBtn.classList.remove('active'); signBtn.style.color = '#94a3b8'; }
+    if (histBtn) { histBtn.classList.add('active'); histBtn.style.color = '#667eea'; }
+    var sp2 = document.getElementById('checkin-sign-panel');
+    var hp2 = document.getElementById('checkin-history-panel');
+    if (sp2) sp2.style.display = 'none';
+    if (hp2) hp2.style.display = '';
+    loadCheckinHistory();
+  }
+}
+
+async function loadCheckinHistory() {
+  var el = document.getElementById('checkin-history-body');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;">加载中...</div>';
+  try {
+    var res = await api('/checkin/history?limit=60');
+    var records = res.history || [];
+    if (records.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">暂无签到记录，开始你的第一次签到吧～</div>';
+      return;
+    }
+    var dateMap = {};
+    records.forEach(function(r) { dateMap[r.checkin_date] = r; });
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = now.getMonth();
+    var firstDay = new Date(year, month, 1).getDay();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var monthName = year + '年' + (month + 1) + '月';
+    var cells = [];
+    for (var i = 0; i < firstDay; i++) { cells.push('<div style="width:36px;height:36px;"></div>'); }
+    for (var d = 1; d <= daysInMonth; d++) {
+      var mm = String(month + 1).padStart(2, '0');
+      var dd = String(d).padStart(2, '0');
+      var dateStr = year + '-' + mm + '-' + dd;
+      var rec = dateMap[dateStr];
+      if (rec) {
+        cells.push('<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;" title="' + dateStr + ' 连续' + rec.streak_before + '天 +' + rec.points_earned + '分">🔥</div>');
+      } else {
+        cells.push('<div style="width:36px;height:36px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:12px;">' + d + '</div>');
+      }
+    }
+    var recentHtml = records.slice(0, 10).map(function(r) {
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#f8fafc;border-radius:8px;font-size:13px;">' +
+        '<span style="color:#1e3a5f;">' + r.checkin_date + '</span>' +
+        '<span style="color:#10b981;font-weight:700;">+' + r.points_earned + '积分</span>' +
+        '<span style="color:#94a3b8;font-size:12px;">🔥' + r.streak_before + '天</span></div>';
+    }).join('');
+    el.innerHTML = '<div style="margin-bottom:12px;font-size:13px;color:#667eea;font-weight:700;">' + monthName + '</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px;">' + cells.join('') + '</div>' +
+      '<div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">最近签到记录：</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;">' + recentHtml + '</div>';
+  } catch (e) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">加载失败</div>';
+  }
+}
+
+window.switchCheckinTab = switchCheckinTab;
+window.loadCheckinHistory = loadCheckinHistory;
+
+
 async function loadSettings() {
   try {
     bindThemeSelector();
@@ -2837,6 +2932,7 @@ async function loadProfile(userId) {
         ${isSelf ? `
         <div class="profile-tabs" style="display:flex;gap:0;background:#f0f2ff;border-radius:12px;padding:4px;margin-bottom:16px;">
           <button id="tab-posts-btn" class="profile-tab-btn active" onclick="switchProfileTab('posts')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#667eea;">📝 帖子</button>
+          <button id="tab-activity-btn" class="profile-tab-btn" onclick="switchProfileTab('activity')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#94a3b8;">🔥 活跃</button>
           <button id="tab-fav-btn" class="profile-tab-btn" onclick="switchProfileTab('favorites')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#94a3b8;">⭐ 收藏</button>
         </div>
         <div id="profile-tab-posts">
@@ -2853,6 +2949,9 @@ async function loadProfile(userId) {
               </div>
             `).join('') : '<div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">暂无帖子</div>'}
           </div>
+        </div>
+        <div id="profile-tab-activity" style="display:none;">
+          <div id="activity-heatmap"><div style="text-align:center;padding:32px;color:#94a3b8;">加载中...</div></div>
         </div>
         <div id="profile-tab-favorites" style="display:none;">
           <h3 style="font-size:16px;color:#667eea;font-weight:700;margin-bottom:12px;">⭐ 我的收藏</h3>
@@ -3204,14 +3303,26 @@ window.loadFavoriteStatus = loadFavoriteStatus;
 function switchProfileTab(tab) {
   var postsPanel = document.getElementById('profile-tab-posts');
   var favPanel = document.getElementById('profile-tab-favorites');
+  var activityPanel = document.getElementById('profile-tab-activity');
   var postsBtn = document.getElementById('tab-posts-btn');
   var favBtn = document.getElementById('tab-fav-btn');
+  var activityBtn = document.getElementById('tab-activity-btn');
 
   if (tab === 'posts') {
     if (postsPanel) postsPanel.style.display = '';
     if (favPanel) favPanel.style.display = 'none';
+    if (activityPanel) activityPanel.style.display = 'none';
     if (postsBtn) { postsBtn.classList.add('active'); postsBtn.style.color = '#667eea'; }
     if (favBtn) { favBtn.classList.remove('active'); favBtn.style.color = '#94a3b8'; }
+    if (activityBtn) { activityBtn.classList.remove('active'); activityBtn.style.color = '#94a3b8'; }
+  } else if (tab === 'activity') {
+    if (postsPanel) postsPanel.style.display = 'none';
+    if (favPanel) favPanel.style.display = 'none';
+    if (activityPanel) activityPanel.style.display = '';
+    if (postsBtn) { postsBtn.classList.remove('active'); postsBtn.style.color = '#94a3b8'; }
+    if (favBtn) { favBtn.classList.remove('active'); favBtn.style.color = '#94a3b8'; }
+    if (activityBtn) { activityBtn.classList.add('active'); activityBtn.style.color = '#667eea'; }
+    loadActivityCalendar(profileUserId);
   } else {
     if (postsPanel) postsPanel.style.display = 'none';
     if (favPanel) favPanel.style.display = '';
@@ -3432,6 +3543,59 @@ function startMsgPolling() {
   if (_msgPollInterval) clearInterval(_msgPollInterval);
   _msgPollInterval = setInterval(loadMsgUnreadCount, 30000);
 }
+
+
+async function loadActivityCalendar(userId) {
+  var el = document.getElementById('activity-heatmap');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">加载中...</div>';
+  try {
+    var res = await api('/users/' + userId + '/activity?days=90');
+    var activityMap = {};
+    (res.activity || []).forEach(function(a) { activityMap[a.day] = a.count; });
+    var now = new Date();
+    var weeks = [];
+    var cur = new Date(now);
+    cur.setDate(cur.getDate() - 89);
+    // Align to start of week (Sunday)
+    cur.setDate(cur.getDate() - cur.getDay());
+    var maxCount = 0;
+    Object.values(activityMap).forEach(function(c) { if (c > maxCount) maxCount = c; });
+    var levelColors = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
+    function getColor(count) {
+      if (count === 0) return levelColors[0];
+      if (maxCount === 0) return levelColors[0];
+      var level = Math.ceil((count / maxCount) * 4);
+      if (level > 4) level = 4;
+      return levelColors[level];
+    }
+    // Build 13 weeks
+    var html = '<div style="font-size:12px;color:#667eea;font-weight:700;margin-bottom:10px;">🔥 近90天活跃热力图</div>';
+    html += '<div style="display:flex;gap:3px;overflow-x:auto;padding-bottom:8px;">';
+    for (var w = 0; w < 13; w++) {
+      html += '<div style="display:flex;flex-direction:column;gap:3px;">';
+      for (var d = 0; d < 7; d++) {
+        var dd = new Date(cur);
+        dd.setDate(dd.getDate() + w * 7 + d);
+        if (dd > now) break;
+        var ymd = dd.getFullYear() + '-' + String(dd.getMonth()+1).padStart(2,'0') + '-' + String(dd.getDate()).padStart(2,'0');
+        var cnt = activityMap[ymd] || 0;
+        html += '<div style="width:14px;height:14px;border-radius:3px;background:' + getColor(cnt) + ';" title="' + ymd + ' ' + cnt + '次活跃"></div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    html += '<div style="display:flex;gap:4px;align-items:center;margin-top:8px;font-size:11px;color:#94a3b8;flex-wrap:wrap;">';
+    html += '<span>少</span>';
+    levelColors.forEach(function(c) { html += '<div style="width:12px;height:12px;border-radius:2px;background:' + c + ';"></div>'; });
+    html += '<span>多</span></div>';
+    el.innerHTML = html;
+  } catch (e) {
+    el.innerHTML = '<div style="text-align:center;padding:32px;color:#ef4444;">加载失败</div>';
+  }
+}
+
+window.loadActivityCalendar = loadActivityCalendar;
 
 // ============ Notifications ============
 async function loadNotifications() {

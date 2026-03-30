@@ -695,3 +695,35 @@
 - `public/index.html`（排行榜面板HTML + 工具栏按钮）
 - `public/js/app.js`（toggleLeaderboard / loadLeaderboard 函数）
 
+
+---
+
+## v1.3 开发记录（续）
+
+### P1.1 签到历史 ✅
+- ✅ 签到卡加「🎁签到 / 📅记录」tab 切换
+- ✅ 日历视图：当前月格子，已签到=🔥绿色，未签到=灰色数字
+- ✅ 最近10条签到记录列表（日期/积分/连续天数）
+- ✅ `switchCheckinTab()` / `loadCheckinHistory()` JS函数
+
+### P1.2 搜索优化 ✅
+- ✅ 后端 `GET /posts` 支持 `sort=newest|hot`（最新/最热）
+- ✅ 后端支持 `time_range=day|week|month` 时间筛选
+- ✅ 前端工具栏加「🕐最新/🔥最热」+「全部/今天/本周/本月」筛选按钮
+- ✅ `setSearchSort()` / `setSearchTime()` JS函数
+- ✅ 最热排序：views + likes*5 + comments*3 加权
+
+### P1.3 用户活跃日历 ✅
+- ✅ `GET /users/:id/activity?days=90` API（posts+comments+checkins 合并统计）
+- ✅ 个人主页加「🔥活跃」tab（仅本人可见）
+- ✅ GitHub 风格 13周热力图，颜色深浅=活跃度
+- ✅ `loadActivityCalendar(userId)` JS函数
+- ✅ 悬停显示具体日期+活跃次数
+
+### 涉及文件
+- `routes/posts.js` - GET / posts 路由加 sort + time_range 参数
+- `routes/users.js` - 新增 `GET /users/:id/activity` API
+- `public/index.html` - 签到历史tabHTML + 搜索筛选栏HTML
+- `public/js/app.js` - switchCheckinTab / loadCheckinHistory / setSearchSort / setSearchTime / loadActivityCalendar
+- `public/css/style.css` - .checkin-sub-tab / .search-filters / .filter-btn / #activity-heatmap 样式
+

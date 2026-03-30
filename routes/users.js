@@ -45,6 +45,54 @@ router.get('/:id', optionalAuth, (req, res) => {
   }
 });
 
+// Get user activity (posts + comments + checkins per day, for heatmap)
+router.get('/:id/activity', (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const { days = 90 } = req.query;
+
+    // Posts per day
+    const posts = db.prepare(`
+      SELECT date(created_at) as day, COUNT(*) as count
+      FROM posts
+      WHERE user_id = ? AND status = 'approved'
+        AND created_at >= datetime('now', '-' || ? || ' days')
+      GROUP BY date(created_at)
+    `).all(userId, Number(days));
+
+    // Comments per day
+    const comments = db.prepare(`
+      SELECT date(created_at) as day, COUNT(*) as count
+      FROM comments
+      WHERE user_id = ?
+        AND created_at >= datetime('now', '-' || ? || ' days')
+      GROUP BY date(created_at)
+    `).all(userId, Number(days));
+
+    // Checkins per day
+    const checkins = db.prepare(`
+      SELECT checkin_date as day, 1 as count
+      FROM checkins
+      WHERE user_id = ?
+        AND checkin_date >= date('now', '-' || ? || ' days')
+    `).all(userId, Number(days));
+
+    // Merge all
+    const map = {};
+    posts.forEach(p => { map[p.day] = (map[p.day] || 0) + p.count; });
+    comments.forEach(c => { map[c.day] = (map[c.day] || 0) + c.count; });
+    checkins.forEach(ch => { map[ch.day] = (map[ch.day] || 0) + 1; });
+
+    const activity = Object.keys(map).map(day => ({ day, count: map[day] }));
+    activity.sort((a, b) => a.day.localeCompare(b.day));
+
+    res.json({ activity, days: Number(days) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '获取活跃数据失败' });
+  }
+});
+
 // Search users by username or nickname (for @mention)
 router.get('/search', (req, res) => {
   try {

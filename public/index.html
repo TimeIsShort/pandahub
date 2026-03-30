@@ -112,6 +112,18 @@
             <input type="text" id="search-input" placeholder="搜索帖子..." onkeyup="handleSearch(event)">
             <button onclick="searchPosts()">🔍</button>
           </div>
+          <div class="search-filters" id="search-filters">
+            <div class="filter-group">
+              <button class="filter-btn active" id="sort-newest" onclick="setSearchSort('newest')">🕐 最新</button>
+              <button class="filter-btn" id="sort-hot" onclick="setSearchSort('hot')">🔥 最热</button>
+            </div>
+            <div class="filter-group">
+              <button class="filter-btn active" id="time-all" onclick="setSearchTime('')">全部</button>
+              <button class="filter-btn" id="time-day" onclick="setSearchTime('day')">今天</button>
+              <button class="filter-btn" id="time-week" onclick="setSearchTime('week')">本周</button>
+              <button class="filter-btn" id="time-month" onclick="setSearchTime('month')">本月</button>
+            </div>
+          </div>
           <button class="btn-primary" id="btn-new-post" onclick="showNewPost()" style="display:none;">
             + 发布帖子
           </button>
@@ -321,9 +333,16 @@
 
         <!-- Check-in Card -->
         <div class="form-card" id="checkin-card" style="margin-top:16px;">
-          <h2>每日签到</h2>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <h2 style="margin:0;">每日签到</h2>
+            <div style="display:flex;gap:4px;background:#f0f2ff;border-radius:10px;padding:3px;flex:1;max-width:200px;">
+              <button id="tab-sign-btn" class="checkin-sub-tab active" onclick="switchCheckinTab('sign')" style="flex:1;padding:5px;border:none;border-radius:7px;background:transparent;font-size:13px;font-weight:600;cursor:pointer;color:#667eea;">🎁 签到</button>
+              <button id="tab-history-btn" class="checkin-sub-tab" onclick="switchCheckinTab('history')" style="flex:1;padding:5px;border:none;border-radius:7px;background:transparent;font-size:13px;font-weight:600;cursor:pointer;color:#94a3b8;">📅 记录</button>
+            </div>
+          </div>
           <div id="checkin-status">
-            <div class="checkin-loading">加载中...</div>
+            <div id="checkin-sign-panel"><div class="checkin-loading">加载中...</div></div>
+            <div id="checkin-history-panel" style="display:none;"><div id="checkin-history-body"></div></div>
           </div>
         </div>
       </div>

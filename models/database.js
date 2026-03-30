@@ -480,3 +480,29 @@ const POINT_COST = {
 module.exports.getUserLevel = getUserLevel;
 module.exports.LEVELS = LEVELS;
 module.exports.POINT_COST = POINT_COST;
+
+// ============ Messages (Private Chat) ============
+db.exec(`
+  CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_id INTEGER NOT NULL,
+    receiver_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    is_read INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_id) REFERENCES users(id),
+    FOREIGN KEY (receiver_id) REFERENCES users(id)
+  )
+`);
+
+// ============ Follows ============
+db.exec(`
+  CREATE TABLE IF NOT EXISTS follows (
+    follower_id INTEGER NOT NULL,
+    following_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (follower_id, following_id),
+    FOREIGN KEY (follower_id) REFERENCES users(id),
+    FOREIGN KEY (following_id) REFERENCES users(id)
+  )
+`);

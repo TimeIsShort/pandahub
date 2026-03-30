@@ -459,3 +459,25 @@
 - ✅ `public/index.html` - 新增 meta description / og:title / og:description / twitter:card
 - ✅ 涉及文件：`routes/sitemap.js`（新建）、`public/index.html`
 
+
+---
+
+## v1.2 开发记录（2026-03-30 下午）
+
+### P1.2 私信系统 ✅
+- ✅ 新建 `routes/messages.js`：`GET /conversations`、`GET /with/:userId`、`POST /`、`GET /unread-count`
+- ✅ 新建 `utils/pushHelper.js`：独立推送工具（避免循环依赖）
+- ✅ 导航栏新增 💬 私信入口 + 未读角标
+- ✅ 会话列表弹窗 + 私信详情弹窗（气泡样式）
+- ✅ 评论/回复时 Web Push 通知帖子作者
+- ✅ 帖子作者卡片 + 帖子列表作者旁新增「💬发私信」按钮
+- ✅ 私信气泡样式（我的/对方的，颜色区分）
+- ✅ Enter 键发送（Shift+Enter 换行）
+
+### 涉及文件
+- `models/database.js` - messages 表 + follows 表（建表）
+- `routes/messages.js` - 私信 API（新建）
+- `public/index.html` - 私信弹窗 UI
+- `public/js/app.js` - 私信函数（loadMsgConversations/openMsgDetail/sendMsg 等）
+- `public/css/style.css` - 气泡样式 + msg-author-btn 按钮样式
+

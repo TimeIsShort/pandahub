@@ -77,6 +77,8 @@ function setAuth(token, user) {
   localStorage.setItem('user', JSON.stringify(user));
   currentUser = user;
   updateNav();
+  loadMsgUnreadCount();
+  startMsgPolling();
 }
 
 function clearAuth() {
@@ -84,6 +86,7 @@ function clearAuth() {
   localStorage.removeItem('user');
   currentUser = null;
   updateNav();
+  if (_msgPollInterval) { clearInterval(_msgPollInterval); _msgPollInterval = null; }
 }
 
 function api(endpoint, options = {}) {
@@ -1300,6 +1303,7 @@ async function loadPosts() {
           ${post.tag_name ? `<span class="post-tag" style="background:${post.tag_color}">${escapeHtml(post.tag_name)}</span>` : ''}
           <span class="avatar-small">${post.avatar ? `<img src="${post.avatar}" alt="avatar">` : (post.nickname || post.username)[0].toUpperCase()}</span>
           <span>${escapeHtml(post.nickname || post.username)}</span>
+          ${user && user.id !== post.user_id ? `<button class="msg-author-btn" onclick="event.stopPropagation();openMsgDetailFromUser(${post.user_id}, '${e(post.nickname || post.username)}')" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px 6px;color:#5d6dff;">💬</button>` : ''}
           <span>👍 <span class="vote-like-count">${post.like_count || 0}</span></span>
           <span>👎 <span class="vote-dislike-count">${post.dislike_count || 0}</span></span>
           <span>💬 ${post.comment_count}</span>
@@ -1394,6 +1398,7 @@ async function viewPost(id) {
           ${res.post.tag_name ? `<span class="post-tag" style="background:${res.post.tag_color}">${escapeHtml(res.post.tag_name)}</span>` : ''}
           <span class="avatar-small">${res.post.avatar ? `<img src="${res.post.avatar}" alt="avatar">` : (res.post.nickname || res.post.username)[0].toUpperCase()}</span>
           <span>${escapeHtml(res.post.nickname || res.post.username)}</span>
+          ${user && user.id !== res.post.user_id ? `<button class="msg-author-btn" onclick="openMsgDetailFromUser(${res.post.user_id}, '${e(res.post.nickname || res.post.username)}')" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px 6px;color:#5d6dff;">💬 发私信</button>` : ''}
           <span>🕐 ${formatDate(res.post.created_at)}</span>
           <span>👁 ${res.post.views}</span>
         </div>
@@ -2733,6 +2738,144 @@ function closeNotifications() {
   document.getElementById('notif-modal').style.display = 'none';
 }
 
+// ============ Messages ============
+let currentMsgPartner = null;
+
+async function loadMsgConversations() {
+  const el = document.getElementById('msg-conversations');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:20px;text-align:center;color:#888;">加载中...</div>';
+  try {
+    const res = await api('/messages/conversations');
+    if (res.error) { el.innerHTML = '<div style="padding:20px;color:#888;">加载失败</div>'; return; }
+    const convs = res.conversations || [];
+    if (!convs.length) {
+      el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#a8b3d4;font-size:14px;">暂无消息记录<br><span style="font-size:12px;margin-top:8px;display:block;">快去找感兴趣的人发私信吧！</span></div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < convs.length; i++) {
+      var c = convs[i];
+      var isMe = c.sender_id === user.id;
+      var msgText = isMe ? '我：' + c.content : c.content;
+      var hasUnread = c.unread_count > 0;
+      html += '<div class="notif-item' + (hasUnread ? ' unread' : '') + '" onclick="openMsgDetail(' + c.partner_id + ',\'' + e(c.partner_nickname || c.partner_username || '') + '\')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #f0f2ff;">';
+      html += '<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#5d6dff,#7e5ad6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0;">' + (c.partner_nickname || c.partner_username || '?')[0].toUpperCase() + '</div>';
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<div style="font-weight:700;font-size:14px;color:#1e2d5a;margin-bottom:3px;">' + e(c.partner_nickname || c.partner_username) + (hasUnread ? ' <span style="background:#ef4444;border-radius:50%;width:8px;height:8px;display:inline-block;vertical-align:middle;margin-left:4px;"></span>' : '') + '</div>';
+      html += '<div style="font-size:13px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + e(c.content) + '</div>';
+      html += '</div><div style="font-size:11px;color:#a8b3d4;flex-shrink:0;">' + fd(c.created_at) + '</div></div>';
+    }
+    el.innerHTML = html;
+  } catch (e) {
+    console.error('[Messages]', e);
+    el.innerHTML = '<div style="padding:20px;color:#888;">加载失败，请重试</div>';
+  }
+}
+
+window.openMessages = async function() {
+  if (!user) { showToast('请先登录', 'error'); return; }
+  document.getElementById('msg-modal').style.display = 'flex';
+  document.getElementById('msg-detail-modal').style.display = 'none';
+  await loadMsgConversations();
+};
+
+window.closeMessages = function() {
+  document.getElementById('msg-modal').style.display = 'none';
+  currentMsgPartner = null;
+};
+
+window.closeMsgDetail = function() {
+  document.getElementById('msg-detail-modal').style.display = 'none';
+};
+
+window.openMsgDetailFromUser = async function(partnerId, partnerName) {
+  await openMsgDetail(partnerId, partnerName || '用户');
+};
+
+window.openMsgDetail = async function(partnerId, partnerName) {
+  currentMsgPartner = partnerId;
+  document.getElementById('msg-partner-name').textContent = '💬 与 ' + partnerName + ' 的对话';
+  document.getElementById('msg-modal').style.display = 'none';
+  document.getElementById('msg-detail-modal').style.display = 'flex';
+  await loadMsgHistory(partnerId);
+};
+
+async function loadMsgHistory(partnerId) {
+  var el = document.getElementById('msg-history');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:20px;text-align:center;color:#888;">加载中...</div>';
+  try {
+    var res = await api('/messages/with/' + partnerId);
+    if (res.error) { el.innerHTML = '<div style="padding:20px;color:#888;">加载失败</div>'; return; }
+    var msgs = res.messages || [];
+    if (!msgs.length) {
+      el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#a8b3d4;font-size:13px;">暂无消息记录，快发送第一条吧！</div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < msgs.length; i++) {
+      var m = msgs[i];
+      var isMe = m.sender_id === user.id;
+      var bubbleClass = isMe ? 'msg-bubble-me' : 'msg-bubble-other';
+      html += '<div class="' + bubbleClass + '" style="margin:8px 0;display:flex;' + (isMe ? 'justify-content:flex-end' : 'justify-content:flex-start') + ';">';
+      html += '<div style="max-width:75%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.55;' + (isMe ? 'background:linear-gradient(135deg,#5d6dff,#7e5ad6);color:#fff;border-bottom-right-radius:4px;' : 'background:#f0f2ff;color:#1e2d5a;border-bottom-left-radius:4px;') + '">' + e(m.content).replace(/\n/g, '<br>') + '</div>';
+      html += '</div>';
+    }
+    el.innerHTML = html;
+    el.scrollTop = el.scrollHeight;
+  } catch (e) {
+    console.error('[Messages]', e);
+    el.innerHTML = '<div style="padding:20px;color:#888;">加载失败</div>';
+  }
+}
+
+window.sendMsgFromInput = async function() {
+  var input = document.getElementById('msg-input');
+  if (!input) return;
+  var content = input.value.trim();
+  if (!content) return;
+  if (!currentMsgPartner) return;
+  input.value = '';
+  await sendMsg(currentMsgPartner, content);
+};
+
+async function sendMsg(partnerId, content) {
+  try {
+    var res = await api('/messages', {
+      method: 'POST',
+      body: JSON.stringify({ receiver_id: partnerId, content: content })
+    });
+    if (res.error) { showToast(res.error, 'error'); return; }
+    await loadMsgHistory(partnerId);
+  } catch (e) {
+    showToast('发送失败', 'error');
+  }
+}
+
+async function loadMsgUnreadCount() {
+  if (!user) return;
+  try {
+    var res = await api('/messages/unread-count');
+    var badge = document.getElementById('msg-badge');
+    if (!badge) return;
+    if (res.count > 0) {
+      badge.textContent = res.count > 99 ? '99+' : res.count;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch (e) {}
+}
+
+// Poll messages every 30s when logged in
+var _msgPollInterval = null;
+function startMsgPolling() {
+  if (_msgPollInterval) clearInterval(_msgPollInterval);
+  _msgPollInterval = setInterval(loadMsgUnreadCount, 30000);
+}
+
+// ============ Notifications ============
 async function loadNotifications() {
   const container = document.getElementById('notif-list');
   if (container) {

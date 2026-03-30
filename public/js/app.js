@@ -580,6 +580,7 @@ function updateNav() {
   document.getElementById('nav-ai').style.display = user ? 'inline-block' : 'none';
   document.getElementById('nav-notif').style.display = user ? 'inline-block' : 'none';
   document.getElementById('nav-toolbox').style.display = 'inline-block';
+  document.getElementById('nav-rss').style.display = 'inline-block';
   document.getElementById('nav-logout').style.display = user ? 'inline-block' : 'none';
   document.getElementById('btn-new-post').style.display = user ? 'inline-block' : 'none';
 

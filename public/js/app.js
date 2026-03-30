@@ -2660,30 +2660,75 @@ async function loadProfile(userId) {
       ? `<img src="${res.user.avatar}" alt="avatar">`
       : (res.user.nickname || res.user.username)[0].toUpperCase();
 
+    const isSelf = userId === getUser()?.id;
+    const level = getUserLevel(res.user.points);
+    const levelColor = level.color || '#667eea';
+    const levelIcon = level.icon || '⭐';
+    const levelName = level.name || '新手上路';
+
     document.getElementById('profile-content').innerHTML = `
-      <div class="profile-header">
-        <div class="profile-avatar">${avatarContent}</div>
-        <div class="profile-info">
-          <h2>${escapeHtml(res.user.nickname || res.user.username)}</h2>
-          <p>${escapeHtml(res.user.bio || '暂无简介')}</p>
-          <p style="font-size:12px;margin-top:4px;">加入于 ${formatDate(res.user.created_at)}</p>
-          ${userHobbies.length ? `<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">${userHobbies.map(h => `<span class="hobby-chip" style="cursor:default;"><span class="hobby-icon">${h.icon}</span><span>${h.name}</span></span>`).join('')}</div>` : ''}
-        </div>
-      </div>
-      <h3>我的帖子</h3>
-      <div class="post-list">
-        ${res.posts.length ? res.posts.map(p => `
-          <div class="post-card" onclick="viewPost(${p.id})">
-            <div class="post-title">${escapeHtml(p.title)}</div>
-            <div class="post-meta">
-              ${p.tag_name ? `<span class="post-tag" style="background:${p.tag_color}">${escapeHtml(p.tag_name)}</span>` : ''}
-              <span>💬 ${p.comment_count}</span>
-              <span>🕐 ${formatDate(p.created_at)}</span>
+      <div class="profile-page">
+        <div class="profile-hero" style="background:linear-gradient(135deg,${levelColor}22,${levelColor}11);border-radius:18px;padding:24px 20px 20px;text-align:center;margin-bottom:20px;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:${levelColor}18;border-radius:50%;"></div>
+          <div style="position:absolute;bottom:-10px;left:-10px;width:80px;height:80px;background:${levelColor}15;border-radius:50%;"></div>
+          <div class="profile-avatar-lg" style="width:88px;height:88px;border-radius:50%;background:linear-gradient(140deg,${levelColor},${levelColor}bb);display:flex;align-items:center;justify-content:center;color:#fff;font-size:36px;font-weight:700;margin:0 auto 12px;overflow:hidden;box-shadow:0 4px 16px ${levelColor}44;border:3px solid #fff;">
+            ${res.user.avatar ? `<img src="${res.user.avatar}" alt="avatar" style="width:100%;height:100%;object-fit:cover;">` : (res.user.nickname || res.user.username)[0].toUpperCase()}
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+            <h2 style="font-size:22px;color:#1e3a5f;margin:0;">${escapeHtml(res.user.nickname || res.user.username)}</h2>
+            <span style="background:${levelColor}22;color:${levelColor};border:1px solid ${levelColor}44;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">${levelIcon} ${levelName}</span>
+            ${res.user.role === 'admin' ? '<span style="background:#ef444422;color:#ef4444;border:1px solid #ef444444;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;">👑 管理员</span>' : ''}
+          </div>
+          <p style="color:#627582;font-size:14px;margin:0 0 14px;">${escapeHtml(res.user.bio || '这个人很懒，什么都没写')}</p>
+          ${userHobbies.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">${userHobbies.map(h => `<span style="background:#f0f2ff;color:#5d6dff;font-size:12px;padding:3px 10px;border-radius:20px;"><span>${h.icon}</span> ${h.name}</span>`).join('')}</div>` : ''}
+          <div class="profile-stats-row" style="display:flex;gap:0;margin-top:16px;background:rgba(255,255,255,0.7);border-radius:12px;padding:4px;border:1px solid ${levelColor}22;">
+            <div style="flex:1;text-align:center;padding:8px 4px;">
+              <div style="font-size:18px;font-weight:800;color:#1e3a5f;">${res.user.points}</div>
+              <div style="font-size:11px;color:#94a3b8;">积分</div>
+            </div>
+            <div style="width:1px;background:${levelColor}22;margin:8px 0;"></div>
+            <div style="flex:1;text-align:center;padding:8px 4px;">
+              <div style="font-size:18px;font-weight:800;color:#1e3a5f;">${res.posts.length}</div>
+              <div style="font-size:11px;color:#94a3b8;">帖子</div>
+            </div>
+            <div style="width:1px;background:${levelColor}22;margin:8px 0;"></div>
+            <div style="flex:1;text-align:center;padding:8px 4px;">
+              <div style="font-size:18px;font-weight:800;color:#f97316;">🔥 ${res.user.checkin_streak || 0}</div>
+              <div style="font-size:11px;color:#94a3b8;">连续签到</div>
+            </div>
+            <div id="profile-followers-stat" style="width:1px;background:${levelColor}22;margin:8px 0;"></div>
+            <div style="flex:1;text-align:center;padding:8px 4px;">
+              <div style="font-size:18px;font-weight:800;color:#667eea;" id="profile-followers-count">-</div>
+              <div style="font-size:11px;color:#94a3b8;">粉丝</div>
             </div>
           </div>
-        `).join('') : '<div class="empty-state-card">暂无帖子</div>'}
+          ${!isSelf ? `<div style="margin-top:14px;"><button id="btn-follow" class="btn-follow" onclick="toggleFollow(${profileUserId})" style="min-width:120px;">+ 关注</button><button class="btn-follow" style="margin-left:8px;background:linear-gradient(135deg,#5d6dff22,#7e5ad622);border:1.5px solid #d5ddff;color:#667eea;" onclick="startChat(${profileUserId})">💬 发私信</button></div>` : ''}
+          ${isSelf ? `<div style="margin-top:14px;font-size:12px;color:#94a3b8;">🕐 加入于 ${formatDate(res.user.created_at)}</div>` : ''}
+        </div>
+        ${isSelf ? `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+          <button onclick="goSettings()" style="flex:1;padding:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">⚙️ 编辑个人资料</button>
+          <button onclick="goCheckin()" style="flex:1;padding:12px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">🎁 每日签到</button>
+        </div>` : ''}
+        <h3 style="font-size:16px;color:#667eea;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;">📝 他的帖子 <span style="font-size:13px;color:#94a3b8;font-weight:400;">(${res.posts.length})</span></h3>
+        <div class="post-list">
+          ${res.posts.length ? res.posts.map(p => `
+            <div class="post-card" onclick="viewPost(${p.id})" style="cursor:pointer;padding:14px 16px;border-bottom:1px solid #f0f4f8;">
+              <div style="font-size:15px;font-weight:700;color:#1e3a5f;margin-bottom:8px;">${escapeHtml(p.title)}</div>
+              <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#94a3b8;flex-wrap:wrap;">
+                ${p.tag_name ? `<span style="background:${p.tag_color}33;color:${p.tag_color};padding:2px 8px;border-radius:10px;font-weight:600;">${escapeHtml(p.tag_name)}</span>` : ''}
+                <span>💬 ${p.comment_count}</span>
+                <span>🕐 ${formatDate(p.created_at)}</span>
+              </div>
+            </div>
+          `).join('') : '<div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">暂无帖子</div>'}
+        </div>
       </div>
     `;
+
+    // Load follow status for non-self profiles
+    if (!isSelf) {
+      loadFollowStatus(profileUserId);
+    }
   } catch (e) {
     console.error(e);
   }
@@ -2873,6 +2918,8 @@ async function loadFollowStatus(targetId) {
 }
 
 window.loadFollowStatus = loadFollowStatus;
+window.goCheckin = goCheckin;
+window.startChat = startChat;
 
 // ============ Messages ============
 let currentMsgPartner = null;

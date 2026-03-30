@@ -553,3 +553,22 @@
 - `public/admin-login.html` - 图表Tab + CSS + loadCharts() + setChartRange() JS
 - `routes/admin.js` - stats API（已有，无需修改）
 
+
+---
+
+## v1.2 开发记录（续）
+
+### P3 用户主页优化 ✅
+- ✅ 全新卡片式布局：渐变色 hero 区域 + 等级徽章
+- ✅ 头像大号圆形（渐变背景随等级变色）
+- ✅ 等级徽章 + 管理员标识（紫色/红色标签）
+- ✅ 积分/帖子/连续签到/粉丝数四格统计栏
+- ✅ 非本人主页：「+ 关注」「💬 发私信」按钮组
+- ✅ 本人主页：「⚙️ 编辑个人资料」「🎁 每日签到」快捷入口
+- ✅ 帖子列表卡片化改造（无标题时代码风格）
+- ✅ 发帖数量统计显示
+
+### 涉及文件
+- `public/js/app.js` - loadProfile 完全重写，goCheckin/startChat 函数
+- `public/css/style.css` - .profile-page / .profile-hero / .profile-avatar-lg / .profile-stats-row 样式
+

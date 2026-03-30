@@ -782,3 +782,24 @@
 - `routes/tags.js` - 新增 3 个管理 API（authMiddleware 保护）
 - `public/admin-login.html` - 标签 Tab 按钮 + Tab 内容 + JS CRUD 函数
 
+
+---
+
+## v1.4 开发记录
+
+### P0 评论点赞 ✅
+- ✅ `routes/commentVotes.js` 新建（POST /comments/:id/vote、GET /comments/:id/votes）
+- ✅ `models/database.js` - `comment_votes` 表（user_id/comment_id/vote_type/UNIQUE）
+- ✅ 评论查询加 `like_count` 字段
+- ✅ 帖子详情页评论加 👍 按钮（点赞数显示）
+- ✅ 回复评论同样加 👍 按钮
+- ✅ 点赞状态异步加载（打开帖子时查询当前用户是否已点赞）
+- ✅ 点赞后按钮即时变红，再次点击取消
+- ✅ 不能给自己评论点赞
+
+### 涉及文件
+- `routes/commentVotes.js`（新建）
+- `models/database.js`（comment_votes 表）
+- `routes/posts.js`（评论查询加 like_count）
+- `public/js/app.js`（评论点赞按钮 + voteComment/loadCommentVoteStatus 函数）
+

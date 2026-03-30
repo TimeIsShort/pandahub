@@ -113,7 +113,8 @@ router.get('/:id', optionalAuth, (req, res) => {
     // Get comments
     const comments = db.prepare(`
       SELECT c.*, u.username, u.nickname, u.avatar,
-             ru.nickname as reply_to_nickname, ru.username as reply_to_username
+             ru.nickname as reply_to_nickname, ru.username as reply_to_username,
+             (SELECT COUNT(*) FROM comment_votes cv WHERE cv.comment_id = c.id) as like_count
       FROM comments c
       LEFT JOIN users u ON c.user_id = u.id
       LEFT JOIN users ru ON c.reply_to_user_id = ru.id

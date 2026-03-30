@@ -195,8 +195,6 @@ ensureColumn('posts', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
 ensureColumn('posts', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
 ensureColumn('posts', 'like_count', 'INTEGER DEFAULT 0');
 ensureColumn('posts', 'dislike_count', 'INTEGER DEFAULT 0');
-ensureColumn('posts', 'is_pinned', 'INTEGER DEFAULT 0');
-ensureColumn('posts', 'is_featured', 'INTEGER DEFAULT 0');
 ensureColumn('comments', 'parent_id', 'INTEGER');
 ensureColumn('comments', 'reply_to_user_id', 'INTEGER');
 ensureColumn('users', 'points', 'INTEGER DEFAULT 0');
@@ -479,45 +477,22 @@ const POINT_COST = {
   create_comment: 2,
 };
 
+ensureColumn('posts', 'is_pinned', 'INTEGER DEFAULT 0');
+ensureColumn('posts', 'is_featured', 'INTEGER DEFAULT 0');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS comment_votes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    comment_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    vote_type TEXT NOT NULL DEFAULT 'like',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (comment_id) REFERENCES comments(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE(comment_id, user_id)
+  )
+`);
+
 module.exports.getUserLevel = getUserLevel;
 module.exports.LEVELS = LEVELS;
 module.exports.POINT_COST = POINT_COST;
-
-// ============ Messages (Private Chat) ============
-db.exec(`
-  CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sender_id INTEGER NOT NULL,
-    receiver_id INTEGER NOT NULL,
-    content TEXT NOT NULL,
-    is_read INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (sender_id) REFERENCES users(id),
-    FOREIGN KEY (receiver_id) REFERENCES users(id)
-  )
-`);
-
-// ============ Follows ============
-db.exec(`
-  CREATE TABLE IF NOT EXISTS follows (
-    follower_id INTEGER NOT NULL,
-    following_id INTEGER NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (follower_id, following_id),
-    FOREIGN KEY (follower_id) REFERENCES users(id),
-    FOREIGN KEY (following_id) REFERENCES users(id)
-  )
-`);
-
-// ============ Favorites / Bookmarks ============
-db.exec(`
-  CREATE TABLE IF NOT EXISTS favorites (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    post_id INTEGER NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (post_id) REFERENCES posts(id),
-    UNIQUE(user_id, post_id)
-  )
-`);

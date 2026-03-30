@@ -1478,6 +1478,9 @@ async function viewPost(id) {
             </div>
             <div class="comment-content">${escapeHtml(r.content)}</div>
             <div class="comment-actions">
+              <button class="comment-action-btn comment-like-btn" id="clike-btn-${r.id}" onclick="voteComment(${r.id})" style="color:#94a3b8;">
+                👍 <span id="clike-count-${r.id}">${r.like_count || 0}</span>
+              </button>
               ${user ? `<button class="comment-action-btn" onclick="startReply(${r.id}, ${r.user_id}, '${escapeHtml(r.nickname || r.username)}')">回复</button>` : ''}
             </div>
           </div>`).join('');
@@ -1492,6 +1495,9 @@ async function viewPost(id) {
           </div>
           <div class="comment-content">${escapeHtml(comment.content)}</div>
           <div class="comment-actions">
+            <button class="comment-action-btn comment-like-btn" id="clike-btn-${comment.id}" onclick="voteComment(${comment.id})" title="赞一个" style="color:#94a3b8;">
+              👍 <span id="clike-count-${comment.id}">${comment.like_count || 0}</span>
+            </button>
             ${user ? `<button class="comment-action-btn" onclick="startReply(${comment.id}, ${comment.user_id}, '${escapeHtml(comment.nickname || comment.username)}')">回复</button>` : ''}
           </div>
           ${directReplies ? `<div class="reply-list">${directReplies}</div>` : ''}
@@ -1503,6 +1509,7 @@ async function viewPost(id) {
         ? rootComments.map(c => renderComment(c)).join('')
         : '<div style="color:#888;padding:20px;text-align:center;">暂无评论</div>';
     }
+    loadCommentVoteStatus();
   } catch (e) {
     console.error(e);
     showToast('加载失败', 'error');
@@ -3416,6 +3423,59 @@ async function loadLeaderboard() {
     el.innerHTML = '<div style="text-align:center;padding:16px;color:#ef4444;">加载失败</div>';
   }
 }
+
+
+// ============ Comment Likes ============
+async function voteComment(commentId) {
+  var user = getUser();
+  if (!user) { showToast('请先登录', 'error'); return; }
+  var btn = document.getElementById('clike-btn-' + commentId);
+  var countEl = document.getElementById('clike-count-' + commentId);
+  if (!btn) return;
+  var isLiked = btn.dataset.liked === '1';
+  try {
+    var res = await api('/comments/' + commentId + '/vote', {
+      method: 'POST',
+      body: JSON.stringify({ vote_type: 'like' })
+    });
+    if (res.error) { showToast(res.error, 'error'); return; }
+    if (countEl) countEl.textContent = res.like_count;
+    if (isLiked) {
+      btn.style.color = '#94a3b8';
+      btn.dataset.liked = '0';
+    } else {
+      btn.style.color = '#ef4444';
+      btn.dataset.liked = '1';
+    }
+  } catch (e) {
+    showToast('操作失败', 'error');
+  }
+}
+
+// Load comment vote status after comments are rendered
+async function loadCommentVoteStatus() {
+  var user = getUser();
+  if (!user) return;
+  var btns = document.querySelectorAll('.comment-like-btn');
+  btns.forEach(function(btn) {
+    var id = btn.id.replace('clike-btn-', '');
+    if (!id) return;
+    api('/comments/' + id + '/votes')
+      .then(function(res) {
+        if (res.error) return;
+        var countEl = document.getElementById('clike-count-' + id);
+        if (countEl) countEl.textContent = res.like_count;
+        if (res.userVote === 'like') {
+          btn.style.color = '#ef4444';
+          btn.dataset.liked = '1';
+        }
+      })
+      .catch(function() {});
+  });
+}
+
+window.voteComment = voteComment;
+window.loadCommentVoteStatus = loadCommentVoteStatus;
 
 // ============ Messages ============
 let currentMsgPartner = null;

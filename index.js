@@ -35,6 +35,7 @@ require('./models/database');
 
 const authRoutes = require('./routes/auth');
 const postRoutes = require('./routes/posts');
+const commentVoteRoutes = require('./routes/commentVotes');
 const tagRoutes = require('./routes/tags');
 const userRoutes = require('./routes/users');
 const uploadRoutes = require('./routes/upload');
@@ -97,6 +98,7 @@ app.get('/toolbox', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
+app.use('/api/comments', commentVoteRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/upload', uploadRoutes);

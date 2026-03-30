@@ -2124,44 +2124,89 @@ async function loadCheckinStatus() {
     const container = document.getElementById('checkin-status');
     if (!container) return;
 
-    const streakDays = [1, 2, 3, 4, 5, 6, 7];
     const bonuses = res.streakBonuses || { 1: 5, 2: 8, 3: 10, 4: 12, 5: 15, 6: 18, 7: 25 };
+    const maxStreak = 7;
 
-    const streakDots = streakDays.map(day => {
-      const dayDate = new Date(Date.now() - (7 - day) * 86400000).toISOString().slice(0, 10);
-      const checked = res.checkedInDates && res.checkedInDates.includes(dayDate);
-      const isNextDay = res.nextStreak !== null && day === Math.min(res.nextStreak, 7);
-      return `<div class="streak-day ${checked ? 'checked' : ''} ${isNextDay ? 'today' : ''}">
-        <div class="streak-dot">${checked ? '✓' : day}</div>
-        <div class="streak-pts">+${bonuses[day]}</div>
+    // Determine which streak rung we're on (capped at 7)
+    const currentStreak = res.currentStreak || 0;
+    const displayStreak = Math.min(currentStreak, maxStreak);
+
+    // Build 7-step streak ladder
+    const streakSteps = [1, 2, 3, 4, 5, 6, 7].map(day => {
+      const bonus = bonuses[day];
+      // Active: this step is <= current streak (already achieved)
+      const isActive = displayStreak >= day;
+      // Current step: the rung matching current streak (for "checked in today" state)
+      const isCurrent = res.checkedInToday && displayStreak === day;
+      // Next step: tomorrow's target (not checked in yet)
+      const nextTarget = res.nextStreak !== null ? Math.min(res.nextStreak, maxStreak) : 1;
+      const isNext = !res.checkedInToday && day === nextTarget;
+      // Week bonus ring (day 7) gets special styling
+      const isWeekBonus = day === 7;
+
+      let statusClass = '';
+      if (isCurrent) statusClass = 'current';
+      else if (isNext) statusClass = 'next';
+      else if (isActive) statusClass = 'active';
+
+      return `<div class="streak-step ${statusClass} ${isWeekBonus ? 'week-bonus' : ''}">
+        <div class="streak-step-ring">${isActive ? '🔥' : day}</div>
+        <div class="streak-step-label">第${day}天</div>
+        <div class="streak-step-pts ${isActive ? 'pts-active' : ''}">+${bonus}</div>
       </div>`;
     }).join('');
+
+    // Progress bar width: if checked in, show full; if not, show partial
+    const progressPct = res.checkedInToday
+      ? 100
+      : displayStreak > 0
+        ? (displayStreak / maxStreak) * 100
+        : 0;
+
+    // Connecting line segments between steps
+    const connector = `<div class="streak-connector" style="width:${progressPct}%"></div>`;
 
     if (res.checkedInToday) {
       container.innerHTML = `
         <div class="checkin-done">
-          <div class="checkin-done-info">
-            <span class="checkin-points">💰 ${res.points} 积分</span>
-            <span class="checkin-streak">🔥 连续签到 <b>${res.currentStreak}</b> 天</span>
+          <div class="checkin-rewards-header">
+            <div class="checkin-rewards-left">
+              <div class="checkin-big-streak">🔥 <b>${res.currentStreak}</b> 天</div>
+              <div class="checkin-points-display">💰 ${res.points} 积分</div>
+            </div>
+            <div class="checkin-week-badge">
+              ${res.currentStreak >= 7 ? '🏆 周冠霸 | ' : ''}已签到
+            </div>
           </div>
-          <div class="streak-calendar">${streakDots}</div>
-          <p class="checkin-tip">✅ 今日已签到，明天再来吧～</p>
+          <div class="streak-ladder-wrap">
+            <div class="streak-ladder-track">${streakSteps}</div>
+            <div class="streak-progress-line"><div class="streak-progress-fill" style="width:${progressPct}%"></div></div>
+          </div>
+          <p class="checkin-tip">✅ 今日已签到！明天继续签到可获 +${bonuses[Math.min(res.currentStreak + 1, 7)]} 积分</p>
         </div>
       `;
     } else {
       container.innerHTML = `
         <div class="checkin-pending">
-          <div class="checkin-done-info">
-            <span class="checkin-points">💰 ${res.points} 积分</span>
-            <span class="checkin-streak">🔥 连续签到 <b>${res.currentStreak}</b> 天</span>
+          <div class="checkin-rewards-header">
+            <div class="checkin-rewards-left">
+              <div class="checkin-big-streak">🔥 <b>${res.currentStreak}</b> 天</div>
+              <div class="checkin-points-display">💰 ${res.points} 积分</div>
+            </div>
+            <div class="streak-next-bonus" id="streak-next-bonus">
+              下次 +${res.nextBonus}积分
+            </div>
           </div>
-          <div class="streak-calendar">${streakDots}</div>
+          <div class="streak-ladder-wrap">
+            <div class="streak-ladder-track">${streakSteps}</div>
+            <div class="streak-progress-line"><div class="streak-progress-fill" style="width:${progressPct}%"></div></div>
+          </div>
           <div class="checkin-action">
-            <button class="btn-primary" onclick="doCheckin()">
-              🎁 立即签到（+${res.nextBonus}积分）
+            <button class="btn-primary checkin-btn-large" onclick="doCheckin()">
+              🎁 立即签到 <span class="checkin-btn-pts">+${res.nextBonus}积分</span>
             </button>
           </div>
-          <p class="checkin-tip">${res.currentStreak > 0 ? `明天继续签到可获 +${bonuses[Math.min(res.currentStreak + 1, 7)]} 积分` : '开始你的第一次签到吧！'}</p>
+          <p class="checkin-tip">${res.currentStreak > 0 ? `再连续签到 ${7 - displayStreak} 天即可解锁第7天 +25 积分周奖励！` : '开始你的第一次签到，连续7天可获最高 +25 积分/天！'}</p>
         </div>
       `;
     }

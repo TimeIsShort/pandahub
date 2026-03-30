@@ -515,3 +515,21 @@
 - `public/js/app.js` - mdInsert / mdHandleTab（Ctrl+B/I/Tab）函数
 - `public/css/style.css` - .md-editor-wrap / .md-toolbar / .md-tool-btn 样式
 
+
+---
+
+## v1.2 开发记录（续）
+
+### P2 签到连续奖励 UI 优化 ✅
+- ✅ 全新7天阶梯进度条：7个圆环表示第1-7天，连线进度填充
+- ✅ 当前签到日：橙色脉冲动画高亮
+- ✅ 已完成天数：绿色渐变高亮 🔥
+- ✅ 明日目标：蓝色虚线边框闪烁
+- ✅ 第7天周冠军：特殊皇冠标识 🔥
+- ✅ 签到按钮大号渐变色（橙），悬停上浮+阴影
+- ✅ "再签到X天解锁周冠军" 提示语引导连续签到
+
+### 涉及文件
+- `public/js/app.js` - loadCheckinStatus 完全重写，7阶梯进度UI
+- `public/css/style.css` - streak-ladder 整套新样式
+

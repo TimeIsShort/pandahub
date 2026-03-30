@@ -2888,6 +2888,7 @@ async function saveSettings() {
 
 // Profile
 async function loadProfile(userId) {
+  window._currentProfileUserId = userId;
   try {
     const res = await api(`/users/${userId}`);
     const profileRes = await api('/profile/me');
@@ -2934,12 +2935,17 @@ async function loadProfile(userId) {
               <div style="font-size:11px;color:#94a3b8;">连续签到</div>
             </div>
             <div id="profile-followers-stat" style="width:1px;background:${levelColor}22;margin:8px 0;"></div>
-            <div style="flex:1;text-align:center;padding:8px 4px;">
+            <div style="flex:1;text-align:center;padding:8px 4px;cursor:pointer;border-radius:8px;transition:background 0.2s;" onclick="showFollowList(${userId}, 'followers')" title="查看粉丝列表">
               <div style="font-size:18px;font-weight:800;color:#667eea;" id="profile-followers-count">-</div>
               <div style="font-size:11px;color:#94a3b8;">粉丝</div>
             </div>
+            <div style="width:1px;background:${levelColor}22;margin:8px 0;"></div>
+            <div style="flex:1;text-align:center;padding:8px 4px;cursor:pointer;border-radius:8px;transition:background 0.2s;" onclick="showFollowList(${userId}, 'following')" title="查看关注列表">
+              <div style="font-size:18px;font-weight:800;color:#10b981;" id="following-count">-</div>
+              <div style="font-size:11px;color:#94a3b8;">关注</div>
+            </div>
           </div>
-          ${!isSelf ? `<div style="margin-top:14px;"><button id="btn-follow" class="btn-follow" onclick="toggleFollow(${profileUserId})" style="min-width:120px;">+ 关注</button><button class="btn-follow" style="margin-left:8px;background:linear-gradient(135deg,#5d6dff22,#7e5ad622);border:1.5px solid #d5ddff;color:#667eea;" onclick="startChat(${profileUserId})">💬 发私信</button></div>` : ''}
+          ${!isSelf ? `<div style="margin-top:14px;"><button id="btn-follow" class="btn-follow" onclick="toggleFollow(${userId})" style="min-width:120px;">+ 关注</button><button class="btn-follow" style="margin-left:8px;background:linear-gradient(135deg,#5d6dff22,#7e5ad622);border:1.5px solid #d5ddff;color:#667eea;" onclick="startChat(${userId})">💬 发私信</button></div>` : ''}
           ${isSelf ? `<div style="margin-top:14px;font-size:12px;color:#94a3b8;">🕐 加入于 ${formatDate(res.user.created_at)}</div>` : ''}
         </div>
         ${isSelf ? `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
@@ -2996,7 +3002,7 @@ async function loadProfile(userId) {
 
     // Load follow status for non-self profiles
     if (!isSelf) {
-      loadFollowStatus(profileUserId);
+      loadFollowStatus(userId);
     }
   } catch (e) {
     console.error(e);
@@ -3274,6 +3280,100 @@ window.loadFollowStatus = loadFollowStatus;
 window.goCheckin = goCheckin;
 window.startChat = startChat;
 
+// ============ Followers / Following List Modal ============
+async function showFollowList(userId, type) {
+  window._lastFollowListUserId = userId;
+  var modal = document.getElementById('follow-list-modal');
+  var title = document.getElementById('follow-list-title');
+  var content = document.getElementById('follow-list-content');
+  if (!modal) return;
+  title.textContent = type === 'followers' ? '👥 粉丝列表' : '👥 关注列表';
+  content.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">加载中...</div>';
+  modal.style.display = 'flex';
+  loadFollowList(userId, type);
+}
+
+async function loadFollowList(userId, type) {
+  var content = document.getElementById('follow-list-content');
+  if (!content) return;
+  try {
+    var endpoint = type === 'followers' ? '/followers/' + userId : '/following/' + userId;
+    var res = await api(endpoint);
+    if (res.error || !res.users) {
+      content.innerHTML = '<div style="text-align:center;padding:32px;color:#ef4444;">加载失败</div>';
+      return;
+    }
+    if (res.users.length === 0) {
+      content.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">' + (type === 'followers' ? '还没有粉丝' : '还没有关注') + '</div>';
+      return;
+    }
+    var currentUser = getUser();
+    content.innerHTML = res.users.map(function(u) {
+      var level = getUserLevel(u.points || 0);
+      var levelColor = level.color || '#667eea';
+      var levelIcon = level.icon || '⭐';
+      var isSelf = currentUser && currentUser.id === u.id;
+      var avatarContent = u.avatar
+        ? '<img src="' + u.avatar + '" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+        : (u.nickname || u.username)[0].toUpperCase();
+      return '<div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid #f0f4f8;' + (u.avatar ? '' : 'background:linear-gradient(140deg,' + levelColor + ',' + levelColor + 'bb);width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;') + '">' +
+        '<div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(140deg,' + levelColor + ',' + levelColor + 'cc);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0;">' + avatarContent + '</div>' +
+        '<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><b style="color:#1e3a5f;font-size:14px;">' + escapeHtml(u.nickname || u.username) + '</b><span style="background:' + levelColor + '22;color:' + levelColor + ';font-size:11px;font-weight:700;padding:1px 6px;border-radius:10px;">' + levelIcon + ' ' + escapeHtml(level.name) + '</span></div><div style="font-size:12px;color:#94a3b8;">积分 ' + (u.points || 0) + '</div></div>' +
+        (!isSelf && currentUser ? '<button class="btn-follow" id="fl-btn-' + u.id + '" onclick="toggleFollow(' + u.id + ', true)" style="min-width:72px;padding:6px 12px;font-size:12px;">+ 关注</button>' : '') +
+        (!isSelf && currentUser ? '<button onclick="startChat(' + u.id + ')" style="margin-left:6px;background:linear-gradient(135deg,#5d6dff22,#7e5ad622);border:1.5px solid #d5ddff;color:#667eea;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;">💬</button>' : '') +
+        (isSelf ? '<span style="font-size:12px;color:#94a3b8;">我</span>' : '') +
+        '</div>';
+    }).join('');
+
+    // Load follow status for all users in list
+    if (currentUser) {
+      res.users.forEach(function(u) {
+        if (u.id !== currentUser.id) {
+          api('/follow/status/' + u.id).then(function(status) {
+            var btn = document.getElementById('fl-btn-' + u.id);
+            if (!btn) return;
+            if (status.is_following) {
+              btn.textContent = '已关注 ✓';
+              btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+              btn.style.color = '#fff';
+              btn.style.borderColor = 'transparent';
+              btn.dataset.following = '1';
+            }
+          });
+        }
+      });
+    }
+  } catch (e) {
+    content.innerHTML = '<div style="text-align:center;padding:32px;color:#ef4444;">加载失败</div>';
+  }
+}
+
+function closeFollowList() {
+  var modal = document.getElementById('follow-list-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+// Override toggleFollow to support follow-list modal refresh
+var _origToggleFollow = toggleFollow;
+async function toggleFollow(userId, fromList) {
+  await _origToggleFollow(userId);
+  if (fromList) {
+    // Re-load the list to update button states
+    var modal = document.getElementById('follow-list-modal');
+    if (modal && modal.style.display !== 'none') {
+      var title = document.getElementById('follow-list-title');
+      var type = title && title.textContent.indexOf('粉丝') !== -1 ? 'followers' : 'following';
+      var userIdMatch = document.getElementById('follow-list-content');
+      // Find the profile user id from the list title
+      loadFollowList(window._lastFollowListUserId, type);
+    }
+  }
+}
+
+window.showFollowList = showFollowList;
+window.closeFollowList = closeFollowList;
+window.loadFollowList = loadFollowList;
+
 // ============ Favorites / Bookmarks ============
 async function toggleFavorite(postId) {
   if (!getUser()) { showToast('请先登录', 'error'); return; }
@@ -3339,7 +3439,7 @@ function switchProfileTab(tab) {
     if (postsBtn) { postsBtn.classList.remove('active'); postsBtn.style.color = '#94a3b8'; }
     if (favBtn) { favBtn.classList.remove('active'); favBtn.style.color = '#94a3b8'; }
     if (activityBtn) { activityBtn.classList.add('active'); activityBtn.style.color = '#667eea'; }
-    loadActivityCalendar(profileUserId);
+    loadActivityCalendar(window._currentProfileUserId);
   } else {
     if (postsPanel) postsPanel.style.display = 'none';
     if (favPanel) favPanel.style.display = '';

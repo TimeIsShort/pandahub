@@ -437,6 +437,21 @@
     </div>
   </div>
 
+  <!-- Followers/Following List Modal -->
+  <div id="follow-list-modal" class="modal modal-notif" style="display:none;z-index:1500;">
+    <div class="modal-content notif-modal-content" style="max-width:480px;">
+      <div class="notif-modal-header">
+        <div class="notif-title-wrap">
+          <span class="notif-modal-title" id="follow-list-title">👥 粉丝列表</span>
+        </div>
+        <div class="notif-modal-actions">
+          <button class="notif-close-btn" onclick="closeFollowList()">×</button>
+        </div>
+      </div>
+      <div id="follow-list-content" class="notif-list" style="max-height:460px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
   <!-- Message Detail Modal -->
   <div id="msg-detail-modal" class="modal" style="display:none;z-index:1600;">
     <div class="modal-content" style="max-width:560px;border-radius:16px;">

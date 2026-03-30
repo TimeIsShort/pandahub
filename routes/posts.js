@@ -4,7 +4,7 @@ const { authMiddleware, optionalAuth } = require('../middleware/auth');
 const { containsSensitiveWords, refreshWords } = require('../middleware/wordFilter');
 const { logAction } = require('../middleware/moderationLog');
 const { updatePostFTS, getUserLevel, POINT_COST } = require('../models/database');
-const { sendPushToUser } = require('../utils/pushHelper');
+const { sendPushToUser, notifyUserNewComment, notifyUserNewReply } = require('../utils/pushHelper');
 
 const router = express.Router();
 
@@ -236,7 +236,7 @@ router.delete('/:id', authMiddleware, (req, res) => {
 });
 
 // Add comment
-router.post('/:id/comments', authMiddleware, (req, res) => {
+router.post('/:id/comments', authMiddleware, async (req, res) => {
   try {
     const { content, parent_id, reply_to_user_id } = req.body;
     if (!content) {
@@ -307,6 +307,8 @@ router.post('/:id/comments', authMiddleware, (req, res) => {
         url: '/post/' + req.params.id,
         tag: 'new-comment'
       });
+      // Email notification (async, don't await)
+      notifyUserNewComment(post.user_id, post.title, comment.nickname || comment.username, '/post/' + req.params.id);
     }
 
     // Notify parent comment author (if this is a reply)
@@ -321,6 +323,8 @@ router.post('/:id/comments', authMiddleware, (req, res) => {
         url: '/post/' + req.params.id,
         tag: 'new-reply'
       });
+      // Email notification (async, don't await)
+      notifyUserNewReply(reply_to_user_id, post.title, comment.nickname || comment.username, '/post/' + req.params.id);
     }
 
     res.json({ comment, points_deducted: cost });

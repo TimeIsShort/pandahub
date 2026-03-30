@@ -4,7 +4,7 @@ const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
 const { logAction } = require('../middleware/moderationLog');
 const { callBailianModeration, parseModerationResult } = require('../middleware/autoModeration');
-const { sendPushToUser } = require('../utils/pushHelper');
+const { sendPushToUser, notifyUserPostApproved, notifyUserPostRejected } = require('../utils/pushHelper');
 
 const router = express.Router();
 const AI_DAILY_QUOTA = 100;
@@ -163,6 +163,8 @@ router.post('/posts/:id/approve', authMiddleware, (req, res) => {
       url: '/post/' + post.id,
       tag: 'post-approved'
     });
+    // Email notification (async, don't await)
+    notifyUserPostApproved(post.user_id, post.title, '/post/' + post.id);
 
     res.json({ success: true, message: '帖子已通过审核' });
   } catch (err) {
@@ -204,6 +206,8 @@ router.post('/posts/:id/reject', authMiddleware, (req, res) => {
       url: '/post/' + post.id,
       tag: 'post-rejected'
     });
+    // Email notification (async, don't await)
+    notifyUserPostRejected(post.user_id, post.title, reason, '/post/' + post.id);
 
     res.json({ success: true, message: '帖子已拒绝' });
   } catch (err) {
@@ -431,6 +435,7 @@ router.post('/posts/:id/auto-review', authMiddleware, async (req, res) => {
       url: '/post/' + post.id,
       tag: 'post-approved'
     });
+    notifyUserPostApproved(post.user_id, post.title, '/post/' + post.id);
     logAction({ adminId: req.user.id, action: 'auto_approve_post', targetType: 'post', targetId: Number(post.id), details: `AI自动通过: ${post.title} | AI回复: ${raw}` });
     return res.json({ success: true, result: 'approved', ai_response: raw, message: 'AI 审核通过，帖子已发布' });
   }
@@ -447,6 +452,7 @@ router.post('/posts/:id/auto-review', authMiddleware, async (req, res) => {
       url: '/post/' + post.id,
       tag: 'post-rejected'
     });
+    notifyUserPostRejected(post.user_id, post.title, 'AI自动审核未通过，请联系管理员', '/post/' + post.id);
     logAction({ adminId: req.user.id, action: 'auto_reject_post', targetType: 'post', targetId: Number(post.id), reason: 'AI自动拒绝', details: `AI拒绝: ${post.title} | AI回复: ${raw}` });
     return res.json({ success: true, result: 'rejected', ai_response: raw, message: 'AI 审核拒绝，帖子已下线' });
   }

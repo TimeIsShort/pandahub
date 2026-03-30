@@ -33,17 +33,121 @@ async function sendPushToUser(userId, { title, body, url, tag }) {
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       JSON.stringify({ title, body, url: url || '/', tag: tag || 'default' })
     );
-    console.log(`[Push] 推送给用户 ${userId}: ${title}`);
+    console.log('[Push] 推送给用户 ' + userId + ': ' + title);
   } catch (err) {
     if (err.statusCode === 404 || err.message.includes('unsubscribed')) {
-      // Clean up dead subscription
       try {
         const db = require('../models/database');
         db.prepare('DELETE FROM push_subscriptions WHERE user_id = ?').run(Number(userId));
       } catch (e2) {}
     }
-    // Silently ignore other push errors
   }
 }
 
-module.exports = { sendPushToUser };
+// ============ Email Notifications ============
+let emailTransporter = null;
+
+function initEmail() {
+  if (emailTransporter) return;
+  try {
+    const nodemailer = require('nodemailer');
+    emailTransporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+      port: process.env.SMTP_PORT || 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER || '',
+        pass: process.env.SMTP_PASS || '',
+      },
+    });
+  } catch (e) {
+    console.warn('[Email] nodemailer 初始化失败:', e.message);
+  }
+}
+
+async function sendEmailToUser(userId, { subject, html }) {
+  initEmail();
+  if (!emailTransporter) return;
+
+  try {
+    const db = require('../models/database');
+    const user = db.prepare(
+      'SELECT email, email_verified, nickname FROM users WHERE id = ?'
+    ).get(Number(userId));
+
+    if (!user || !user.email || user.email_verified !== 1) return;
+
+    const fromStr = '"熊猫社区" <' + (process.env.SMTP_FROM || 'noreply@pandahub.cloud') + '>';
+    await emailTransporter.sendMail({
+      from: fromStr,
+      to: user.email,
+      subject,
+      html,
+    });
+    console.log('[Email] 发送给用户 ' + userId + ' (' + user.email + '): ' + subject);
+  } catch (err) {
+    console.warn('[Email] 发送失败:', err.message);
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+async function notifyUserNewComment(userId, postTitle, commenterName, postUrl) {
+  await sendEmailToUser(userId, {
+    subject: '💬 您在熊猫社区的帖子有新评论',
+    html: '<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px;">' +
+      '<div style="text-align:center;margin-bottom:24px;"><h2 style="color:#667eea;">🐼 熊猫社区</h2></div>' +
+      '<p style="font-size:16px;color:#333;">您好！</p>' +
+      '<p style="font-size:16px;color:#333;">您的帖子 <strong>「' + escapeHtml(postTitle) + '」</strong> 收到了新的评论：</p>' +
+      '<div style="background:#f0f7ff;border-radius:8px;padding:16px;margin:20px 0;font-size:15px;color:#1e3a5f;">' +
+      '<strong>' + escapeHtml(commenterName) + '</strong> 评论了你的帖子</div>' +
+      '<p style="font-size:14px;color:#888;">登录熊猫社区查看详情 →</p></div>',
+  });
+}
+
+async function notifyUserNewReply(userId, postTitle, replierName, postUrl) {
+  await sendEmailToUser(userId, {
+    subject: '💬 您在熊猫社区的评论有新回复',
+    html: '<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px;">' +
+      '<div style="text-align:center;margin-bottom:24px;"><h2 style="color:#667eea;">🐼 熊猫社区</h2></div>' +
+      '<p style="font-size:16px;color:#333;">您好！</p>' +
+      '<p style="font-size:16px;color:#333;">您的评论收到了新的回复！</p>' +
+      '<div style="background:#f0f7ff;border-radius:8px;padding:16px;margin:20px 0;font-size:15px;color:#1e3a5f;">' +
+      '<strong>' + escapeHtml(replierName) + '</strong> 回复了你的评论</div>' +
+      '<p style="font-size:14px;color:#888;">登录熊猫社区查看详情 →</p></div>',
+  });
+}
+
+async function notifyUserPostApproved(userId, postTitle, postUrl) {
+  await sendEmailToUser(userId, {
+    subject: '🎉 您的帖子已通过审核 - 熊猫社区',
+    html: '<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px;">' +
+      '<div style="text-align:center;margin-bottom:24px;"><h2 style="color:#667eea;">🐼 熊猫社区</h2></div>' +
+      '<p style="font-size:16px;color:#333;">您好！</p>' +
+      '<p style="font-size:16px;color:#333;">恭喜！您的帖子已通过审核，现在可以在社区看到了：</p>' +
+      '<div style="background:#f0fdf4;border-left:4px solid #10b981;border-radius:4px;padding:16px;margin:20px 0;font-size:15px;color:#166534;">' +
+      '<strong>「' + escapeHtml(postTitle) + '」</strong> 已上线 🎉</div>' +
+      '<p style="font-size:14px;color:#888;">登录熊猫社区查看 →</p></div>',
+  });
+}
+
+async function notifyUserPostRejected(userId, postTitle, reason, postUrl) {
+  var reasonHtml = reason ? '<div style="margin-top:8px;font-size:14px;">原因：' + escapeHtml(reason) + '</div>' : '';
+  await sendEmailToUser(userId, {
+    subject: '❌ 您的帖子未通过审核 - 熊猫社区',
+    html: '<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px;">' +
+      '<div style="text-align:center;margin-bottom:24px;"><h2 style="color:#667eea;">🐼 熊猫社区</h2></div>' +
+      '<p style="font-size:16px;color:#333;">您好！</p>' +
+      '<p style="font-size:16px;color:#333;">很遗憾，您的帖子未通过审核：</p>' +
+      '<div style="background:#fef2f2;border-left:4px solid #ef4444;border-radius:4px;padding:16px;margin:20px 0;font-size:15px;color:#991b1b;">' +
+      '<strong>「' + escapeHtml(postTitle) + '」</strong>' + reasonHtml + '</div>' +
+      '<p style="font-size:14px;color:#888;">如有疑问，请联系管理员。</p></div>',
+  });
+}
+
+module.exports = { sendPushToUser, sendEmailToUser, notifyUserNewComment, notifyUserNewReply, notifyUserPostApproved, notifyUserPostRejected };

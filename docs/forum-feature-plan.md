@@ -572,3 +572,23 @@
 - `public/js/app.js` - loadProfile 完全重写，goCheckin/startChat 函数
 - `public/css/style.css` - .profile-page / .profile-hero / .profile-avatar-lg / .profile-stats-row 样式
 
+
+---
+
+## v1.2 开发记录（续）
+
+### P3 邮件通知触发 ✅
+- ✅ `utils/pushHelper.js` 重构：邮件模块（sendEmailToUser + 4个通知模板）
+- ✅ 评论帖子时 → 邮件通知作者（`notifyUserNewComment`）
+- ✅ 回复评论时 → 邮件通知被回复者（`notifyUserNewReply`）
+- ✅ 帖子审核通过 → 邮件通知作者（`notifyUserPostApproved`）
+- ✅ 帖子审核拒绝 → 邮件通知作者（`notifyUserPostRejected`）
+- ✅ AI 自动审核通过/拒绝同样触发邮件
+- ✅ 非阻塞：邮件发送为 async，不影响主流程响应速度
+- ✅ 已验证邮箱用户才发（`email_verified = 1`）
+
+### 涉及文件
+- `utils/pushHelper.js`（重构，新增邮件模块）
+- `routes/posts.js`（评论路由加 async + 调用 `notifyUserNewComment/Reply`）
+- `routes/admin.js`（审核路由导入 + 调用 `notifyUserPostApproved/Rejected`）
+

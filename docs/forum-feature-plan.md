@@ -635,3 +635,24 @@
 - `public/index.html` - 评论输入框加 `@mention-dropdown`
 - `public/js/app.js` - `handleCommentInput()` / `searchMentionUsers()` / `insertMention()`
 
+
+---
+
+## v1.3 开发记录（续）
+
+### P0 通知中心 ✅
+- ✅ `GET /notifications` API 增强：支持 `type` 筛选 + `page/limit` 分页
+- ✅ 通知分类筛选 tab（全部/💬评论/回复/🎉审核通过/❌审核拒绝/@提及）
+- ✅ 每条通知加类型标签 badge（彩色样式）
+- ✅ 分页器：上一页/下一页/页码信息
+- ✅ 通知中心弹窗改造（max-width 限制 + filter tabs + pagination）
+- ✅ `setNotifFilter()` / `loadNotifications()` / `loadNotificationsPrev/Next()` JS函数
+- ✅ 全部已读按钮 + 标记单条已读（点击跳转帖子）
+- ✅ `typeLabel` 字段返回中文类型名
+
+### 涉及文件
+- `routes/notifications.js` - GET / 分页+筛选增强
+- `public/index.html` - 通知中心弹窗加 filter tabs + pagination
+- `public/js/app.js` - 重写通知函数 + 新增分页函数
+- `public/css/style.css` - .notif-filter-tabs / .notif-filter-btn / .notif-pagination / .notif-type-badge 样式
+

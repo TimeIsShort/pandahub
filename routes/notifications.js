@@ -4,21 +4,58 @@ const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get user's notifications
+const TYPE_LABELS = {
+  new_comment: '💬 评论',
+  new_reply: '💬 回复',
+  post_approved: '🎉 审核通过',
+  post_rejected: '❌ 审核拒绝',
+  mention: '@ 提及',
+  system: '🔔 系统',
+};
+
+// Get user's notifications (paginated + filterable)
 router.get('/', authMiddleware, (req, res) => {
   try {
+    const { type = '', page = 1, limit = 20 } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
+
+    let where = 'WHERE n.user_id = ?';
+    let params = [req.user.id];
+
+    if (type) {
+      where += ' AND n.type = ?';
+      params.push(type);
+    }
+
     const notifications = db.prepare(`
       SELECT n.*, p.title as post_title
       FROM notifications n
       LEFT JOIN posts p ON n.post_id = p.id
-      WHERE n.user_id = ?
+      ${where}
       ORDER BY n.created_at DESC
-      LIMIT 50
-    `).all(req.user.id);
-    
-    const unreadCount = notifications.filter(n => !n.is_read).length;
-    
-    res.json({ notifications, unreadCount });
+      LIMIT ? OFFSET ?
+    `).all(...params, Number(limit), Number(offset));
+
+    const totalResult = db.prepare(`
+      SELECT COUNT(*) as c FROM notifications n ${where}
+    `).get(...params);
+
+    const unreadResult = db.prepare(`
+      SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND is_read = 0
+    `).get(req.user.id);
+
+    // Add human-readable type label
+    notifications.forEach(n => {
+      n.typeLabel = TYPE_LABELS[n.type] || '🔔 通知';
+    });
+
+    res.json({
+      notifications,
+      total: totalResult.c,
+      unreadCount: unreadResult.c,
+      page: Number(page),
+      limit: Number(limit),
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '获取通知失败' });

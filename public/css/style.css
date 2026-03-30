@@ -2782,6 +2782,60 @@ main.container {
   color: #8b98a1;
 }
 
+/* Notification Center - Filter Tabs */
+.notif-filter-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f2ff;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+
+.notif-filter-btn {
+  padding: 5px 12px;
+  border: 1.5px solid #d5ddff;
+  border-radius: 20px;
+  background: #fff;
+  color: #667eea;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .2s;
+}
+
+.notif-filter-btn.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border-color: transparent;
+}
+
+.notif-filter-btn:hover:not(.active) {
+  border-color: #667eea;
+}
+
+/* Notification item type badge */
+.notif-type-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  margin-right: 6px;
+}
+.notif-type-badge.comment { background: #f0f7ff; color: #667eea; }
+.notif-type-badge.reply { background: #e8f5ff; color: #3b82f6; }
+.notif-type-badge.approved { background: #f0fdf4; color: #10b981; }
+.notif-type-badge.rejected { background: #fef2f2; color: #ef4444; }
+.notif-type-badge.mention { background: #f5f0ff; color: #8b5cf6; }
+.notif-type-badge.system { background: #f8f8f8; color: #64748b; }
+
+/* Notification pagination */
+.notif-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .empty-state-card {
   text-align: center;
   padding: 36px 24px;

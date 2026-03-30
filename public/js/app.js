@@ -2923,16 +2923,100 @@ async function loadNotifCount() {
   }
 }
 
+let notifPage = 1;
+let notifFilter = '';
+let notifTotal = 0;
+let notifLimit = 15;
+
 async function openNotifications() {
   const user = getUser();
   if (!user) return showLogin();
-
   document.getElementById('notif-modal').style.display = 'flex';
+  notifPage = 1;
+  notifFilter = '';
+  var filterBtns = document.querySelectorAll('.notif-filter-btn');
+  filterBtns.forEach(function(b) { b.classList.remove('active'); });
+  var allBtn = document.getElementById('notif-filter-tabs');
+  if (allBtn) allBtn.querySelector('.notif-filter-btn') && allBtn.querySelector('.notif-filter-btn').classList.add('active');
   loadNotifications();
 }
 
 function closeNotifications() {
   document.getElementById('notif-modal').style.display = 'none';
+}
+
+function setNotifFilter(type) {
+  notifFilter = type;
+  notifPage = 1;
+  var filterBtns = document.querySelectorAll('.notif-filter-btn');
+  filterBtns.forEach(function(b) { b.classList.remove('active'); });
+  if (event && event.target && event.target.classList) event.target.classList.add('active');
+  loadNotifications();
+}
+
+async function loadNotifications() {
+  const container = document.getElementById('notif-list');
+  if (container) container.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">加载中...</div>';
+
+  try {
+    var url = '/notifications?page=' + notifPage + '&limit=' + notifLimit;
+    if (notifFilter) url += '&type=' + notifFilter;
+    const res = await api(url);
+    const list = document.getElementById('notif-list');
+    notifTotal = res.total || 0;
+
+    document.getElementById('notif-unread-count').textContent = res.unreadCount > 0 ? res.unreadCount + '条未读' : '';
+
+    if (!res.notifications || res.notifications.length === 0) {
+      if (list) list.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;font-size:14px;">暂无通知</div>';
+      document.getElementById('notif-pagination').style.display = 'none';
+      return;
+    }
+
+    var typeClassMap = {
+      new_comment: 'comment',
+      new_reply: 'reply',
+      post_approved: 'approved',
+      post_rejected: 'rejected',
+      mention: 'mention',
+      system: 'system'
+    };
+
+    if (list) {
+      list.innerHTML = res.notifications.map(function(n) {
+        var tc = typeClassMap[n.type] || 'system';
+        return '<div class="notif-item ' + (n.is_read ? '' : 'unread') + '" onclick="handleNotifClick(' + n.id + ',' + (n.post_id || 'null') + ')">' +
+          '<div class="notif-title"><span class="notif-type-badge ' + tc + '">' + (n.typeLabel || '通知') + '</span>' + escapeHtml(n.title) + '</div>' +
+          '<div class="notif-content">' + escapeHtml(n.content || '') + '</div>' +
+          '<div class="notif-time">' + formatDate(n.created_at) + '</div></div>';
+      }).join('');
+    }
+
+    var totalPages = Math.ceil(notifTotal / notifLimit);
+    document.getElementById('notif-pagination').style.display = totalPages > 1 ? 'flex' : 'none';
+    document.getElementById('notif-page-info').textContent = '第' + notifPage + '/' + totalPages + '页，共' + notifTotal + '条';
+    var prevBtn = document.getElementById('notif-prev');
+    var nextBtn = document.getElementById('notif-next');
+    if (prevBtn) prevBtn.disabled = notifPage <= 1;
+    if (nextBtn) nextBtn.disabled = notifPage >= totalPages;
+
+  } catch (e) {
+    console.error(e);
+    if (container) container.innerHTML = '<div style="text-align:center;padding:32px;color:#ef4444;">加载失败</div>';
+  }
+}
+
+async function loadNotificationsPrev() {
+  if (notifPage <= 1) return;
+  notifPage--;
+  loadNotifications();
+}
+
+async function loadNotificationsNext() {
+  var totalPages = Math.ceil(notifTotal / notifLimit);
+  if (notifPage >= totalPages) return;
+  notifPage++;
+  loadNotifications();
 }
 
 // ============ Follow System ============

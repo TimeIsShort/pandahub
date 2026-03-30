@@ -98,18 +98,23 @@
 
 ## 四、P2 社交扩展
 
-### 4.1 帖子举报功能
+### 4.1 帖子举报功能 ✅
 **目标**：用户可举报违规帖子/评论
 
 **功能**：
-- [ ] 数据库加 `reports` 表（reporter_id / target_type: post|comment / target_id / reason / status / created_at）
-- [ ] `POST /reports` API（需要登录）
-- [ ] 帖子详情页加「🚩 举报」按钮（登录用户可见）
-- [ ] 评论下方加「🚩 举报」按钮
-- [ ] 管理后台新增「🚩 举报管理」Tab
-- [ ] 举报列表：举报人 / 被举报内容 / 理由 / 时间 / 操作（忽略/删帖/封禁用户）
+- [x] 数据库 `reports` 表（reporter_id / target_type / target_id / reason / status / admin_note）
+- [x] `POST /api/reports` 提交举报（需登录，不能重复举报，不能举报自己）
+- [x] `GET /api/reports/reasons` 举报原因列表
+- [x] `GET /api/reports/admin` 管理端举报列表（支持状态筛选+分页）
+- [x] `POST /api/reports/admin/:id/dismiss` 忽略举报
+- [x] `POST /api/reports/admin/:id/action` 处理举报（删内容/封号）
+- [x] `GET /api/reports/admin/count` 待处理举报数 badge
+- [x] 帖子详情页「🚩 举报」按钮（登录用户可见，非作者）
+- [x] 评论下方「🚩 举报」按钮（登录用户可见，非评论作者）
+- [x] 举报弹窗：选择原因（6类）+ 补充说明 + 提交
+- [x] 管理后台新增「🚩 举报管理」Tab，支持筛选+分页+操作
 
-**涉及文件**：`routes/reports.js`（新建）、`models/database.js`、`public/js/app.js`、`public/admin-login.html`
+**涉及文件**：`routes/reports.js`（新建）、`models/database.js`、`public/js/app.js`、`public/index.html`、`public/admin-login.html`
 
 ---
 

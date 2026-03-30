@@ -844,3 +844,18 @@
 - `public/index.html` - 排行榜面板加「完整榜单 →」按钮 + lb-my-rank-mini 容器
 - `public/js/app.js` - loadLeaderboard 升级：加载我的排名、当前用户高亮
 - `routes/leaderboard.js` - 新增 `/me` 接口、支持分页参数
+
+### P2 帖子举报功能 ✅
+- ✅ `reports` 表：reporter_id / target_type(post|comment) / target_id / reason / status(pending|resolved|dismissed) / admin_note
+- ✅ 后端 `routes/reports.js`：POST /api/reports（登录） / GET /api/reports/admin（列表+分页+状态筛选） / POST /admin/:id/dismiss / POST /admin/:id/action
+- ✅ 帖子详情页 action bar 加「🚩 举报」按钮（非作者登录用户可见）
+- ✅ 每条评论加「🚩 举报」按钮（非评论作者登录用户可见）
+- ✅ 举报弹窗：6类原因按钮（单选）+ 补充说明文本框 + 提交
+- ✅ 管理后台新增「🚩 举报管理」Tab，支持筛选待处理/已处理/已忽略，分页，操作（忽略/删内容/封号）
+
+### 涉及文件
+- `models/database.js` - reports 表
+- `routes/reports.js` - 新建后端路由
+- `public/index.html` - 举报弹窗 HTML
+- `public/js/app.js` - openReportModal / submitReport / selectReportReason 函数
+- `public/admin-login.html` - 举报管理 Tab + loadReports / dismissReport / actionReport 函数

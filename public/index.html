@@ -416,21 +416,40 @@
         </div>
       </div>
       <div id="auth-form-register" style="display:none;">
-        <h2>注册</h2>
+        <h2>注册账号</h2>
+        <div class="reg-steps" id="reg-steps">
+          <span class="reg-step active" id="reg-step-1">1 验证邮箱</span>
+          <span class="reg-step-sep">›</span>
+          <span class="reg-step" id="reg-step-2">2 填写信息</span>
+          <span class="reg-step-sep">›</span>
+          <span class="reg-step" id="reg-step-3">3 完成注册</span>
+        </div>
         <div class="form-group">
-          <label>用户名</label>
-          <input type="text" id="register-username">
+          <label>邮箱 <span style="color:#ef4444">*</span></label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="email" id="register-email" placeholder="用于接收验证码" style="flex:1;">
+            <button type="button" id="btn-reg-send-code" class="btn-send-code-mini" onclick="sendRegCode()">发送验证码</button>
+          </div>
+          <span id="reg-code-countdown" style="font-size:12px;color:#f59e0b;margin-top:4px;display:block;"></span>
+        </div>
+        <div class="form-group">
+          <label>验证码 <span style="color:#ef4444">*</span></label>
+          <input type="text" id="register-code" placeholder="6位验证码" maxlength="6" inputmode="numeric" autocomplete="one-time-code" style="max-width:200px;">
+        </div>
+        <div class="form-group">
+          <label>用户名 <span style="color:#ef4444">*</span></label>
+          <input type="text" id="register-username" placeholder="3-20位字母数字下划线" maxlength="20">
         </div>
         <div class="form-group">
           <label>昵称</label>
-          <input type="text" id="register-nickname">
+          <input type="text" id="register-nickname" placeholder="显示名称（不填则用用户名）" maxlength="30">
         </div>
         <div class="form-group">
-          <label>密码</label>
-          <input type="password" id="register-password">
+          <label>密码 <span style="color:#ef4444">*</span></label>
+          <input type="password" id="register-password" placeholder="包含大小写字母和数字，至少6位">
         </div>
         <div class="form-actions">
-          <button id="btn-register-submit" class="btn-primary" onclick="register()">注册</button>
+          <button id="btn-register-submit" class="btn-primary" onclick="register()">立即注册</button>
           <button class="btn-link" onclick="switchToLogin()">已有账号？去登录</button>
         </div>
       </div>

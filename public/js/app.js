@@ -1085,12 +1085,85 @@ async function login() {
   }
 }
 
+// ============ Registration with Email Verification ============
+let regVerifyEmail = '';
+let regCodeCountdown = 0;
+let regCodeTimer = null;
+
+function updateRegStep(step) {
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById('reg-step-' + i);
+    if (!el) continue;
+    el.classList.remove('active', 'done');
+    if (i < step) el.classList.add('done');
+    else if (i === step) el.classList.add('active');
+  }
+}
+
+async function sendRegCode() {
+  const emailInput = document.getElementById('register-email');
+  const email = emailInput ? emailInput.value.trim() : '';
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email) { showToast('请先填写邮箱', 'error'); return; }
+  if (!emailRegex.test(email)) { showToast('邮箱格式不正确', 'error'); return; }
+
+  const btn = document.getElementById('btn-reg-send-code');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = '发送中...';
+
+  const username = document.getElementById('register-username') ? document.getElementById('register-username').value.trim() : '';
+  const password = document.getElementById('register-password') ? document.getElementById('register-password').value : '';
+  try {
+    const res = await fetch('/auth/send-register-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, username, password })
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || '发送失败', 'error'); btn.disabled = false; btn.textContent = '重新发送'; return; }
+    showToast('验证码已发送到邮箱', 'success');
+    regVerifyEmail = email;
+    updateRegStep(2);
+    startRegCountdown();
+  } catch (e) {
+    console.error('[Auth]', e);
+    showToast('网络错误，请重试', 'error');
+    btn.disabled = false;
+    btn.textContent = '重新发送';
+  }
+}
+
+function startRegCountdown() {
+  regCodeCountdown = 300;
+  const el = document.getElementById('reg-code-countdown');
+  const btn = document.getElementById('btn-reg-send-code');
+  el.textContent = '5分钟后可重发';
+  if (regCodeTimer) clearInterval(regCodeTimer);
+  regCodeTimer = setInterval(() => {
+    regCodeCountdown--;
+    if (regCodeCountdown <= 0) {
+      clearInterval(regCodeTimer);
+      el.textContent = '';
+      btn.disabled = false;
+      btn.textContent = '重新发送';
+    } else if (regCodeCountdown >= 60) {
+      el.textContent = Math.floor(regCodeCountdown / 60) + '分' + (regCodeCountdown % 60) + '秒后可重发';
+    } else {
+      el.textContent = regCodeCountdown + '秒后可重发';
+    }
+  }, 1000);
+}
+
 async function register() {
   const username = document.getElementById('register-username').value.trim();
   const nickname = document.getElementById('register-nickname').value.trim();
   const password = document.getElementById('register-password').value;
-  if (!username || !password) {
-    showToast('请填写用户名和密码', 'error');
+  const email = document.getElementById('register-email').value.trim();
+  const code = document.getElementById('register-code').value.trim();
+
+  if (!email || !code || !username || !password) {
+    showToast('请填写完整信息（邮箱、验证码、用户名、密码）', 'error');
     return;
   }
   if (password.length < 6) {
@@ -1101,6 +1174,14 @@ async function register() {
     showToast('密码必须包含大小写字母和数字', 'error');
     return;
   }
+  if (email !== regVerifyEmail) {
+    showToast('验证码与邮箱不匹配，请重新获取', 'error');
+    return;
+  }
+  if (code.length !== 6) {
+    showToast('验证码为6位数字', 'error');
+    return;
+  }
 
   if (!window._captchaPassed) {
     openCaptcha(() => register());
@@ -1108,30 +1189,37 @@ async function register() {
   }
   window._captchaPassed = false;
 
-  const resetRegisterBtn = setButtonBusy('btn-register-submit', '提交中...');
+  const resetRegisterBtn = setButtonBusy('btn-register-submit', '注册中...');
   try {
-    const res = await api('/auth/register', {
+    // Step 1: verify the code first
+    const verifyRes = await api('/auth/verify-register', {
       method: 'POST',
-      body: JSON.stringify({ username, nickname, password })
+      body: JSON.stringify({ username, email, code })
     });
-    if (res.error) {
-      showToast(res.error, 'error');
+    if (verifyRes.error) {
+      showToast(verifyRes.error, 'error');
+      resetRegisterBtn();
       return;
     }
 
-    if (res.pending || !res.token) {
+    // Step 2: login to get token
+    const loginRes = await api('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    });
+    if (loginRes.error) {
+      showToast('账号已创建但自动登录失败，请手动登录', 'warn', 3500);
       closeModal();
-      showToast(res.message || '注册成功，等待管理员审核后可登录', 'success', 2800);
       showLogin();
       return;
     }
 
-    setAuth(res.token, res.user);
+    setAuth(loginRes.token, loginRes.user);
+    updateRegStep(3);
     closeModal();
-    showToast('注册成功！', 'success');
+    showToast('注册成功，欢迎加入熊猫社区！🎉', 'success');
   } catch (e) {
-    showToast('注册失败', 'error');
-  } finally {
+    showToast('注册失败，请重试', 'error');
     resetRegisterBtn();
   }
 }

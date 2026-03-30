@@ -2014,6 +2014,62 @@ main.container {
   letter-spacing: 0.2px;
 }
 
+/* ===== Registration Form (in modal) ===== */
+.reg-steps {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+.reg-step {
+  color: #a8b3d4;
+  font-weight: 600;
+  transition: color .2s;
+}
+.reg-step.active { color: #5d6dff; font-weight: 700; }
+.reg-step.done { color: #10b981; }
+.reg-step-sep { color: #d0d7e8; }
+
+.btn-send-code-mini {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1.5px solid #c5d0ff;
+  background: linear-gradient(135deg, #eef0ff, #f5f3ff);
+  color: #5d6dff;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.btn-send-code-mini:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5d6dff, #7e5ad6);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(93,109,255,.3);
+}
+.btn-send-code-mini:disabled { opacity: .6; cursor: not-allowed; }
+
+#auth-form-register input {
+  background: #fafbff;
+  border-color: #d5ddff;
+  color: #1e2d5a;
+  font-size: 14px;
+  border-radius: 10px;
+  padding: 10px 13px;
+  width: 100%;
+  transition: border-color .2s, box-shadow .2s;
+}
+#auth-form-register input:focus {
+  outline: none;
+  border-color: #8294ff;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(93,109,255,.12);
+}
+#auth-form-register input::placeholder { color: #a8b3d4; }
+
 .auth-modal-content .btn-link {
   margin-left: auto;
 }

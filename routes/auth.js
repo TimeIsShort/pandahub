@@ -44,7 +44,7 @@ router.post('/register', async (req, res) => {
 // Send registration verification code
 router.post('/send-register-code', async (req, res) => {
   try {
-    const { email, username } = req.body;
+    const { email, username, password } = req.body;
     if (!email) {
       return res.status(400).json({ error: '邮箱不能为空' });
     }
@@ -55,33 +55,38 @@ router.post('/send-register-code', async (req, res) => {
     if (!username) {
       return res.status(400).json({ error: '用户名不能为空' });
     }
-
-    // Find pending user
-    const user = db.prepare('SELECT id FROM users WHERE username = ? AND approved = 0').get(username);
-    if (!user) {
-      return res.status(404).json({ error: '未找到待激活的账号，请先注册' });
+    if (!password) {
+      return res.status(400).json({ error: '密码不能为空' });
     }
 
-    // Check if email already used by another user
-    const emailUsed = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(email, user.id);
+    // Check username existence
+    const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+    if (existingUser) {
+      return res.status(400).json({ error: '用户名已存在' });
+    }
+
+    // Check email existence
+    const emailUsed = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
     if (emailUsed) {
       return res.status(400).json({ error: '该邮箱已被其他账号使用' });
     }
+
+    // Create user (pending approval, unverified)
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const result = db.prepare(
+      'INSERT INTO users (username, password, nickname, email, approved, email_verified) VALUES (?, ?, ?, ?, 0, 0)'
+    ).run(username, hashedPassword, username, email);
+    const userId = result.lastInsertRowid;
 
     // Generate code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Invalidate old codes for this user
-    db.prepare('UPDATE email_codes SET used = 1 WHERE user_id = ? AND used = 0').run(user.id);
-
     // Save code
     db.prepare(
       "INSERT INTO email_codes (email, user_id, code, purpose, expires_at) VALUES (?, ?, ?, 'register', ?)"
-    ).run(email, user.id, code, expiresAt.toISOString());
-
-    // Update user's email field
-    db.prepare('UPDATE users SET email = ? WHERE id = ?').run(email, user.id);
+    ).run(email, userId, code, expiresAt.toISOString());
 
     // Try to send email
     const nodemailer = require('nodemailer');

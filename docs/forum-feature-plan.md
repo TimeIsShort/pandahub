@@ -1,7 +1,7 @@
 # pandahub.cloud 论坛功能规划
 
 > 更新时间：2026-03-30
-> 当前状态：P0 + P1 + P2 + P3 + P4 全部完成 ✅
+> 当前状态：P0~P4 ✅ 完成 | v1.1 进行中（P1.1 注册流程补全 ✅）
 
 ---
 
@@ -381,3 +381,21 @@
 ## 代码备份（2026-03-30）
 
 - `/root/forum_backup_202603301432/` - P0~P4 开发完成全量备份（包含所有路由、前端页面、中间件、i18n 词库等）
+
+---
+
+## v1.1 开发记录（2026-03-30）
+
+### P1.1 注册流程补全 ✅
+**已实现**：
+- ✅ 注册表单新增邮箱验证流程（三步进度指示器：验证邮箱 → 填写信息 → 完成注册）
+- ✅ 后端 `/auth/send-register-code` 重构：接收密码 + 同时创建待激活用户 + 发送验证码（一气呵成）
+- ✅ `/auth/verify-register` 验证成功后账号自动激活（`approved=1`），无需管理员审核
+- ✅ 前端 `app.js` 新增 `sendRegCode()` + `startRegCountdown()` + `updateRegStep()` 函数
+- ✅ 验证码 5 分钟倒计时，60s 以下显示秒数
+
+**涉及文件**：
+- `public/index.html` - 注册表单 HTML（邮箱、验证码、三步进度条）
+- `public/css/style.css` - `.reg-steps` / `.btn-send-code-mini` / 输入框样式
+- `public/js/app.js` - 新增注册验证码相关函数
+- `routes/auth.js` - `/send-register-code` 重构（创建用户+发验证码）

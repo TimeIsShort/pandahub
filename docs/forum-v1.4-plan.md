@@ -134,14 +134,16 @@
 
 ## 五、P3 可选功能
 
-### 5.1 用户积分转账/赠予
+### 5.1 用户积分转账/赠予 ✅
 **目标**：用户之间可以互相转赠积分
 
 **功能**：
-- [ ] 数据库加 `point_transfers` 表
-- [ ] `POST /points/transfer` API（转出方扣积分，接收方加积分）
-- [ ] 转账记录页面（发送记录 + 接收记录）
-- [ ] 大额转账需管理员审核（可选）
+- [x] 数据库 `point_transfers` 表（from/to_user_id / amount / status / note）
+- [x] `POST /api/points/transfer`（转出方扣积分，接收方加积分）
+- [x] `GET /api/points/transfers`（我的转账记录：sent + received 分页）
+- [x] 设置页新增「💸 积分转账」卡片
+- [x] 转账表单：对方用户名 / 积分数量 / 备注
+- [x] 转账记录：tab 切换「我转出的」/「我收到的」，含头像/昵称/金额/时间/备注
 
 ### 5.2 RSS 订阅
 **目标**：提供论坛 RSS Feed，便于 RSS 阅读器订阅

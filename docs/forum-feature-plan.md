@@ -871,3 +871,16 @@
 ### 涉及文件
 - `public/js/app.js` - buildCommentTree / renderCommentItem / expandReplies 重构
 - `public/css/style.css` - 嵌套评论 CSS 样式（depth-1 / depth-2 / expand button）
+
+### P3 积分转账 ✅
+- ✅ `point_transfers` 表：from_user_id / to_user_id / amount / status / note / created_at
+- ✅ `POST /api/points/transfer` - 转账接口，扣转出方积分、加接收方积分
+- ✅ `GET /api/points/transfers` - 我的转账记录（sent/received 双列表）
+- ✅ 设置页加「💸 积分转账」卡片，包含转账表单和记录 tab
+- ✅ 转账记录 tab 切换「我转出的」/「我收到的」，含头像+昵称+金额+时间+备注
+
+### 涉及文件
+- `models/database.js` - point_transfers 表
+- `routes/points.js` - 新建后端路由
+- `public/index.html` - 转账卡片 HTML
+- `public/js/app.js` - submitTransfer / loadTransferRecords / switchTransferTab 函数

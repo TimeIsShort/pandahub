@@ -765,3 +765,20 @@
 - `public/js/app.js` - 帖子列表/详情页加标签
 - `public/admin-login.html` - 管理后台帖子列表加按钮
 
+
+---
+
+## v1.3 开发记录（续）
+
+### P2 标签管理后台 ✅
+- ✅ `routes/tags.js` 新增 `POST /api/tags`（创建标签）、`PUT /api/tags/:id`（更新）、`DELETE /api/tags/:id`（删除）
+- ✅ 管理后台新增「🏷️ 标签管理」Tab
+- ✅ 标签卡片：图标/名称/关联帖子数 + ✏️编辑/🗑删除按钮
+- ✅ 顶部添加表单：标签名+颜色选择器+图标+添加按钮
+- ✅ 删除时显示确认提示，解绑关联帖子
+- ✅ 增删改后自动刷新列表
+
+### 涉及文件
+- `routes/tags.js` - 新增 3 个管理 API（authMiddleware 保护）
+- `public/admin-login.html` - 标签 Tab 按钮 + Tab 内容 + JS CRUD 函数
+

@@ -609,6 +609,7 @@
         <button class="tab-btn" id="tabWordsBtn">🛡️ 敏感词</button>
         <button class="tab-btn" id="tabLogsBtn">📊 操作日志</button>
         <button class="tab-btn" id="tabChartsBtn">📈 统计看板</button>
+        <button class="tab-btn" id="tabTagsBtn">🏷️ 标签管理</button>
       </div>
       <div id="tabApps">
         <div class="card">
@@ -688,6 +689,20 @@
               <canvas id="chartTags" height="200"></canvas>
             </div>
           </div>
+        </div>
+      </div>
+      <div id="tabTags" class="hidden">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <h2>🏷️ 标签管理</h2>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input id="tagNameInput" type="text" placeholder="标签名称" style="padding:8px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:14px;">
+              <input id="tagColorInput" type="color" value="#667eea" style="width:40px;height:38px;border:1.5px solid #d5ddff;border-radius:8px;cursor:pointer;">
+              <input id="tagIconInput" type="text" placeholder="图标" value="🏷️" style="padding:8px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:14px;width:60px;">
+              <button class="btn btn-approve" id="addTagBtn" onclick="addNewTag()" style="padding:8px 16px;">➕ 添加</button>
+            </div>
+          </div>
+          <div id="tagsList"></div>
         </div>
       </div>
       <div id="tabUsers" class="hidden">
@@ -846,7 +861,7 @@
 
     function setActiveTab(tab) {
       currentTab = tab;
-      var tabs = ['apps', 'posts', 'users', 'words', 'logs', 'charts'];
+      var tabs = ['apps', 'posts', 'users', 'words', 'logs', 'charts', 'tags'];
       for (var i = 0; i < tabs.length; i++) {
         var key = tabs[i];
         var panel = document.getElementById('tab' + key.charAt(0).toUpperCase() + key.slice(1));
@@ -867,6 +882,7 @@
       if (tab === 'words') loadWords();
       if (tab === 'logs') loadLogs(1);
       if (tab === 'charts') loadCharts();
+      if (tab === 'tags') loadTagsList();
     }
 
     document.getElementById('tabAppsBtn').onclick = function() { setActiveTab('apps'); };
@@ -875,6 +891,7 @@
     document.getElementById('tabWordsBtn').onclick = function() { setActiveTab('words'); };
     document.getElementById('tabLogsBtn').onclick = function() { setActiveTab('logs'); };
     document.getElementById('tabChartsBtn').onclick = function() { setActiveTab('charts'); };
+    document.getElementById('tabTagsBtn').onclick = function() { setActiveTab('tags'); };
 
     document.getElementById('appsSearchInput').addEventListener('input', function() { renderApplications(); });
     document.getElementById('appsStatusFilter').addEventListener('change', function() { renderApplications(); });
@@ -1463,7 +1480,79 @@
         .catch(function(err) { showToast('操作失败', 'error'); });
     };
 
-    window.autoReviewAll = function() {
+
+    // ============ Tag Management ============
+    var tagsCache = [];
+
+    window.loadTagsList = function() {
+      adminApi('/api/tags')
+        .then(function(res) {
+          tagsCache = res.tags || [];
+          renderTagsList();
+        })
+        .catch(function() { showToast('标签加载失败', 'error'); });
+    };
+
+    function renderTagsList() {
+      var el = document.getElementById('tagsList');
+      if (!el) return;
+      if (tagsCache.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">暂无标签</div>';
+        return;
+      }
+      el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">' +
+        tagsCache.map(function(t) {
+          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+              '<span style="font-size:20px;">' + (t.icon || '🏷️') + '</span>' +
+              '<div><div style="font-weight:700;font-size:14px;color:#1e3a5f;">' + e(t.name) + '</div>' +
+              '<div style="font-size:11px;color:#94a3b8;">帖子: ' + t.post_count + '</div></div>' +
+            '</div>' +
+            '<div style="display:flex;gap:6px;">' +
+              '<button onclick="editTag(' + t.id + ')" style="padding:5px 10px;border:1px solid #d5ddff;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;">✏️</button>' +
+              '<button onclick="deleteTag(' + t.id + ')" style="padding:5px 10px;border:1px solid #fca5a5;border-radius:6px;background:#fef2f2;color:#ef4444;cursor:pointer;font-size:12px;">🗑</button>' +
+            '</div></div>';
+        }).join('') + '</div>';
+    }
+
+    window.addNewTag = function() {
+      var name = document.getElementById('tagNameInput').value.trim();
+      var color = document.getElementById('tagColorInput').value;
+      var icon = document.getElementById('tagIconInput').value.trim() || '🏷️';
+      if (!name) { showToast('请输入标签名称', 'error'); return; }
+      adminApi('/api/tags', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, color: color, icon: icon }) })
+        .then(function(data) {
+          showToast('添加成功', 'success');
+          document.getElementById('tagNameInput').value = '';
+          loadTagsList();
+        })
+        .catch(function(err) { showToast(err.message || '添加失败', 'error'); });
+    };
+
+    window.editTag = function(id) {
+      var tag = tagsCache.find(function(t) { return t.id === id; });
+      if (!tag) return;
+      var newName = prompt('标签名称:', tag.name);
+      if (!newName || newName.trim() === tag.name) return;
+      var newColor = prompt('颜色（HEX如 #667eea）:', tag.color);
+      if (!newColor) return;
+      var newIcon = prompt('图标:', tag.icon || '🏷️');
+      adminApi('/api/tags/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName.trim(), color: newColor, icon: newIcon || '🏷️' }) })
+        .then(function() { showToast('更新成功', 'success'); loadTagsList(); })
+        .catch(function() { showToast('更新失败', 'error'); });
+    };
+
+    window.deleteTag = function(id) {
+      var tag = tagsCache.find(function(t) { return t.id === id; });
+      if (!tag) return;
+      if (!confirm('确定删除标签 "' + tag.name + '" 吗？该标签下的帖子将解除关联。')) return;
+      adminApi('/api/tags/' + id, { method: 'DELETE' })
+        .then(function() { showToast('已删除', 'success'); loadTagsList(); })
+        .catch(function() { showToast('删除失败', 'error'); });
+    };
+
+
+        window.autoReviewAll = function() {
       var pendingCount = postsCache.filter(function(p) { return p.status === 'pending'; }).length;
       if (pendingCount === 0) {
         showToast('没有待审核的帖子', 'error');

@@ -1421,6 +1421,7 @@ async function viewPost(id) {
         <div class="post-actions">
           <button id="btn-favorite" onclick="toggleFavorite(${res.post.id})">☆ 收藏</button>
           <button onclick="sharePost(${res.post.id}, '${escapeHtml(res.post.title)}')">🔗 分享</button>
+          ${res.user && res.user.id === res.post.user_id || (user && user.role === 'admin') ? `<button onclick="editPost(${res.post.id})" style="color:#5d6dff">✏️ 编辑</button>` : ''}
           ${res.user && res.user.id === res.post.user_id || (user && user.role === 'admin') ? `<button onclick="deletePost(${res.post.id})" style="color:#ef4444">🗑 删除</button>` : ''}
         </div>` : ''}
       </div>
@@ -1712,6 +1713,31 @@ async function deletePost(id) {
     showToast('删除失败', 'error');
   }
 }
+
+let editingPostId = null;
+
+window.editPost = async function(id) {
+  editingPostId = id;
+  var res = await api('/posts/' + id);
+  if (res.error || !res.post) { showToast('帖子加载失败', 'error'); return; }
+  var p = res.post;
+  document.getElementById('post-title').value = p.title || '';
+  document.getElementById('content').value = p.content || '';
+  var tagsRes = await api('/tags');
+  document.getElementById('post-tag').innerHTML = '<option value="">无标签</option>' +
+    (tagsRes.tags || []).map(function(t) { return '<option value="' + t.id + '">' + t.name + '</option>'; }).join('');
+  if (p.tag_id) { document.getElementById('post-tag').value = p.tag_id; }
+  var submitBtn = document.getElementById('btn-submit-post');
+  if (submitBtn) { submitBtn.textContent = '保存编辑'; }
+  var formTitle = document.querySelector('#view-new-post h2');
+  if (formTitle) formTitle.textContent = '✏️ 编辑帖子';
+  showView('new-post');
+};
+
+window.goNewPost = function() {
+  editingPostId = null;
+  showNewPost();
+};
 
 // Vote on a post (like or dislike)
 async function votePost(id, voteType) {
@@ -2073,6 +2099,12 @@ async function showNewPost() {
   document.getElementById('image-preview-list').innerHTML = '';
   const placeholder = document.querySelector('.upload-placeholder');
   if (placeholder) placeholder.style.display = 'flex';
+  // Reset edit mode
+  editingPostId = null;
+  var submitBtn = document.getElementById('btn-submit-post');
+  if (submitBtn) submitBtn.textContent = '发布帖子';
+  var formTitle = document.querySelector('#view-new-post h2');
+  if (formTitle) formTitle.textContent = '发布新帖子';
 
   const res = await api('/tags');
   document.getElementById('post-tag').innerHTML = '<option value="">无标签</option>' +
@@ -2115,19 +2147,33 @@ async function submitPost() {
       fullContent += '\n\n' + uploadedImageUrls.map(url => `![图片](${url})`).join('\n');
     }
 
-    const res = await api('/posts', {
-      method: 'POST',
+    var apiUrl = '/posts';
+    var apiMethod = 'POST';
+    var successMsg = '发布成功！';
+    if (editingPostId) {
+      apiUrl = '/posts/' + editingPostId;
+      apiMethod = 'PUT';
+      successMsg = '编辑成功！';
+    }
+
+    const res = await api(apiUrl, {
+      method: apiMethod,
       body: JSON.stringify({ title, content: fullContent, tag_id: tag_id || null })
     });
 
     // Reset
     selectedImages = [];
     uploadedImageUrls = [];
+    editingPostId = null;
+    var submitBtn = document.getElementById('btn-submit-post');
+    if (submitBtn) submitBtn.textContent = '发布帖子';
+    var formTitle = document.querySelector('#view-new-post h2');
+    if (formTitle) formTitle.textContent = '发布新帖子';
 
     if (res.message) {
       showToast(res.message, 'success', 2600);
     } else {
-      showToast('发布成功！', 'success');
+      showToast(successMsg, 'success');
     }
     goHome();
   } catch (e) {

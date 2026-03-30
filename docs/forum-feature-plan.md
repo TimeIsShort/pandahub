@@ -656,3 +656,21 @@
 - `public/js/app.js` - 重写通知函数 + 新增分页函数
 - `public/css/style.css` - .notif-filter-tabs / .notif-filter-btn / .notif-pagination / .notif-type-badge 样式
 
+
+---
+
+## v1.3 开发记录（续）
+
+### P0 帖子编辑/删除 ✅
+- ✅ 后端 PUT `/posts/:id`（编辑）和 DELETE `/posts/:id`（删除）已有
+- ✅ 前端帖子详情页加「✏️ 编辑」按钮（仅作者/管理员可见）
+- ✅ 点击编辑 → 复用发帖弹窗，预填标题/正文/标签，按钮文字变为「保存编辑」
+- ✅ `editPost(id)` JS函数：加载帖子数据 + 切换编辑模式
+- ✅ `submitPost()` 支持编辑模式：检测 `editingPostId`，用 PUT 代替 POST
+- ✅ 编辑成功后重置状态（editingPostId=null），按钮恢复「发布帖子」
+- ✅ 删除已有确认弹窗（`askConfirm`）
+
+### 涉及文件
+- `public/js/app.js` - editPost 函数 + submitPost 编辑模式 + showNewPost 重置
+- `routes/posts.js` - PUT/DELETE API（已有，无需修改）
+

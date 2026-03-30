@@ -1486,6 +1486,78 @@ async function viewPost(id) {
   }
 }
 
+let mentionSearchTimeout = null;
+let mentionQuery = '';
+
+function handleCommentInput(el) {
+  var val = el.value;
+  var cursor = el.selectionStart;
+  // Check if @ typed before cursor
+  var beforeCursor = val.substring(0, cursor);
+  var atMatch = beforeCursor.match(/@([\w\u4e00-\u9fa5]*)$/);
+  var dropdown = document.getElementById('mention-dropdown');
+  var list = document.getElementById('mention-list');
+  if (!dropdown || !list) return;
+
+  if (atMatch) {
+    mentionQuery = atMatch[1];
+    dropdown.style.display = 'block';
+    clearTimeout(mentionSearchTimeout);
+    mentionSearchTimeout = setTimeout(function() {
+      searchMentionUsers(mentionQuery, list);
+    }, 200);
+  } else {
+    dropdown.style.display = 'none';
+    mentionQuery = '';
+  }
+}
+
+async function searchMentionUsers(query, list) {
+  if (!query) {
+    // Show recent users or popular users
+    list.innerHTML = '<div style="padding:10px 12px;color:#94a3b8;font-size:12px;">输入用户名搜索...</div>';
+    return;
+  }
+  try {
+    var res = await api('/users/search?q=' + encodeURIComponent(query) + '&limit=5');
+    var users = res.users || [];
+    if (users.length === 0) {
+      list.innerHTML = '<div style="padding:10px 12px;color:#94a3b8;font-size:12px;">未找到用户</div>';
+      return;
+    }
+    list.innerHTML = users.map(function(u) {
+      var name = u.nickname || u.username;
+      return '<div onclick="insertMention(\'' + (u.username) + '\', \'' + name.replace(/'/g, "\\'") + '\')" style="padding:8px 12px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f0f4f8;" onmouseover="this.style.background=\'#f0f2ff\'" onmouseout="this.style.background=\'\'">' +
+        '<span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;">' + name[0].toUpperCase() + '</span>' +
+        '<span style="color:#1e3a5f;font-weight:600;">' + name + '</span>' +
+        '<span style="color:#94a3b8;font-size:11px;margin-left:auto;">@' + u.username + '</span></div>';
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<div style="padding:10px 12px;color:#ef4444;font-size:12px;">搜索失败</div>';
+  }
+}
+
+function insertMention(username, displayName) {
+  var ta = document.getElementById('comment-input');
+  if (!ta) return;
+  var cursor = ta.selectionStart;
+  var val = ta.value;
+  // Find the @ position
+  var before = val.substring(0, cursor);
+  var atIdx = before.lastIndexOf('@');
+  if (atIdx === -1) return;
+  var newVal = val.substring(0, atIdx) + '@' + username + ' ' + val.substring(cursor);
+  ta.value = newVal;
+  ta.focus();
+  var newPos = atIdx + username.length + 2;
+  ta.setSelectionRange(newPos, newPos);
+  var dropdown = document.getElementById('mention-dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+  mentionQuery = '';
+}
+
+window.insertMention = insertMention;
+
 async function submitComment() {
   const content = document.getElementById('comment-input').value.trim();
   if (!content && commentImages.length === 0) {

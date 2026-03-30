@@ -4,7 +4,7 @@ const { authMiddleware, optionalAuth } = require('../middleware/auth');
 const { containsSensitiveWords, refreshWords } = require('../middleware/wordFilter');
 const { logAction } = require('../middleware/moderationLog');
 const { updatePostFTS, getUserLevel, POINT_COST } = require('../models/database');
-const { sendPushToUser, notifyUserNewComment, notifyUserNewReply } = require('../utils/pushHelper');
+const { sendPushToUser, notifyUserNewComment, notifyUserNewReply, processMentions } = require('../utils/pushHelper');
 
 const router = express.Router();
 
@@ -294,6 +294,9 @@ router.post('/:id/comments', authMiddleware, async (req, res) => {
 
     // Deduct points
     db.prepare('UPDATE users SET points = points - ? WHERE id = ?').run(cost, req.user.id);
+
+    // Process @mentions (async, non-blocking)
+    processMentions(content, req.params.id, post.title, req.user.id, comment.nickname || comment.username);
 
     // Notify post author (if not commenting on own post)
     if (post.user_id !== req.user.id) {

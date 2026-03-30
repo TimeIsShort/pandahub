@@ -614,3 +614,24 @@
 - `public/index.html`（无改动）
 - `index.js`（注册 favorites 路由）
 
+
+---
+
+## v1.3 开发记录（续）
+
+### P0 @提及用户 ✅
+- ✅ 评论中 `@username` 解析（正则匹配中文/英文/数字，1-20字符）
+- ✅ 提及用户去重（同一评论不重复通知）
+- ✅ Web Push + 应用内通知 + 邮件三通道通知
+- ✅ `processMentions()` 函数（非阻塞，不影响评论速度）
+- ✅ 前端 @ 输入触发用户搜索下拉
+- ✅ `GET /users/search?q=` API（按用户名/昵称搜索，返回前5条）
+- ✅ 选中用户插入 `@username` 光标位置
+
+### 涉及文件
+- `utils/pushHelper.js` - `notifyUserMentioned()` / `processMentions()` 函数
+- `routes/posts.js` - 评论插入后调用 `processMentions()`
+- `routes/users.js` - 新增 `GET /users/search` API
+- `public/index.html` - 评论输入框加 `@mention-dropdown`
+- `public/js/app.js` - `handleCommentInput()` / `searchMentionUsers()` / `insertMention()`
+

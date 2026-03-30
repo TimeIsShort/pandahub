@@ -150,4 +150,56 @@ async function notifyUserPostRejected(userId, postTitle, reason, postUrl) {
   });
 }
 
-module.exports = { sendPushToUser, sendEmailToUser, notifyUserNewComment, notifyUserNewReply, notifyUserPostApproved, notifyUserPostRejected };
+async function notifyUserMentioned(userId, postTitle, mentionerName, postUrl) {
+  await sendEmailToUser(userId, {
+    subject: '@ 在熊猫社区有人提到了你',
+    html: '<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px;">' +
+      '<div style="text-align:center;margin-bottom:24px;"><h2 style="color:#667eea;">🐼 熊猫社区</h2></div>' +
+      '<p style="font-size:16px;color:#333;">您好！</p>' +
+      '<p style="font-size:16px;color:#333;"><strong>' + escapeHtml(mentionerName) + '</strong> 在评论中提到了您：</p>' +
+      '<div style="background:#f0f7ff;border-radius:8px;padding:16px;margin:20px 0;font-size:15px;color:#1e3a5f;">' +
+      '帖子：<strong>' + escapeHtml(postTitle) + '</strong></div>' +
+      '<p style="font-size:14px;color:#888;">登录熊猫社区查看详情 →</p></div>',
+  });
+}
+
+// Parse @mentions from content and send notifications
+async function processMentions(content, postId, postTitle, commenterId, commenterName) {
+  // Find all @username patterns
+  var mentions = content.match(/@([\w\u4e00-\u9fa5]{1,20})/g) || [];
+  // Deduplicate
+  var seen = {};
+  var unique = [];
+  for (var i = 0; i < mentions.length; i++) {
+    var username = mentions[i].substring(1); // remove @
+    if (!seen[username] && username !== commenterName) {
+      seen[username] = true;
+      unique.push(username);
+    }
+  }
+  if (unique.length === 0) return;
+
+  var db = require('../models/database');
+  for (var j = 0; j < unique.length; j++) {
+    var mentionedUser = db.prepare('SELECT id FROM users WHERE username = ? OR nickname = ?').get(unique[j], unique[j]);
+    if (!mentionedUser || mentionedUser.id === commenterId) continue;
+
+    // Send in-app notification
+    db.prepare(
+      "INSERT INTO notifications (user_id, type, title, content, post_id) VALUES (?, 'mention', '@ 有人提到了你', ?, ?)"
+    ).run(mentionedUser.id, '有人 @ 了你，快去看看吧', postId);
+
+    // Web Push
+    sendPushToUser(mentionedUser.id, {
+      title: '@ 有人提到了你',
+      body: commenterName + ' 在评论中 @ 了你',
+      url: '/post/' + postId,
+      tag: 'mention-' + postId
+    });
+
+    // Email (async)
+    notifyUserMentioned(mentionedUser.id, postTitle, commenterName, '/post/' + postId);
+  }
+}
+
+module.exports = { sendPushToUser, sendEmailToUser, notifyUserNewComment, notifyUserNewReply, notifyUserPostApproved, notifyUserPostRejected, notifyUserMentioned };

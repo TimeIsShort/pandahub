@@ -45,4 +45,25 @@ router.get('/:id', optionalAuth, (req, res) => {
   }
 });
 
+// Search users by username or nickname (for @mention)
+router.get('/search', (req, res) => {
+  try {
+    const { q = '', limit = 10 } = req.query;
+    if (!q || q.length < 1) return res.json({ users: [] });
+
+    const pattern = '%' + q + '%';
+    const users = db.prepare(`
+      SELECT id, username, nickname, avatar
+      FROM users
+      WHERE username LIKE ? OR nickname LIKE ?
+      ORDER BY username ASC
+      LIMIT ?
+    `).all(pattern, pattern, Number(limit));
+
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: '搜索失败' });
+  }
+});
+
 module.exports = router;

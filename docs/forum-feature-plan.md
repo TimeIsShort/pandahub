@@ -533,3 +533,23 @@
 - `public/js/app.js` - loadCheckinStatus 完全重写，7阶梯进度UI
 - `public/css/style.css` - streak-ladder 整套新样式
 
+
+---
+
+## v1.2 开发记录（续）
+
+### P2 管理后台图表 ✅
+- ✅ 新增「📈 统计看板」Tab
+- ✅ 4张统计卡片：用户总数/活跃用户/帖子总数/待审帖子（渐变色卡片）
+- ✅ 每日发帖量柱状图（7天/30天切换）
+- ✅ 每日新增用户柱状图
+- ✅ 每日活跃用户柱状图
+- ✅ 标签分布环形图（Top 8）
+- ✅ 概览区新增「用户总数」统计卡
+- ✅ 使用 Chart.js CDN（v4.4.0）
+- ✅ API：`GET /api/admin/stats?range=7|30`（已有后端支持）
+
+### 涉及文件
+- `public/admin-login.html` - 图表Tab + CSS + loadCharts() + setChartRange() JS
+- `routes/admin.js` - stats API（已有，无需修改）
+

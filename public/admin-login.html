@@ -31,6 +31,25 @@
     .status-approved { background: #d1fae5; color: #059669; }
     .status-rejected { background: #fee2e2; color: #dc2626; }
     .empty-state { text-align: center; padding: 40px; color: #888; }
+    .charts-card { padding: 20px; }
+    .charts-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    .charts-header h2 { font-size: 18px; color: #2d3d68; }
+    .charts-range-btns { display: flex; gap: 6px; }
+    .range-btn { padding: 6px 16px; border: 1.5px solid #d5ddff; border-radius: 20px; background: #fff; color: #667eea; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
+    .range-btn.active { background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; border-color: transparent; }
+    .range-btn:hover:not(.active) { border-color: #667eea; }
+    .charts-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .summary-card { background: linear-gradient(135deg,#667eea22,#764ba222); border: 1px solid #d5ddff; border-radius: 12px; padding: 14px 16px; }
+    .summary-card.users { background: linear-gradient(135deg,#10b98122,#05966922); border-color: #bbf7d0; }
+    .summary-card.posts { background: linear-gradient(135deg,#f59e0b22,#f9731622); border-color: #fde68a; }
+    .summary-card.active { background: linear-gradient(135deg,#3b82f622,#1d4ed822); border-color: #bfdbfe; }
+    .summary-card.pending { background: linear-gradient(135deg,#ef444422,#dc262622); border-color: #fecaca; }
+    .summary-label { font-size: 12px; color: #64748b; font-weight: 600; margin-bottom: 4px; }
+    .summary-value { font-size: 24px; font-weight: 800; color: #2d3d68; }
+    .summary-value small { font-size: 12px; font-weight: 600; color: #94a3b8; margin-left: 4px; }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .chart-container { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .chart-container h3 { font-size: 14px; color: #667eea; font-weight: 700; margin-bottom: 10px; }
     .login-box { max-width: 360px; margin: 100px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
     .login-box h2 { text-align: center; margin-bottom: 24px; color: #333; }
     .form-group { margin-bottom: 16px; }
@@ -536,6 +555,7 @@
       }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <div id="loginView" class="login-box">
@@ -562,6 +582,10 @@
       </div>
       <div class="overview-grid">
         <div class="overview-card soft">
+          <div class="overview-label">用户总数</div>
+          <div class="overview-value" id="statUsersTotal">0</div>
+        </div>
+        <div class="overview-card">
           <div class="overview-label">申请总数</div>
           <div class="overview-value" id="statAppsTotal">0</div>
         </div>
@@ -584,6 +608,7 @@
         <button class="tab-btn" id="tabUsersBtn">👥 用户管理</button>
         <button class="tab-btn" id="tabWordsBtn">🛡️ 敏感词</button>
         <button class="tab-btn" id="tabLogsBtn">📊 操作日志</button>
+        <button class="tab-btn" id="tabChartsBtn">📈 统计看板</button>
       </div>
       <div id="tabApps">
         <div class="card">
@@ -633,6 +658,36 @@
             </div>
           </div>
           <div id="postsList"></div>
+        </div>
+      </div>
+      <div id="tabCharts" class="hidden">
+        <div class="card charts-card">
+          <div class="charts-header">
+            <h2>📈 运营统计看板</h2>
+            <div class="charts-range-btns">
+              <button class="range-btn active" id="range7Btn" onclick="setChartRange(7)">近7天</button>
+              <button class="range-btn" id="range30Btn" onclick="setChartRange(30)">近30天</button>
+            </div>
+          </div>
+          <div class="charts-summary" id="chartsSummary"></div>
+          <div class="charts-grid">
+            <div class="chart-container">
+              <h3>📝 每日发帖量</h3>
+              <canvas id="chartPosts" height="160"></canvas>
+            </div>
+            <div class="chart-container">
+              <h3>👥 每日新增用户</h3>
+              <canvas id="chartUsers" height="160"></canvas>
+            </div>
+            <div class="chart-container">
+              <h3>🔥 每日活跃用户</h3>
+              <canvas id="chartActive" height="160"></canvas>
+            </div>
+            <div class="chart-container">
+              <h3>📂 标签分布</h3>
+              <canvas id="chartTags" height="200"></canvas>
+            </div>
+          </div>
         </div>
       </div>
       <div id="tabUsers" class="hidden">
@@ -791,7 +846,7 @@
 
     function setActiveTab(tab) {
       currentTab = tab;
-      var tabs = ['apps', 'posts', 'users', 'words', 'logs'];
+      var tabs = ['apps', 'posts', 'users', 'words', 'logs', 'charts'];
       for (var i = 0; i < tabs.length; i++) {
         var key = tabs[i];
         var panel = document.getElementById('tab' + key.charAt(0).toUpperCase() + key.slice(1));
@@ -811,6 +866,7 @@
       if (tab === 'users') loadUsers();
       if (tab === 'words') loadWords();
       if (tab === 'logs') loadLogs(1);
+      if (tab === 'charts') loadCharts();
     }
 
     document.getElementById('tabAppsBtn').onclick = function() { setActiveTab('apps'); };
@@ -818,6 +874,7 @@
     document.getElementById('tabUsersBtn').onclick = function() { setActiveTab('users'); };
     document.getElementById('tabWordsBtn').onclick = function() { setActiveTab('words'); };
     document.getElementById('tabLogsBtn').onclick = function() { setActiveTab('logs'); };
+    document.getElementById('tabChartsBtn').onclick = function() { setActiveTab('charts'); };
 
     document.getElementById('appsSearchInput').addEventListener('input', function() { renderApplications(); });
     document.getElementById('appsStatusFilter').addEventListener('change', function() { renderApplications(); });
@@ -888,6 +945,7 @@
       .then(function(data) {
         if (data.error) { showToast(data.error, 'error'); return; }
         usersCache = data.users || [];
+        updateOverviewStats();
         renderUsers();
       })
       .catch(function(err) {
@@ -1037,6 +1095,7 @@
       document.getElementById('statAppsPending').textContent = appPending;
       document.getElementById('statPostsTotal').textContent = postTotal;
       document.getElementById('statPostsPending').textContent = postPending;
+      document.getElementById('statUsersTotal').textContent = usersCache ? usersCache.length : 0;
     }
 
     function renderApplications() {
@@ -1605,6 +1664,109 @@
       actionDialogOptions = null;
       document.getElementById('actionModal').style.display = 'none';
       resolve({ confirmed: !!confirmed, value: value });
+    }
+
+    var chartInstances = {};
+    var chartRange = 7;
+
+    function setChartRange(days) {
+      chartRange = days;
+      document.getElementById('range7Btn').classList.toggle('active', days === 7);
+      document.getElementById('range30Btn').classList.toggle('active', days === 30);
+      loadCharts();
+    }
+
+    async function loadCharts() {
+      try {
+        var res = await fetch('/api/admin/stats?range=' + chartRange, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        var data = await res.json();
+        if (data.error) return;
+
+        // Render summary cards
+        var s = data.summary;
+        document.getElementById('chartsSummary').innerHTML = '<div class="summary-card users"><div class="summary-label">用户总数</div><div class="summary-value">' + s.totalUsers + '</div></div>' +
+          '<div class="summary-card active"><div class="summary-label">活跃用户<small>(' + data.range + '天)</small></div><div class="summary-value">' + s.activeUsers + '</div></div>' +
+          '<div class="summary-card posts"><div class="summary-label">帖子总数</div><div class="summary-value">' + s.totalPosts + '</div></div>' +
+          '<div class="summary-card pending"><div class="summary-label">待审帖子</div><div class="summary-value">' + s.pendingPosts + '</div></div>';
+
+        // Destroy old charts
+        Object.values(chartInstances).forEach(function(c) { if (c) c.destroy(); });
+
+        var labels = data.trend.dailyPosts.map(function(d) { return d.date.slice(5); }); // MM-DD format
+
+        // Posts bar chart
+        var ctxPosts = document.getElementById('chartPosts').getContext('2d');
+        chartInstances.posts = new Chart(ctxPosts, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: '发帖量',
+              data: data.trend.dailyPosts.map(function(d) { return d.count; }),
+              backgroundColor: 'rgba(102,126,234,0.7)',
+              borderRadius: 6
+            }]
+          },
+          options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+
+        // Users bar chart
+        var ctxUsers = document.getElementById('chartUsers').getContext('2d');
+        chartInstances.users = new Chart(ctxUsers, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: '新增用户',
+              data: data.trend.dailyUsers.map(function(d) { return d.count; }),
+              backgroundColor: 'rgba(16,185,129,0.7)',
+              borderRadius: 6
+            }]
+          },
+          options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+
+        // Active users bar chart
+        var ctxActive = document.getElementById('chartActive').getContext('2d');
+        chartInstances.active = new Chart(ctxActive, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: '活跃用户',
+              data: data.trend.dailyActive.map(function(d) { return d.count; }),
+              backgroundColor: 'rgba(59,130,246,0.7)',
+              borderRadius: 6
+            }]
+          },
+          options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+
+        // Tag distribution doughnut
+        var tagLabels = data.tagDist.slice(0, 8).map(function(t) { return t.name; });
+        var tagCounts = data.tagDist.slice(0, 8).map(function(t) { return t.count; });
+        var ctxTags = document.getElementById('chartTags').getContext('2d');
+        chartInstances.tags = new Chart(ctxTags, {
+          type: 'doughnut',
+          data: {
+            labels: tagLabels,
+            datasets: [{
+              data: tagCounts,
+              backgroundColor: [
+                'rgba(102,126,234,0.8)', 'rgba(16,185,129,0.8)', 'rgba(245,158,11,0.8)',
+                'rgba(239,68,68,0.8)', 'rgba(59,130,246,0.8)', 'rgba(168,85,247,0.8)',
+                'rgba(34,197,94,0.8)', 'rgba(249,115,22,0.8)'
+              ]
+            }]
+          },
+          options: { responsive: true, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } } }
+        });
+
+      } catch (e) {
+        console.error('Charts load error', e);
+      }
     }
 
     if (token) showAdminView();

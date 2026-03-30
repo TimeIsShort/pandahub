@@ -592,3 +592,25 @@
 - `routes/posts.js`（评论路由加 async + 调用 `notifyUserNewComment/Reply`）
 - `routes/admin.js`（审核路由导入 + 调用 `notifyUserPostApproved/Rejected`）
 
+
+---
+
+## v1.3 开发记录（续）
+
+### P0 收藏/书签 ✅
+- ✅ `routes/favorites.js` 新建（收藏API）
+- ✅ `models/database.js` - `favorites` 表（user_id/post_id/UNIQUE约束）
+- ✅ API: `POST /api/favorites` 收藏、`DELETE /api/favorites/:postId` 取消、`GET /api/favorites` 列表、`GET /api/favorites/status/:postId` 状态查询
+- ✅ 帖子详情页加「☆ 收藏」按钮（已收藏显示★已收藏）
+- ✅ 帖子列表每条加 ☆ 收藏按钮
+- ✅ 个人主页「⭐ 收藏」tab（本人可见），点击加载收藏列表
+- ✅ 收藏列表显示：标题/标签/作者/评论数/收藏时间
+- ✅ `toggleFavorite()` / `loadFavoriteStatus()` / `loadFavoritesList()` / `switchProfileTab()` JS函数
+
+### 涉及文件
+- `routes/favorites.js`（新建）
+- `models/database.js`（favorites 表）
+- `public/js/app.js`（收藏按钮UI + JS函数）
+- `public/index.html`（无改动）
+- `index.js`（注册 favorites 路由）
+

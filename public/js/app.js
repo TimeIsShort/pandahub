@@ -1304,6 +1304,7 @@ async function loadPosts() {
           <span class="avatar-small">${post.avatar ? `<img src="${post.avatar}" alt="avatar">` : (post.nickname || post.username)[0].toUpperCase()}</span>
           <span>${escapeHtml(post.nickname || post.username)}</span>
           ${user && user.id !== post.user_id ? `<button class="msg-author-btn" onclick="event.stopPropagation();openMsgDetailFromUser(${post.user_id}, '${e(post.nickname || post.username)}')" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px 6px;color:#5d6dff;">💬</button>` : ''}
+          <button onclick="event.stopPropagation();toggleFavorite(${post.id})" id="fav-btn-${post.id}" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px 4px;color:#94a3b8;" title="收藏">☆</button>
           <span>👍 <span class="vote-like-count">${post.like_count || 0}</span></span>
           <span>👎 <span class="vote-dislike-count">${post.dislike_count || 0}</span></span>
           <span>💬 ${post.comment_count}</span>
@@ -1391,6 +1392,11 @@ async function viewPost(id) {
       }
     }
 
+    // Load favorite status
+    if (user) {
+      loadFavoriteStatus(postId);
+    }
+
     postDetailEl.innerHTML = `
       <div class="post-detail-card">
         <div class="post-detail-title">${escapeHtml(res.post.title)}</div>
@@ -1413,6 +1419,7 @@ async function viewPost(id) {
         <div class="post-detail-content">${renderContent(res.post.content)}</div>
         ${user ? `
         <div class="post-actions">
+          <button id="btn-favorite" onclick="toggleFavorite(${res.post.id})">☆ 收藏</button>
           <button onclick="sharePost(${res.post.id}, '${escapeHtml(res.post.title)}')">🔗 分享</button>
           ${res.user && res.user.id === res.post.user_id || (user && user.role === 'admin') ? `<button onclick="deletePost(${res.post.id})" style="color:#ef4444">🗑 删除</button>` : ''}
         </div>` : ''}
@@ -2709,7 +2716,32 @@ async function loadProfile(userId) {
           <button onclick="goSettings()" style="flex:1;padding:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">⚙️ 编辑个人资料</button>
           <button onclick="goCheckin()" style="flex:1;padding:12px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">🎁 每日签到</button>
         </div>` : ''}
-        <h3 style="font-size:16px;color:#667eea;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;">📝 他的帖子 <span style="font-size:13px;color:#94a3b8;font-weight:400;">(${res.posts.length})</span></h3>
+        ${isSelf ? `
+        <div class="profile-tabs" style="display:flex;gap:0;background:#f0f2ff;border-radius:12px;padding:4px;margin-bottom:16px;">
+          <button id="tab-posts-btn" class="profile-tab-btn active" onclick="switchProfileTab('posts')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#667eea;">📝 帖子</button>
+          <button id="tab-fav-btn" class="profile-tab-btn" onclick="switchProfileTab('favorites')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#94a3b8;">⭐ 收藏</button>
+        </div>
+        <div id="profile-tab-posts">
+          <h3 style="font-size:16px;color:#667eea;font-weight:700;margin-bottom:12px;">📝 他的帖子 <span style="font-size:13px;color:#94a3b8;font-weight:400;">(${res.posts.length})</span></h3>
+          <div class="post-list">
+            ${res.posts.length ? res.posts.map(p => `
+              <div class="post-card" onclick="viewPost(${p.id})" style="cursor:pointer;padding:14px 16px;border-bottom:1px solid #f0f4f8;">
+                <div style="font-size:15px;font-weight:700;color:#1e3a5f;margin-bottom:8px;">${escapeHtml(p.title)}</div>
+                <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#94a3b8;flex-wrap:wrap;">
+                  ${p.tag_name ? `<span style="background:${p.tag_color}33;color:${p.tag_color};padding:2px 8px;border-radius:10px;font-weight:600;">${escapeHtml(p.tag_name)}</span>` : ''}
+                  <span>💬 ${p.comment_count}</span>
+                  <span>🕐 ${formatDate(p.created_at)}</span>
+                </div>
+              </div>
+            `).join('') : '<div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">暂无帖子</div>'}
+          </div>
+        </div>
+        <div id="profile-tab-favorites" style="display:none;">
+          <h3 style="font-size:16px;color:#667eea;font-weight:700;margin-bottom:12px;">⭐ 我的收藏</h3>
+          <div id="favorites-list"><div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">加载中...</div></div>
+        </div>
+        ` : `
+        <h3 style="font-size:16px;color:#667eea;font-weight:700;margin-bottom:12px;">📝 他的帖子 <span style="font-size:13px;color:#94a3b8;font-weight:400;">(${res.posts.length})</span></h3>
         <div class="post-list">
           ${res.posts.length ? res.posts.map(p => `
             <div class="post-card" onclick="viewPost(${p.id})" style="cursor:pointer;padding:14px 16px;border-bottom:1px solid #f0f4f8;">
@@ -2722,8 +2754,11 @@ async function loadProfile(userId) {
             </div>
           `).join('') : '<div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">暂无帖子</div>'}
         </div>
+        `}
       </div>
     `;
+
+    // Load follow status for non-self profiles
 
     // Load follow status for non-self profiles
     if (!isSelf) {
@@ -2920,6 +2955,101 @@ async function loadFollowStatus(targetId) {
 window.loadFollowStatus = loadFollowStatus;
 window.goCheckin = goCheckin;
 window.startChat = startChat;
+
+// ============ Favorites / Bookmarks ============
+async function toggleFavorite(postId) {
+  if (!getUser()) { showToast('请先登录', 'error'); return; }
+  var btn = document.getElementById('btn-favorite');
+  var isFav = btn && btn.dataset.favorited === '1';
+
+  try {
+    if (isFav) {
+      var res = await api('/favorites/' + postId, { method: 'DELETE' });
+      if (res.error) { showToast(res.error, 'error'); return; }
+      showToast('已取消收藏', 'success');
+      if (btn) { btn.textContent = '☆ 收藏'; btn.dataset.favorited = '0'; }
+    } else {
+      var res2 = await api('/favorites', { method: 'POST', body: JSON.stringify({ post_id: postId }) });
+      if (res2.error) { showToast(res2.error, 'error'); return; }
+      showToast('收藏成功！', 'success');
+      if (btn) { btn.textContent = '★ 已收藏'; btn.dataset.favorited = '1'; }
+    }
+  } catch (e) {
+    showToast('操作失败', 'error');
+  }
+}
+
+async function loadFavoriteStatus(postId) {
+  try {
+    var res = await api('/favorites/status/' + postId);
+    if (res.error) return;
+    var btn = document.getElementById('btn-favorite');
+    if (btn) {
+      if (res.is_favorited) {
+        btn.textContent = '★ 已收藏';
+        btn.dataset.favorited = '1';
+      } else {
+        btn.textContent = '☆ 收藏';
+        btn.dataset.favorited = '0';
+      }
+    }
+  } catch (e) {}
+}
+
+window.toggleFavorite = toggleFavorite;
+window.loadFavoriteStatus = loadFavoriteStatus;
+
+function switchProfileTab(tab) {
+  var postsPanel = document.getElementById('profile-tab-posts');
+  var favPanel = document.getElementById('profile-tab-favorites');
+  var postsBtn = document.getElementById('tab-posts-btn');
+  var favBtn = document.getElementById('tab-fav-btn');
+
+  if (tab === 'posts') {
+    if (postsPanel) postsPanel.style.display = '';
+    if (favPanel) favPanel.style.display = 'none';
+    if (postsBtn) { postsBtn.classList.add('active'); postsBtn.style.color = '#667eea'; }
+    if (favBtn) { favBtn.classList.remove('active'); favBtn.style.color = '#94a3b8'; }
+  } else {
+    if (postsPanel) postsPanel.style.display = 'none';
+    if (favPanel) favPanel.style.display = '';
+    if (postsBtn) { postsBtn.classList.remove('active'); postsBtn.style.color = '#94a3b8'; }
+    if (favBtn) { favBtn.classList.add('active'); favBtn.style.color = '#667eea'; }
+    // Load favorites
+    loadFavoritesList();
+  }
+}
+
+window.switchProfileTab = switchProfileTab;
+
+async function loadFavoritesList() {
+  var el = document.getElementById('favorites-list');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">加载中...</div>';
+  try {
+    var res = await api('/favorites');
+    if (res.error) { el.innerHTML = '<div style="text-align:center;padding:32px;color:#ef4444;">加载失败</div>'; return; }
+    if (!res.favorites || res.favorites.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">暂无收藏，快去收藏感兴趣的帖子吧～</div>';
+      return;
+    }
+    el.innerHTML = res.favorites.map(p => `
+      <div class="post-card" onclick="viewPost(${p.id})" style="cursor:pointer;padding:14px 16px;border-bottom:1px solid #f0f4f8;">
+        <div style="font-size:15px;font-weight:700;color:#1e3a5f;margin-bottom:8px;">${escapeHtml(p.title)}</div>
+        <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#94a3b8;flex-wrap:wrap;">
+          ${p.tag_name ? `<span style="background:${p.tag_color}33;color:${p.tag_color};padding:2px 8px;border-radius:10px;font-weight:600;">${escapeHtml(p.tag_name)}</span>` : ''}
+          <span>👤 ${escapeHtml(p.author_nickname || p.author_username)}</span>
+          <span>💬 ${p.comment_count || 0}</span>
+          <span>🕐 ${formatDate(p.favorited_at)}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    el.innerHTML = '<div style="text-align:center;padding:32px;color:#ef4444;">加载失败</div>';
+  }
+}
+
+window.loadFavoritesList = loadFavoritesList;
 
 // ============ Messages ============
 let currentMsgPartner = null;

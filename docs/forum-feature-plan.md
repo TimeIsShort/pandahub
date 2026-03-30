@@ -820,3 +820,13 @@
 - `public/index.html` - 导航栏加 `#theme-toggle` 按钮
 - `public/js/app.js` - `toggleTheme()` / `setTheme()` / 加载恢复逻辑
 
+### P1 个人主页增强 ✅
+- ✅ 粉丝数和关注数均可点击，打开弹窗展示用户列表
+- ✅ 列表内显示头像/昵称/等级/积分，可直接关注或发私信
+- ✅ 修复原代码 `profileUserId` 未定义变量 bug
+- ✅ `showFollowList()` / `loadFollowList()` / `closeFollowList()` JS函数
+
+### 涉及文件
+- `public/index.html` - 新增 `#follow-list-modal` 弹窗
+- `public/js/app.js` - 个人主页 stats row 加点击，follow list 函数
+

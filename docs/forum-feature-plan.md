@@ -830,3 +830,17 @@
 - `public/index.html` - 新增 `#follow-list-modal` 弹窗
 - `public/js/app.js` - 个人主页 stats row 加点击，follow list 函数
 
+
+### P1 积分排行榜入口增强 ✅
+- ✅ 排行榜面板新增「完整榜单 →」按钮，可跳转独立排行榜页
+- ✅ 排行榜面板新增「我的排名」迷你卡，登录用户显示自己当前排名
+- ✅ 当前用户在榜时列表中高亮（紫色边框 + 「我」标签）
+- ✅ 新建 `public/leaderboard.html` 独立排行榜页：前三名 podium 卡片、top100 列表、分页
+- ✅ 独立页底部显示总人数、页码导航
+- ✅ `GET /api/leaderboard/me` 新增接口：返回当前用户排名信息
+
+### 涉及文件
+- `public/leaderboard.html` - 新建独立排行榜页
+- `public/index.html` - 排行榜面板加「完整榜单 →」按钮 + lb-my-rank-mini 容器
+- `public/js/app.js` - loadLeaderboard 升级：加载我的排名、当前用户高亮
+- `routes/leaderboard.js` - 新增 `/me` 接口、支持分页参数

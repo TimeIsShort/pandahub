@@ -1328,8 +1328,8 @@ async function loadPosts() {
           <span>${escapeHtml(post.nickname || post.username)}</span>
           ${user && user.id !== post.user_id ? `<button class="msg-author-btn" onclick="event.stopPropagation();openMsgDetailFromUser(${post.user_id}, '${e(post.nickname || post.username)}')" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px 6px;color:#5d6dff;">💬</button>` : ''}
           <button onclick="event.stopPropagation();toggleFavorite(${post.id})" id="fav-btn-${post.id}" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px 4px;color:#94a3b8;" title="收藏">☆</button>
-          <span>👍 <span class="vote-like-count">${post.like_count || 0}</span></span>
-          <span>👎 <span class="vote-dislike-count">${post.dislike_count || 0}</span></span>
+          <button onclick="event.stopPropagation();votePost(${post.id}, 'like')" class="vote-inline-btn ${post.userVote === 'like' ? 'liked' : ''}" title="赞一个" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px 4px;color:${post.userVote === 'like' ? '#ef4444' : '#94a3b8'};">👍 <span class="vote-like-count">${post.like_count || 0}</span></button>
+          <button onclick="event.stopPropagation();votePost(${post.id}, 'dislike')" class="vote-inline-btn ${post.userVote === 'dislike' ? 'disliked' : ''}" title="踩一下" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px 4px;color:${post.userVote === 'dislike' ? '#8b5cf6' : '#94a3b8'};">👎 <span class="vote-dislike-count">${post.dislike_count || 0}</span></button>
           <span>💬 ${post.comment_count}</span>
           <span>👁 ${post.views}</span>
           <span>🕐 ${formatDate(post.created_at)}</span>
@@ -1802,7 +1802,7 @@ async function votePost(id, voteType) {
     if (dislikeCount) dislikeCount.textContent = res.dislike_count;
 
     // Update post list if visible
-    updatePostListVoteCounts(id, res.like_count, res.dislike_count);
+    updatePostListVoteCounts(id, res.like_count, res.dislike_count, res.currentVote);
 
   } catch (e) {
     showToast('投票失败', 'error');
@@ -1810,13 +1810,21 @@ async function votePost(id, voteType) {
 }
 
 // Update vote counts in the post list cards (without reloading)
-function updatePostListVoteCounts(postId, likeCount, dislikeCount) {
+function updatePostListVoteCounts(postId, likeCount, dislikeCount, currentVote) {
   const cards = document.querySelectorAll(`.post-card[data-post-id="${postId}"]`);
-  cards.forEach(card => {
-    const likeEl = card.querySelector('.vote-like-count');
-    const dislikeEl = card.querySelector('.vote-dislike-count');
+  cards.forEach(function(card) {
+    var likeEl = card.querySelector('.vote-like-count');
+    var dislikeEl = card.querySelector('.vote-dislike-count');
+    var likeBtn = card.querySelector('.vote-inline-btn');
+    var dislikeBtn = card.querySelectorAll('.vote-inline-btn')[1];
     if (likeEl) likeEl.textContent = likeCount;
     if (dislikeEl) dislikeEl.textContent = dislikeCount;
+    if (likeBtn) {
+      likeBtn.style.color = currentVote === 'like' ? '#ef4444' : '#94a3b8';
+    }
+    if (dislikeBtn) {
+      dislikeBtn.style.color = currentVote === 'dislike' ? '#8b5cf6' : '#94a3b8';
+    }
   });
 }
 

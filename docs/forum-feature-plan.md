@@ -727,3 +727,20 @@
 - `public/js/app.js` - switchCheckinTab / loadCheckinHistory / setSearchSort / setSearchTime / loadActivityCalendar
 - `public/css/style.css` - .checkin-sub-tab / .search-filters / .filter-btn / #activity-heatmap 样式
 
+
+---
+
+## v1.3 开发记录（续）
+
+### P2 点赞功能 ✅
+- ✅ 帖子列表：👍👎 变成可点击按钮（不再是纯文字）
+- ✅ 点赞后按钮即时变红（👍）/紫色（👎），再次点击取消
+- ✅ `updatePostListVoteCounts()` 升级：同时更新按钮颜色
+- ✅ `.vote-inline-btn` 样式：悬停灰底，点击高亮
+- ✅ 热度排序已实现：views + likes*5 + comments*3 加权
+
+### 涉及文件
+- `public/js/app.js` - 帖子列表 vote 按钮模板 + `updatePostListVoteCounts` 升级
+- `public/css/style.css` - `.vote-inline-btn` 样式
+- `routes/posts.js` - 热度排序（已有）
+

@@ -3810,3 +3810,17 @@ select:focus-visible {
   overflow-x: auto;
 }
 
+
+/* Vote inline buttons in post list */
+.vote-inline-btn {
+  font-family: inherit;
+  border-radius: 6px;
+  transition: all .18s;
+}
+.vote-inline-btn:hover {
+  background: #f1f5f9;
+}
+.vote-inline-btn.liked {
+  color: #ef4444 !important;
+}
+

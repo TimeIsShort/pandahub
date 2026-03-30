@@ -613,7 +613,25 @@
               <option value="rejected">已下架</option>
             </select>
           </div>
-          <div id="aiReviewProgress" style="display:none; margin:10px 0; padding:12px; background:#f3f0ff; border-radius:8px; color:#6d28d9; font-size:14px;"></div>
+          <div id="aiReviewProgress" style="display:none; margin:10px 0;">
+            <div style="background:#ede9fe;border-radius:10px;padding:14px 16px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <span style="font-size:18px;">🤖</span>
+                <div>
+                  <div style="font-weight:700;color:#6d28d9;font-size:14px;" id="aiReviewTitle">AI 批量审核中...</div>
+                  <div style="font-size:12px;color:#7c3aed;" id="aiReviewSubtitle">正在处理帖子，请稍候</div>
+                </div>
+              </div>
+              <div style="background:#c4b5fd;height:8px;border-radius:4px;overflow:hidden;">
+                <div id="aiReviewBar" style="background:linear-gradient(90deg,#7c3aed,#a78bfa);height:100%;width:0%;border-radius:4px;transition:width .4s ease;"></div>
+              </div>
+              <div style="font-size:12px;color:#7c3aed;margin-top:6px;" id="aiReviewCount">0 / 0 篇已处理</div>
+            </div>
+            <div id="aiReviewResult" style="display:none;margin-top:10px;padding:12px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;">
+              <div style="font-weight:700;color:#166534;margin-bottom:8px;font-size:14px;">✅ 审核完成</div>
+              <div id="aiReviewStats" style="font-size:13px;color:#15803d;line-height:1.8;"></div>
+            </div>
+          </div>
           <div id="postsList"></div>
         </div>
       </div>
@@ -1375,20 +1393,58 @@
         if (!result.confirmed) return;
         var progressEl = document.getElementById('aiReviewProgress');
         var btnEl = document.getElementById('aiAutoReviewBtn');
+        var barEl = document.getElementById('aiReviewBar');
+        var countEl = document.getElementById('aiReviewCount');
+        var titleEl = document.getElementById('aiReviewTitle');
+        var subtitleEl = document.getElementById('aiReviewSubtitle');
+        var resultEl = document.getElementById('aiReviewResult');
+        var statsEl = document.getElementById('aiReviewStats');
+
         progressEl.style.display = 'block';
-        progressEl.innerHTML = '🤖 AI 审核中，请稍候...';
+        resultEl.style.display = 'none';
+        barEl.style.width = '0%';
+        countEl.textContent = '0 / ' + pendingCount + ' 篇已处理';
+        titleEl.textContent = '🤖 AI 批量审核中...';
+        subtitleEl.textContent = '正在处理帖子，请稍候';
         btnEl.disabled = true;
         btnEl.style.opacity = '0.6';
+
+        // Animate progress bar during the wait
+        var progressTimer = setInterval(function() {
+          var current = parseInt(countEl.textContent.match(/(\d+)/)?.[1] || 0);
+          var estPct = Math.min((current / pendingCount) * 90, 85);
+          barEl.style.width = estPct + '%';
+        }, 300);
+
         adminApi('/api/admin/posts/auto-review-all', { method: 'POST' })
           .then(function(data) {
-            progressEl.style.display = 'none';
+            clearInterval(progressTimer);
+            barEl.style.width = '100%';
+            countEl.textContent = pendingCount + ' / ' + pendingCount + ' 篇已处理';
+            titleEl.textContent = '✅ 审核完成';
+            subtitleEl.textContent = data.message || '';
             btnEl.disabled = false;
             btnEl.style.opacity = '1';
-            if (data.error) { showToast(data.error, 'error'); return; }
+
+            if (data.error) {
+              showToast(data.error, 'error');
+              progressEl.style.display = 'none';
+              return;
+            }
+
+            var r = data.results || {};
+            var statsHtml = '';
+            if (r.approved) statsHtml += '✅ <strong>自动通过</strong>：' + r.approved + ' 篇<br>';
+            if (r.rejected) statsHtml += '❌ <strong>自动拒绝</strong>：' + r.rejected + ' 篇<br>';
+            if (r.manual_review) statsHtml += '🤔 <strong>需人工审核</strong>：' + r.manual_review + ' 篇<br>';
+            if (!statsHtml) statsHtml = '无帖子需要审核';
+            statsEl.innerHTML = statsHtml;
+            resultEl.style.display = 'block';
             showToast(data.message || '批量审核完成', 'success');
             loadPosts();
           })
           .catch(function(err) {
+            clearInterval(progressTimer);
             progressEl.style.display = 'none';
             btnEl.disabled = false;
             btnEl.style.opacity = '1';

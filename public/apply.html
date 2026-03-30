@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>申请内测账号 - 熊猫社区</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #5d6dff;
+      --primary-light: #eef0ff;
+      --primary-2: #7e5ad6;
+      --ink: #253354;
+      --ink-soft: #60708f;
+      --line: #dce5ff;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(950px 460px at 6% -10%, rgba(93,109,255,.23), transparent 55%),
+        radial-gradient(900px 520px at 96% 2%, rgba(126,90,214,.18), transparent 50%),
+        linear-gradient(160deg, #edf2ff 0%, #f8f7ff 45%, #edf3ff 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      color: var(--ink);
+    }
+
+    /* ===== Card ===== */
+    .apply-card {
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(219,228,255,.92);
+      border-radius: 22px;
+      padding: 36px 38px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow:
+        0 18px 50px rgba(42, 52, 88, 0.16),
+        0 0 0 1px rgba(255,255,255,0.6) inset;
+      backdrop-filter: blur(12px);
+      animation: card-in .35s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(18px) scale(.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ===== Header ===== */
+    .apply-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .apply-header .logo {
+      font-size: 46px;
+      margin-bottom: 10px;
+      display: block;
+      filter: drop-shadow(0 4px 12px rgba(93,109,255,.3));
+    }
+    .apply-header h1 {
+      font-size: 26px;
+      color: #1e2d5a;
+      margin-bottom: 6px;
+      letter-spacing: .3px;
+      font-weight: 800;
+    }
+    .apply-header p {
+      color: #6b7aa3;
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+
+    /* ===== Form ===== */
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-group label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 7px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #3f5077;
+      letter-spacing: .3px;
+    }
+    .form-group label .required { color: #ef4444; }
+    .form-group label .label-icon {
+      font-size: 14px;
+      opacity: 0.75;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #d5ddff;
+      border-radius: 11px;
+      font-size: 14px;
+      background: #fafbff;
+      transition: border-color .22s ease, box-shadow .22s ease, background .22s ease;
+      font-family: inherit;
+      color: #1e2d5a;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #8294ff;
+      background: #fff;
+      box-shadow: 0 0 0 3.5px rgba(93,109,255,.13);
+    }
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+      color: #a8b3d4;
+    }
+    .form-group textarea {
+      resize: vertical;
+      min-height: 110px;
+      line-height: 1.65;
+    }
+
+    /* ===== Email + Code row ===== */
+    .email-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .email-input-row input[type="email"] { flex: 1; }
+
+    /* ===== Send Code Button ===== */
+    .btn-send-code {
+      padding: 10px 14px;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 10px;
+      border: 1.5px solid #c5d0ff;
+      background: linear-gradient(135deg, #eef0ff, #f5f3ff);
+      color: #5d6dff;
+      cursor: pointer;
+      transition: all .2s ease;
+      font-family: inherit;
+      min-width: 96px;
+      letter-spacing: .2px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-send-code:hover:not(:disabled) {
+      background: linear-gradient(135deg, #5d6dff, #7e5ad6);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(93,109,255,.35);
+      transform: translateY(-1px);
+    }
+    .btn-send-code:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ===== Verify Code row ===== */
+    .code-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .code-input-row input {
+      max-width: 180px;
+    }
+    .code-countdown {
+      font-size: 12.5px;
+      color: #f59e0b;
+      font-weight: 600;
+      letter-spacing: .2px;
+      min-width: 90px;
+    }
+
+    /* ===== Submit Button ===== */
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #5d6dff 0%, #7e5ad6 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 15.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .22s cubic-bezier(.34,1.56,.64,1);
+      box-shadow: 0 8px 24px rgba(93,109,255,.35);
+      letter-spacing: .5px;
+      margin-top: 6px;
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(93,109,255,.45);
+    }
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      padding: 10px 16px;
+      background: #f0f2ff;
+      color: #5d6dff;
+      border: 1.5px solid #c5d0ff;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s ease;
+      font-family: inherit;
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: #e8ecff;
+      border-color: #8294ff;
+    }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 18px;
+      color: #7c8cd8;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: color .2s ease;
+    }
+    .back-link:hover { color: #5d6dff; text-decoration: underline; }
+
+    /* ===== Success State ===== */
+    .success-message {
+      text-align: center;
+      padding: 20px 10px;
+    }
+    .success-icon {
+      font-size: 68px;
+      margin-bottom: 14px;
+      display: block;
+    }
+    .success-message h2 {
+      background: linear-gradient(135deg, #10b981, #059669);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+      font-size: 23px;
+    }
+    .success-message p {
+      color: #6b7aa3;
+      margin-bottom: 8px;
+      line-height: 1.7;
+    }
+
+    /* ===== Toast ===== */
+    .apply-toast {
+      position: fixed;
+      right: 16px;
+      top: 16px;
+      z-index: 2200;
+      min-width: 175px;
+      max-width: min(88vw, 310px);
+      padding: 11px 16px;
+      border-radius: 11px;
+      font-size: 13.5px;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(-8px) scale(.97);
+      transition: all .22s cubic-bezier(.34,1.56,.64,1);
+      box-shadow: 0 8px 24px rgba(30,41,59,.18);
+      pointer-events: none;
+    }
+    .apply-toast.show { opacity: 1; transform: translateY(0) scale(1); }
+    .apply-toast.success { background: #ecfdf5; color: #065f46; border: 1.5px solid #a7f3d0; }
+    .apply-toast.error { background: #fef2f2; color: #991b1b; border: 1.5px solid #fecaca; }
+
+    /* ===== Steps Indicator ===== */
+    .steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 26px;
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #a8b3d4;
+      font-weight: 600;
+      letter-spacing: .3px;
+    }
+    .step.active { color: #5d6dff; }
+    .step.done { color: #10b981; }
+    .step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #eaecff;
+      color: #8294ff;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+    .step.active .step-num {
+      background: linear-gradient(135deg, #5d6dff, #7e5ad6);
+      color: #fff;
+      box-shadow: 0 3px 8px rgba(93,109,255,.35);
+    }
+    .step.done .step-num {
+      background: #10b981;
+      color: #fff;
+    }
+    .step-line {
+      flex: 1;
+      height: 1.5px;
+      background: #dce5ff;
+      max-width: 50px;
+      margin: 0 6px;
+    }
+    .step.done + .step-line, .step-line.done {
+      background: #10b981;
+    }
+
+    /* ===== Mobile ===== */
+    @media (max-width: 520px) {
+      .apply-card { padding: 26px 20px; border-radius: 18px; }
+      .apply-header h1 { font-size: 22px; }
+      .email-input-row { flex-direction: column; }
+      .btn-send-code { width: 100%; height: 40px; font-size: 13px; }
+      .code-input-row { flex-wrap: wrap; }
+      .code-input-row input { max-width: 100%; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="apply-card" id="applyCard">
+    <div class="apply-header">
+      <span class="logo">🐼</span>
+      <h1>申请内测账号</h1>
+      <p>填写以下信息，加入熊猫社区大家庭</p>
+    </div>
+
+    <div class="steps">
+      <div class="step active" id="step1">
+        <div class="step-num">1</div>
+        <span>验证邮箱</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" id="step2">
+        <div class="step-num">2</div>
+        <span>填写信息</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" id="step3">
+        <div class="step-num">3</div>
+        <span>等待审核</span>
+      </div>
+    </div>
+
+    <form id="applyForm">
+      <div class="form-group">
+        <label><span class="label-icon">👤</span>用户名 <span class="required">*</span></label>
+        <input type="text" id="username" name="username" placeholder="3-20位字母、数字或下划线" required minlength="3" maxlength="20" pattern="[a-zA-Z0-9_]+" title="3-20位字母、数字或下划线">
+      </div>
+
+      <div class="form-group">
+        <label><span class="label-icon">✨</span>昵称</label>
+        <input type="text" id="nickname" name="nickname" placeholder="显示名称（不填则用用户名）" maxlength="30">
+      </div>
+
+      <div class="form-group">
+        <label><span class="label-icon">📧</span>邮箱 <span class="required">*</span></label>
+        <div class="email-input-row">
+          <input type="email" id="email" name="email" placeholder="用于接收审核通知" required>
+          <button type="button" id="btn-send-code" class="btn-send-code" onclick="sendApplyCode()">发送验证码</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label><span class="label-icon">🔐</span>验证码 <span class="required">*</span></label>
+        <div class="code-input-row">
+          <input type="text" id="verify-code" placeholder="请输入6位验证码" maxlength="6" autocomplete="one-time-code" inputmode="numeric">
+          <span id="code-countdown" class="code-countdown"></span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label><span class="label-icon">💬</span>申请理由</label>
+        <textarea id="reason" name="reason" placeholder="简单介绍一下你自己，或者你想在社区做什么..."></textarea>
+      </div>
+
+      <button type="submit" class="btn-primary" id="submitBtn">提交申请</button>
+    </form>
+
+    <a href="/" class="back-link">← 返回首页</a>
+  </div>
+
+  <div id="applyToast" class="apply-toast" aria-live="polite"></div>
+
+  <script>
+    const form = document.getElementById('applyForm');
+    const submitBtn = document.getElementById('submitBtn');
+    let applyToastTimer = null;
+
+    function showToast(message, type = 'success', duration = 1800) {
+      if (!message) return;
+      const toast = document.getElementById('applyToast');
+      if (!toast) return;
+      toast.className = `apply-toast ${type}`;
+      toast.textContent = message;
+      requestAnimationFrame(() => toast.classList.add('show'));
+      if (applyToastTimer) clearTimeout(applyToastTimer);
+      applyToastTimer = setTimeout(() => toast.classList.remove('show'), duration);
+    }
+
+    function updateStep(step) {
+      for (let i = 1; i <= 3; i++) {
+        const el = document.getElementById('step' + i);
+        if (!el) continue;
+        el.classList.remove('active', 'done');
+        if (i < step) el.classList.add('done');
+        else if (i === step) el.classList.add('active');
+      }
+      document.querySelectorAll('.step-line').forEach((el, idx) => {
+        el.classList.toggle('done', idx < step - 1);
+      });
+    }
+
+    async function checkStatus() {
+      const savedUsername = localStorage.getItem('pendingApplication');
+      if (savedUsername) {
+        try {
+          const res = await fetch(`/apply/status?username=${encodeURIComponent(savedUsername)}`);
+          const data = await res.json();
+          if (data.status === 'pending') showStatus('pending', '申请已提交，请耐心等待审核');
+        } catch (e) {}
+      }
+    }
+
+    function showStatus(status, message) {
+      updateStep(3);
+      const card = document.getElementById('applyCard');
+      const iconMap = { pending: '⏳', approved: '✅', rejected: '❌' };
+      const titles = { pending: '申请已提交', approved: '申请已通过', rejected: '申请被拒绝' };
+      card.innerHTML = `
+        <div class="success-message">
+          <span class="success-icon">${iconMap[status] || '📋'}</span>
+          <h2>${titles[status]}</h2>
+          <p>${message}</p>
+          ${status === 'pending' ? '<p style="font-size:13px;color:#a8b3d4;margin-top:10px;">请等待管理员审核，审核结果会通过邮箱通知</p>' : ''}
+        </div>
+        <a href="/" class="back-link" style="margin-top:24px;">← 返回首页</a>
+      `;
+    }
+
+    let verifyEmail = '';
+    let codeCountdown = 0;
+    let codeTimer = null;
+
+    async function sendApplyCode() {
+      const emailInput = document.getElementById('email');
+      const email = emailInput ? emailInput.value.trim() : '';
+      if (!email) { showToast('请先填写邮箱', 'error'); return; }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) { showToast('请输入正确的邮箱格式', 'error'); return; }
+
+      const btn = document.getElementById('btn-send-code');
+      if (!btn) { showToast('按钮加载异常，请刷新页面', 'error'); return; }
+      btn.disabled = true;
+      btn.textContent = '发送中...';
+
+      const usernameVal = document.getElementById('username') ? document.getElementById('username').value.trim() : '';
+      try {
+        const res = await fetch('/apply/send-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, username: usernameVal })
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.error || '发送失败', 'error'); btn.disabled = false; btn.textContent = '重新发送'; return; }
+        showToast('验证码已发送到邮箱', 'success');
+        verifyEmail = email;
+        updateStep(2);
+        startCountdown();
+      } catch (e) {
+        console.error('[Apply]', e);
+        showToast('网络错误，请检查网络', 'error');
+        btn.disabled = false;
+        btn.textContent = '重新发送';
+      }
+    }
+
+    function startCountdown() {
+      codeCountdown = 300;
+      const el = document.getElementById('code-countdown');
+      const btn = document.getElementById('btn-send-code');
+      el.textContent = '5分钟后可重发';
+      if (codeTimer) clearInterval(codeTimer);
+      codeTimer = setInterval(() => {
+        codeCountdown--;
+        if (codeCountdown <= 0) {
+          clearInterval(codeTimer);
+          el.textContent = '';
+          btn.disabled = false;
+          btn.textContent = '重新发送';
+        } else if (codeCountdown >= 60) {
+          el.textContent = Math.floor(codeCountdown / 60) + '分' + (codeCountdown % 60) + '秒后可重发';
+        } else {
+          el.textContent = codeCountdown + '秒后可重发';
+        }
+      }, 1000);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const nickname = document.getElementById('nickname').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const reason = document.getElementById('reason').value.trim();
+      const code = document.getElementById('verify-code').value.trim();
+
+      if (!username || !email) { showToast('用户名和邮箱不能为空', 'error'); return; }
+      if (!code) { showToast('请输入验证码', 'error'); return; }
+      if (email !== verifyEmail) { showToast('验证码与邮箱不匹配，请重新获取', 'error'); return; }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '提交中...';
+      updateStep(3);
+
+      try {
+        const res = await fetch('/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, nickname, email, reason, code })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          localStorage.setItem('pendingApplication', username);
+          showToast('申请提交成功！', 'success');
+          showStatus('pending', '申请已提交，请耐心等待管理员审核');
+        } else {
+          showToast(data.error || '提交失败', 'error', 2400);
+          submitBtn.disabled = false;
+          submitBtn.textContent = '提交申请';
+          updateStep(2);
+        }
+      } catch (e) {
+        showToast('提交失败，请重试', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '提交申请';
+        updateStep(2);
+      }
+    });
+
+    checkStatus();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 - 熊猫社区</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; }
+    .header { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 20px; }
+    .header button { background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .card { background: white; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .card h2 { font-size: 18px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e5e5e5; }
+    .app-item { border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .app-item:last-child { margin-bottom: 0; }
+    .app-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px; }
+    .app-user { font-weight: 600; font-size: 15px; color: #333; }
+    .app-meta { font-size: 13px; color: #888; margin-top: 4px; }
+    .app-email { font-size: 14px; color: #666; margin-bottom: 8px; }
+    .app-reason { font-size: 14px; color: #555; background: #f9f9f9; padding: 10px; border-radius: 6px; margin-bottom: 10px; max-height: 100px; overflow-y: auto; }
+    .app-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; }
+    .btn-approve { background: #10b981; color: white; }
+    .btn-reject { background: #ef4444; color: white; }
+    .btn-approve:hover { background: #059669; }
+    .btn-reject:hover { background: #dc2626; }
+    .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .status-pending { background: #fef3c7; color: #d97706; }
+    .status-approved { background: #d1fae5; color: #059669; }
+    .status-rejected { background: #fee2e2; color: #dc2626; }
+    .empty-state { text-align: center; padding: 40px; color: #888; }
+    .login-box { max-width: 360px; margin: 100px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+    .login-box h2 { text-align: center; margin-bottom: 24px; color: #333; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; margin-bottom: 6px; font-size: 14px; color: #555; }
+    .form-group input { width: 100%; padding: 10px 12px; border: 2px solid #e5e5e5; border-radius: 8px; font-size: 15px; }
+    .form-group input:focus { outline: none; border-color: #667eea; }
+    .btn-primary { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn-primary:hover { opacity: 0.9; }
+    .hidden { display: none; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e5e5; padding-bottom: 10px; }
+    .tab-btn { padding: 10px 20px; border: none; background: #f5f5f5; border-radius: 6px; cursor: pointer; }
+    .tab-btn.active { background: #667eea; color: white; }
+    .badge { background: #ef4444; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 6px; }
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: white; border-radius: 12px; padding: 24px; width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px; }
+    .modal-title { font-size: 18px; font-weight: 600; color: #333; }
+    .modal-close { font-size: 24px; cursor: pointer; color: #999; }
+    .modal-meta { font-size: 13px; color: #888; margin-bottom: 16px; }
+    .modal-body { font-size: 14px; line-height: 1.8; color: #555; white-space: pre-wrap; }
+    .post-title { cursor: pointer; color: #667eea; }
+    .post-title:hover { text-decoration: underline; }
+    .action-dialog { max-width: 520px; }
+    .action-desc { font-size: 14px; color: #556; margin-bottom: 12px; line-height: 1.6; }
+    .action-input { width: 100%; padding: 11px 12px; border: 2px solid #d8deef; border-radius: 10px; font-size: 14px; transition: border-color .2s ease, box-shadow .2s ease; }
+    .action-input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.16); }
+    .action-error { margin-top: 8px; font-size: 12px; color: #dc2626; min-height: 18px; }
+    .btn-cancel { background: #e7ebf4; color: #48566e; }
+    .btn-cancel:hover { background: #d7deeb; }
+    .admin-toast-wrap {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 2200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .admin-toast {
+      min-width: 160px;
+      max-width: min(82vw, 280px);
+      padding: 8px 11px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 8px 18px rgba(20, 28, 45, 0.12);
+      opacity: 0;
+      transform: translateY(-5px) scale(.985);
+      transition: opacity .16s ease, transform .16s ease;
+    }
+    .admin-toast.show { opacity: 1; transform: translateY(0) scale(1); }
+    .admin-toast.success { background: #dcfce7; color: #14532d; border: 1px solid #86efac; }
+    .admin-toast.error { background: #fee2e2; color: #7f1d1d; border: 1px solid #fca5a5; }
+    .admin-toast.info { background: #dbeafe; color: #1e3a8a; border: 1px solid #93c5fd; }
+    .list-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .list-toolbar input, .list-toolbar select {
+      padding: 9px 11px;
+      border: 1px solid #d8deea;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #fff;
+    }
+    .list-toolbar input { min-width: 280px; flex: 1; }
+    .list-toolbar select { min-width: 140px; }
+    .table-wrap {
+      border: 1px solid #e5e8f2;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .row-head, .row-item {
+      display: grid;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-bottom: 1px solid #edf0f6;
+      font-size: 13px;
+    }
+    .row-head {
+      background: #f6f8ff;
+      color: #5a6783;
+      font-weight: 600;
+    }
+    .row-item:last-child { border-bottom: none; }
+    .apps-grid { grid-template-columns: 1.1fr 1.1fr 1.6fr .8fr 1fr; }
+    .posts-grid { grid-template-columns: 1.5fr .8fr .6fr .9fr .7fr 1.3fr 1.2fr; }
+    .users-grid { grid-template-columns: 1.1fr .8fr .8fr .8fr .8fr 1fr 1.4fr; }
+    .create-user-toolbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 10px;
+    }
+    .row-title {
+      color: #3f5ddb;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .row-title:hover { text-decoration: underline; }
+    .cell-muted {
+      color: #5e6f82;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cell-ellipsis {
+      color: #49566a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .row-actions .btn { padding: 6px 10px; font-size: 12px; }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      width: fit-content;
+    }
+    .status-pill.pending { background: #fff3cd; color: #b45309; }
+    .status-pill.approved { background: #dcfce7; color: #047857; }
+    .status-pill.rejected { background: #fee2e2; color: #b91c1c; }
+    .row-item.post-row { cursor: pointer; transition: background-color .15s ease; }
+    .row-item.post-row:hover { background: #f8faff; }
+    @media (max-width: 980px) {
+      .apps-grid, .posts-grid, .users-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+      .row-head { display: none; }
+      .row-item { padding: 12px; }
+      .row-item > div::before {
+        content: attr(data-label);
+        display: inline-block;
+        min-width: 72px;
+        margin-right: 6px;
+        font-weight: 600;
+        color: #667085;
+      }
+      .row-actions { margin-top: 4px; }
+    }
+
+    /* Visual Refresh */
+    :root {
+      --bg-a: #eef3ff;
+      --bg-b: #f7f5ff;
+      --ink: #1f2a44;
+      --ink-soft: #5f6f8f;
+      --line: #dfe6ff;
+      --surface: rgba(255,255,255,.88);
+      --primary: #5d6dff;
+      --primary-2: #7f58d7;
+      --good: #0f9960;
+      --danger: #db3d57;
+      --radius: 14px;
+      --shadow-sm: 0 8px 20px rgba(42, 52, 88, 0.10);
+      --shadow: 0 18px 40px rgba(42, 52, 88, 0.16);
+    }
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 420px at 5% -10%, rgba(93,109,255,.18), transparent 55%),
+        radial-gradient(760px 520px at 96% 0%, rgba(127,88,215,.15), transparent 50%),
+        linear-gradient(160deg, var(--bg-a), var(--bg-b));
+    }
+    .header {
+      background: linear-gradient(120deg, #5d6dff, #7f58d7);
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      padding: 14px 18px;
+    }
+    .header h1 {
+      font-size: 24px;
+      letter-spacing: .3px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .header button {
+      border: 1px solid rgba(255,255,255,.28);
+      background: rgba(255,255,255,.16);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-weight: 600;
+      transition: transform .15s ease, background-color .15s ease;
+      backdrop-filter: blur(4px);
+    }
+    .header button:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.25);
+    }
+    .container {
+      max-width: 1240px;
+      padding: 22px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid rgba(219,227,255,.95);
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(8px);
+      padding: 22px;
+    }
+    .card h2 {
+      color: #27345a;
+      margin-bottom: 14px;
+      border-bottom: 1px solid #e8edff;
+      padding-bottom: 11px;
+    }
+    .tabs {
+      border-bottom: none;
+      padding-bottom: 0;
+      background: rgba(255,255,255,.6);
+      border: 1px solid #e3e8ff;
+      border-radius: 12px;
+      padding: 8px;
+      width: fit-content;
+      box-shadow: 0 4px 12px rgba(47, 64, 122, 0.08);
+      margin-bottom: 18px;
+    }
+    .tab-btn {
+      border-radius: 10px;
+      background: transparent;
+      color: #4f5f86;
+      font-weight: 600;
+      padding: 9px 16px;
+      transition: all .18s ease;
+    }
+    .tab-btn:hover {
+      background: #eef2ff;
+      color: #3b4ca5;
+    }
+    .tab-btn.active {
+      background: linear-gradient(120deg, var(--primary), var(--primary-2));
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(95, 101, 234, .35);
+    }
+    .badge {
+      background: #ef4444;
+      box-shadow: 0 4px 10px rgba(239,68,68,.38);
+    }
+    .list-toolbar {
+      background: #f6f8ff;
+      border: 1px solid #e5eaff;
+      border-radius: 12px;
+      padding: 10px;
+    }
+    .list-toolbar input,
+    .list-toolbar select {
+      border: 1px solid #d7defc;
+      border-radius: 10px;
+      background: #fff;
+      color: #2a3860;
+      font-size: 13px;
+    }
+    .list-toolbar input:focus,
+    .list-toolbar select:focus {
+      outline: none;
+      border-color: #8393ff;
+      box-shadow: 0 0 0 3px rgba(93,109,255,.12);
+    }
+    .table-wrap {
+      border: 1px solid #e2e8ff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(55, 74, 142, 0.08);
+    }
+    .row-head {
+      background: linear-gradient(180deg, #f7f9ff, #f1f4ff);
+      color: #586893;
+      font-size: 12px;
+      letter-spacing: .2px;
+      text-transform: uppercase;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .row-item {
+      background: #fff;
+      transition: background-color .16s ease, transform .16s ease;
+      border-bottom: 1px solid #edf2ff;
+    }
+    .row-item:nth-child(even) {
+      background: #fcfdff;
+    }
+    .row-item.post-row:hover {
+      background: #f6f8ff;
+      transform: translateY(-1px);
+    }
+    .row-title {
+      color: #3e56d8;
+    }
+    .cell-muted {
+      color: var(--ink-soft);
+    }
+    .status-pill {
+      border: 1px solid transparent;
+      font-weight: 700;
+    }
+    .status-pill.pending {
+      background: #fff3dc;
+      color: #a16207;
+      border-color: #ffe0a6;
+    }
+    .status-pill.approved {
+      background: #dcfce7;
+      color: #0f766e;
+      border-color: #a7f3d0;
+    }
+    .status-pill.rejected {
+      background: #ffe4e6;
+      color: #be123c;
+      border-color: #fecdd3;
+    }
+    .btn {
+      border-radius: 9px;
+      font-weight: 700;
+      padding: 6px 12px;
+      font-size: 12px;
+      transition: transform .14s ease, filter .14s ease, box-shadow .14s ease;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.02);
+    }
+    .btn:active {
+      transform: translateY(0);
+    }
+    .btn-approve {
+      background: linear-gradient(135deg, #12b886, #0f9960);
+      box-shadow: 0 6px 14px rgba(15, 153, 96, .25);
+    }
+    .btn-reject {
+      background: linear-gradient(135deg, #ef476f, #db3d57);
+      box-shadow: 0 6px 14px rgba(219, 61, 87, .22);
+    }
+    .btn-cancel {
+      background: #eef2ff;
+      border: 1px solid #dbe2ff;
+      color: #465173;
+      box-shadow: none;
+    }
+    .modal {
+      background: rgba(17, 24, 39, .45);
+      backdrop-filter: blur(4px);
+    }
+    .modal-content {
+      border-radius: 14px;
+      border: 1px solid #dce3ff;
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .modal-title {
+      color: #26345b;
+      font-size: 19px;
+    }
+    .modal-meta {
+      color: #5d6d8d;
+      background: #f5f8ff;
+      border: 1px solid #e5ebff;
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+    .modal-body {
+      background: #fdfdff;
+      border: 1px solid #e8eeff;
+      border-radius: 10px;
+      padding: 12px;
+      color: #3f4d6f;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .login-box {
+      border: 1px solid #dde4ff;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(10px);
+      padding: 32px;
+    }
+    .login-box h2 {
+      font-size: 24px;
+      color: #28365e;
+      margin-bottom: 20px;
+    }
+    .form-group input {
+      border: 1px solid #d4ddff;
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: 14px;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .form-group input:focus {
+      border-color: #7a8dff;
+      box-shadow: 0 0 0 3px rgba(93,109,255,.14);
+    }
+    .btn-primary {
+      border-radius: 10px;
+      background: linear-gradient(120deg, var(--primary), var(--primary-2));
+      box-shadow: 0 10px 22px rgba(93,109,255,.32);
+      font-size: 14px;
+      letter-spacing: .2px;
+    }
+    .empty-state {
+      color: #6f7f9c;
+      font-size: 14px;
+      padding: 34px;
+      background: #f8faff;
+      border: 1px dashed #d9e2ff;
+      border-radius: 12px;
+    }
+    .admin-hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      background: linear-gradient(140deg, rgba(93,109,255,.11), rgba(127,88,215,.08));
+      border: 1px solid #dde5ff;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+    .hero-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #2a3968;
+      letter-spacing: .2px;
+    }
+    .hero-subtitle {
+      font-size: 12px;
+      color: #62749a;
+      margin-top: 4px;
+    }
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .overview-card {
+      background: rgba(255,255,255,.9);
+      border: 1px solid #e1e8ff;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 5px 12px rgba(69, 84, 143, 0.08);
+    }
+    .overview-label {
+      font-size: 12px;
+      color: #60739b;
+      margin-bottom: 5px;
+    }
+    .overview-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: #2d3c68;
+      line-height: 1.1;
+    }
+    .overview-card.pending .overview-value { color: #b45309; }
+    .overview-card.good .overview-value { color: #0f766e; }
+    .overview-card.soft .overview-value { color: #4b5ccf; }
+    @media (max-width: 900px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .tabs {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      .create-user-toolbar {
+        grid-template-columns: 1fr;
+      }
+      .tab-btn {
+        width: 100%;
+      }
+      .container {
+        padding: 14px;
+      }
+      .overview-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .admin-hero {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+    @media (max-width: 560px) {
+      .overview-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="loginView" class="login-box">
+    <h2>管理员登录</h2>
+    <div class="form-group"><label>用户名</label><input type="text" id="adminUser"></div>
+    <div class="form-group"><label>密码</label><input type="password" id="adminPass"></div>
+    <button class="btn-primary" id="loginBtn">登录</button>
+  </div>
+
+  <div id="adminView" class="hidden">
+    <header class="header">
+      <h1>🛠 管理后台</h1>
+      <div style="display:flex;gap:8px;">
+        <button id="homeBtn" onclick="window.location.href='/'">🏠 返回首页</button>
+        <button id="logoutBtn">退出</button>
+      </div>
+    </header>
+    <div class="container">
+      <div class="admin-hero">
+        <div>
+          <div class="hero-title">运营控制台</div>
+          <div class="hero-subtitle">统一处理账号申请、帖子审核与内容运营</div>
+        </div>
+      </div>
+      <div class="overview-grid">
+        <div class="overview-card soft">
+          <div class="overview-label">申请总数</div>
+          <div class="overview-value" id="statAppsTotal">0</div>
+        </div>
+        <div class="overview-card pending">
+          <div class="overview-label">待审申请</div>
+          <div class="overview-value" id="statAppsPending">0</div>
+        </div>
+        <div class="overview-card soft">
+          <div class="overview-label">帖子总数</div>
+          <div class="overview-value" id="statPostsTotal">0</div>
+        </div>
+        <div class="overview-card good">
+          <div class="overview-label">待审帖子</div>
+          <div class="overview-value" id="statPostsPending">0</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" id="tabAppsBtn">📋 账号申请</button>
+        <button class="tab-btn" id="tabPostsBtn">📝 帖子管理<span id="pendingPostsBadge"></span></button>
+        <button class="tab-btn" id="tabUsersBtn">👥 用户管理</button>
+      </div>
+      <div id="tabApps">
+        <div class="card">
+          <h2>📋 内测申请<span id="appsCount"></span></h2>
+          <div class="list-toolbar">
+            <input id="appsSearchInput" type="text" placeholder="搜索用户名 / 昵称 / 邮箱 / 申请理由">
+            <select id="appsStatusFilter">
+              <option value="all">全部状态</option>
+              <option value="pending">待审核</option>
+              <option value="approved">已通过</option>
+              <option value="rejected">已拒绝</option>
+            </select>
+          </div>
+          <div id="appsList"></div>
+        </div>
+      </div>
+      <div id="tabPosts" class="hidden">
+        <div class="card">
+          <h2>📝 帖子管理<span id="postsCount"></span></h2>
+          <div class="list-toolbar">
+            <button class="btn btn-approve" id="aiAutoReviewBtn" onclick="autoReviewAll()" style="background:#7c3aed;">🤖 AI 批量审核</button>
+            <input id="postsSearchInput" type="text" placeholder="搜索标题 / 作者 / 内容">
+            <select id="postsStatusFilter">
+              <option value="all">全部状态</option>
+              <option value="pending">待审核</option>
+              <option value="approved">已上线</option>
+              <option value="rejected">已下架</option>
+            </select>
+          </div>
+          <div id="aiReviewProgress" style="display:none; margin:10px 0; padding:12px; background:#f3f0ff; border-radius:8px; color:#6d28d9; font-size:14px;"></div>
+          <div id="postsList"></div>
+        </div>
+      </div>
+      <div id="tabUsers" class="hidden">
+        <div class="card">
+          <h2>👥 用户管理<span id="usersCount"></span></h2>
+          <div class="list-toolbar create-user-toolbar">
+            <input id="createUserUsername" type="text" placeholder="新用户用户名">
+            <input id="createUserNickname" type="text" placeholder="昵称（可选）">
+            <input id="createUserPassword" type="password" placeholder="初始密码（至少6位）">
+            <button class="btn btn-approve" id="createUserBtn" style="padding:9px 14px;">创建用户</button>
+          </div>
+          <div class="list-toolbar">
+            <input id="usersSearchInput" type="text" placeholder="搜索用户名 / 昵称">
+            <select id="usersStatusFilter">
+              <option value="all">全部状态</option>
+              <option value="active">正常</option>
+              <option value="banned">已封禁</option>
+            </select>
+          </div>
+          <div id="usersList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post Detail Modal -->
+  <div id="postModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle"></div>
+        <span class="modal-close" onclick="closePostModal()">&times;</span>
+      </div>
+      <div class="modal-meta" id="modalMeta"></div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="app-actions" style="margin-top:20px;" id="modalActions"></div>
+    </div>
+  </div>
+
+  <!-- Action Input Modal -->
+  <div id="actionModal" class="modal" style="display:none;">
+    <div class="modal-content action-dialog">
+      <div class="modal-header">
+        <div class="modal-title" id="actionModalTitle">操作确认</div>
+        <span class="modal-close" onclick="closeActionDialog(false)">&times;</span>
+      </div>
+      <div class="action-desc" id="actionModalDesc"></div>
+      <input id="actionModalInput" class="action-input" type="text" autocomplete="off" />
+      <div class="action-error" id="actionModalError"></div>
+      <div class="app-actions" style="justify-content:flex-end; margin-top:12px;">
+        <button class="btn btn-cancel" onclick="closeActionDialog(false)">取消</button>
+        <button class="btn btn-approve" id="actionModalConfirmBtn" onclick="closeActionDialog(true)">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="adminToastWrap" class="admin-toast-wrap" aria-live="polite"></div>
+
+  <script>
+    var token = localStorage.getItem('adminToken');
+    var currentTab = 'apps';
+    var applicationsCache = [];
+    var postsCache = [];
+    var usersCache = [];
+    var currentAdminUser = null;
+    var actionDialogResolver = null;
+    var actionDialogOptions = null;
+    var toastTimer = null;
+
+    function handleAuthExpired(message) {
+      localStorage.removeItem('adminToken');
+      token = null;
+      currentAdminUser = null;
+      showLoginView();
+      showToast(message || '登录已失效，请重新登录', 'error');
+    }
+
+    function adminApi(path, options) {
+      var opts = options || {};
+      var headers = opts.headers || {};
+      if (token) {
+        headers.Authorization = 'Bearer ' + token;
+      }
+      return fetch(path, Object.assign({}, opts, { headers: headers }))
+        .then(function(res) {
+          return res.json().catch(function() { return { error: '服务响应异常' }; })
+            .then(function(data) {
+              data._status = res.status;
+              if (res.status === 401) {
+                handleAuthExpired('登录已失效，请重新登录');
+                throw new Error('AUTH_EXPIRED');
+              }
+              if (res.status === 403) {
+                showToast(data.error || '需要管理员权限', 'error');
+                throw new Error('FORBIDDEN');
+              }
+              return data;
+            });
+        });
+    }
+
+    document.getElementById('loginBtn').onclick = function() {
+      var username = document.getElementById('adminUser').value.trim();
+      var password = document.getElementById('adminPass').value;
+      fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: username, password: password }) })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        if (data.user.role !== 'admin') { showToast('需要管理员权限', 'error'); return; }
+        token = data.token;
+        localStorage.setItem('adminToken', token);
+        showAdminView();
+        showToast('登录成功', 'success');
+      })
+      .catch(function(err) { showToast('登录失败', 'error'); });
+    };
+
+    document.getElementById('logoutBtn').onclick = function() { localStorage.removeItem('adminToken'); token = null; showLoginView(); };
+
+    function setActiveTab(tab) {
+      currentTab = tab;
+      var tabs = ['apps', 'posts', 'users'];
+      for (var i = 0; i < tabs.length; i++) {
+        var key = tabs[i];
+        var panel = document.getElementById('tab' + key.charAt(0).toUpperCase() + key.slice(1));
+        var btn = document.getElementById('tab' + key.charAt(0).toUpperCase() + key.slice(1) + 'Btn');
+        if (!panel || !btn) continue;
+        if (key === tab) {
+          panel.classList.remove('hidden');
+          btn.classList.add('active');
+        } else {
+          panel.classList.add('hidden');
+          btn.classList.remove('active');
+        }
+      }
+
+      if (tab === 'apps') loadApplications();
+      if (tab === 'posts') loadPosts();
+      if (tab === 'users') loadUsers();
+    }
+
+    document.getElementById('tabAppsBtn').onclick = function() { setActiveTab('apps'); };
+    document.getElementById('tabPostsBtn').onclick = function() { setActiveTab('posts'); };
+    document.getElementById('tabUsersBtn').onclick = function() { setActiveTab('users'); };
+
+    document.getElementById('appsSearchInput').addEventListener('input', function() { renderApplications(); });
+    document.getElementById('appsStatusFilter').addEventListener('change', function() { renderApplications(); });
+    document.getElementById('postsSearchInput').addEventListener('input', function() { renderPosts(); });
+    document.getElementById('postsStatusFilter').addEventListener('change', function() { renderPosts(); });
+    document.getElementById('usersSearchInput').addEventListener('input', function() { renderUsers(); });
+    document.getElementById('usersStatusFilter').addEventListener('change', function() { renderUsers(); });
+    document.getElementById('createUserBtn').addEventListener('click', function() { createManagedUser(); });
+
+    function showAdminView() {
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('adminView').classList.remove('hidden');
+      adminApi('/api/auth/me')
+      .then(function(data) {
+        if (!data.user || data.user.role !== 'admin') {
+          handleAuthExpired('当前账号不是管理员');
+          return;
+        }
+        currentAdminUser = data.user;
+        loadApplications();
+        loadPosts();
+        loadUsers();
+      })
+      .catch(function(err) {
+        if (String(err && err.message) !== 'AUTH_EXPIRED' && String(err && err.message) !== 'FORBIDDEN') {
+          showToast('管理员身份校验失败', 'error');
+        }
+      });
+    }
+
+    function showLoginView() {
+      document.getElementById('loginView').classList.remove('hidden');
+      document.getElementById('adminView').classList.add('hidden');
+    }
+
+    function loadApplications() {
+      adminApi('/api/admin/applications')
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        applicationsCache = data.applications || [];
+        updateOverviewStats();
+        renderApplications();
+      })
+      .catch(function(err) {
+        if (String(err && err.message) === 'AUTH_EXPIRED' || String(err && err.message) === 'FORBIDDEN') return;
+        console.error(err);
+        showToast('加载申请列表失败', 'error');
+      });
+    }
+
+    function loadPosts() {
+      adminApi('/api/admin/all-posts')
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        postsCache = data.posts || [];
+        updateOverviewStats();
+        renderPosts();
+      })
+      .catch(function(err) {
+        if (String(err && err.message) === 'AUTH_EXPIRED' || String(err && err.message) === 'FORBIDDEN') return;
+        console.error(err);
+        showToast('加载帖子列表失败', 'error');
+      });
+    }
+
+    function loadUsers() {
+      adminApi('/api/admin/users')
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        usersCache = data.users || [];
+        renderUsers();
+      })
+      .catch(function(err) {
+        if (String(err && err.message) === 'AUTH_EXPIRED' || String(err && err.message) === 'FORBIDDEN') return;
+        console.error(err);
+        showToast('加载用户列表失败', 'error');
+      });
+    }
+
+    function updateOverviewStats() {
+      var appTotal = applicationsCache.length;
+      var appPending = applicationsCache.filter(function(a) { return a.status === 'pending'; }).length;
+      var postTotal = postsCache.length;
+      var postPending = postsCache.filter(function(p) { return p.status === 'pending'; }).length;
+      document.getElementById('statAppsTotal').textContent = appTotal;
+      document.getElementById('statAppsPending').textContent = appPending;
+      document.getElementById('statPostsTotal').textContent = postTotal;
+      document.getElementById('statPostsPending').textContent = postPending;
+    }
+
+    function renderApplications() {
+      var keyword = String(document.getElementById('appsSearchInput').value || '').trim().toLowerCase();
+      var status = document.getElementById('appsStatusFilter').value;
+      var filtered = applicationsCache.filter(function(app) {
+        var statusOk = status === 'all' || app.status === status;
+        if (!statusOk) return false;
+        if (!keyword) return true;
+        var target = [app.username, app.nickname, app.email, app.reason].join(' ').toLowerCase();
+        return target.indexOf(keyword) !== -1;
+      });
+
+      document.getElementById('appsCount').textContent = '（' + filtered.length + '/' + applicationsCache.length + '）';
+      if (!filtered.length) {
+        document.getElementById('appsList').innerHTML = '<div class="empty-state">没有匹配的申请</div>';
+        return;
+      }
+
+      var html = '<div class="table-wrap">';
+      html += '<div class="row-head apps-grid">';
+      html += '<div>用户</div><div>邮箱</div><div>申请理由</div><div>状态 / 时间</div><div>操作</div>';
+      html += '</div>';
+
+      for (var i = 0; i < filtered.length; i++) {
+        var app = filtered[i];
+        var reason = shortText(app.reason || '-', 48);
+        var actionHtml = '<span class="cell-muted">已处理</span>';
+        if (app.status === 'pending') {
+          actionHtml = '<div class="row-actions">'
+            + '<button class="btn btn-approve" onclick="event.stopPropagation(); approveApp(' + app.id + ')">通过</button>'
+            + '<button class="btn btn-reject" onclick="event.stopPropagation(); rejectApp(' + app.id + ')">拒绝</button>'
+            + '</div>';
+        }
+
+        html += '<div class="row-item apps-grid">';
+        html += '<div data-label="用户" class="cell-ellipsis"><strong>' + e(app.nickname || app.username) + '</strong><span class="cell-muted"> @' + e(app.username) + '</span></div>';
+        html += '<div data-label="邮箱" class="cell-ellipsis">' + e(app.email || '-') + '</div>';
+        html += '<div data-label="申请理由" class="cell-ellipsis">' + e(reason) + '</div>';
+        html += '<div data-label="状态/时间"><span class="status-pill ' + app.status + '">' + appStatusText(app.status) + '</span><div class="cell-muted">' + fd(app.created_at) + '</div></div>';
+        html += '<div data-label="操作">' + actionHtml + '</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+      document.getElementById('appsList').innerHTML = html;
+    }
+
+    function renderPosts() {
+      var keyword = String(document.getElementById('postsSearchInput').value || '').trim().toLowerCase();
+      var status = document.getElementById('postsStatusFilter').value;
+      var pendingCount = postsCache.filter(function(p) { return p.status === 'pending'; }).length;
+      document.getElementById('pendingPostsBadge').innerHTML = pendingCount > 0 ? '<span class="badge">' + pendingCount + '</span>' : '';
+
+      var filtered = postsCache.filter(function(post) {
+        var statusOk = status === 'all' || post.status === status;
+        if (!statusOk) return false;
+        if (!keyword) return true;
+        var target = [post.title, post.content, post.username, post.nickname].join(' ').toLowerCase();
+        return target.indexOf(keyword) !== -1;
+      });
+
+      document.getElementById('postsCount').textContent = '（' + filtered.length + '/' + postsCache.length + '篇）';
+      window.allPosts = postsCache;
+
+      if (!filtered.length) {
+        document.getElementById('postsList').innerHTML = '<div class="empty-state">没有匹配的帖子</div>';
+        return;
+      }
+
+      var html = '<div class="table-wrap">';
+      html += '<div class="row-head posts-grid">';
+      html += '<div>标题</div><div>作者</div><div>状态</div><div>发布时间</div><div>浏览/评论</div><div>内容摘要</div><div>操作</div>';
+      html += '</div>';
+
+      for (var i = 0; i < filtered.length; i++) {
+        var p = filtered[i];
+        var excerpt = shortText(p.content || '', 70);
+        var actions = '';
+        if (p.status === 'pending') {
+          actions = '<div class="row-actions">'
+            + '<button class="btn btn-approve" onclick="event.stopPropagation(); approvePost(' + p.id + ')">通过</button>'
+            + '<button class="btn btn-reject" onclick="event.stopPropagation(); rejectPost(' + p.id + ')">拒绝</button>'
+            + '<button class="btn" onclick="event.stopPropagation(); aiReviewPost(' + p.id + ')" style="background:#7c3aed;color:#fff;padding:6px 10px;font-size:12px;">🤖 AI</button>'
+            + '</div>';
+        } else if (p.status === 'approved') {
+          actions = '<div class="row-actions"><button class="btn btn-reject" onclick="event.stopPropagation(); rejectPost(' + p.id + ')">下架</button></div>';
+        } else {
+          actions = '<div class="row-actions"><button class="btn btn-approve" onclick="event.stopPropagation(); approvePost(' + p.id + ')">重新上线</button></div>';
+        }
+
+        html += '<div class="row-item posts-grid post-row" onclick="showPostById(' + p.id + ')">';
+        html += '<div data-label="标题" class="row-title" title="' + e(p.title) + '">' + e(p.title) + '</div>';
+        html += '<div data-label="作者" class="cell-ellipsis">' + e(p.nickname || p.username) + '</div>';
+        html += '<div data-label="状态"><span class="status-pill ' + p.status + '">' + statusText(p.status) + '</span></div>';
+        html += '<div data-label="发布时间" class="cell-muted">' + fd(p.created_at) + '</div>';
+        html += '<div data-label="浏览/评论" class="cell-muted">👁 ' + (p.views || 0) + ' / 💬 ' + (p.comment_count || 0) + '</div>';
+        html += '<div data-label="内容摘要" class="cell-ellipsis">' + e(excerpt) + '</div>';
+        html += '<div data-label="操作">' + actions + '</div>';
+        html += '</div>';
+      }
+
+      html += '</div>';
+      document.getElementById('postsList').innerHTML = html;
+    }
+
+    function renderUsers() {
+      var keyword = String(document.getElementById('usersSearchInput').value || '').trim().toLowerCase();
+      var status = document.getElementById('usersStatusFilter').value;
+
+      var filtered = usersCache.filter(function(user) {
+        var isBanned = Number(user.is_banned) === 1;
+        var statusOk = status === 'all' || (status === 'active' && !isBanned) || (status === 'banned' && isBanned);
+        if (!statusOk) return false;
+        if (!keyword) return true;
+        var target = [user.username, user.nickname, user.role].join(' ').toLowerCase();
+        return target.indexOf(keyword) !== -1;
+      });
+
+      document.getElementById('usersCount').textContent = '（' + filtered.length + '/' + usersCache.length + '）';
+      if (!filtered.length) {
+        document.getElementById('usersList').innerHTML = '<div class="empty-state">没有匹配的用户</div>';
+        return;
+      }
+
+      var html = '<div class="table-wrap">';
+      html += '<div class="row-head users-grid">';
+      html += '<div>用户</div><div>角色</div><div>账号状态</div><div>今日额度</div><div>帖子数</div><div>最近登录</div><div>操作</div>';
+      html += '</div>';
+
+      for (var i = 0; i < filtered.length; i++) {
+        var u = filtered[i];
+        var isAdmin = String(u.role || '').toLowerCase() === 'admin';
+        var isBanned = Number(u.is_banned) === 1;
+        var isSelf = currentAdminUser && Number(currentAdminUser.id) === Number(u.id);
+        var roleLabel = isAdmin ? '管理员' : '普通用户';
+        var roleClass = isAdmin ? 'pending' : 'approved';
+        var statusLabel = isBanned ? '已封禁' : '正常';
+        var statusClass = isBanned ? 'rejected' : 'approved';
+        var quotaText = isAdmin ? '不限' : String(Number(u.ai_quota) || 0);
+        var loginText = u.last_login ? fd(u.last_login) : '从未登录';
+        var bannedTip = isBanned && u.banned_reason ? '（' + e(shortText(u.banned_reason, 16)) + '）' : '';
+        var actionHtml = '<span class="cell-muted">管理员账号</span>';
+
+        if (!isAdmin) {
+          actionHtml = '<div class="row-actions">';
+          if (isBanned) {
+            actionHtml += '<button class="btn btn-approve" onclick="event.stopPropagation(); unbanUser(' + u.id + ')">解封</button>';
+          } else {
+            var banDisabled = isSelf ? ' disabled style="opacity:.55;cursor:not-allowed;"' : '';
+            actionHtml += '<button class="btn btn-reject"' + banDisabled + ' onclick="event.stopPropagation(); banUser(' + u.id + ')">封禁</button>';
+          }
+          actionHtml += '<button class="btn btn-cancel" onclick="event.stopPropagation(); resetUserQuota(' + u.id + ')">刷新额度</button>';
+          actionHtml += '</div>';
+        }
+
+        html += '<div class="row-item users-grid">';
+        html += '<div data-label="用户" class="cell-ellipsis"><strong>' + e(u.nickname || u.username) + '</strong><div class="cell-muted">@' + e(u.username) + ' · ' + fd(u.created_at) + '</div></div>';
+        html += '<div data-label="角色"><span class="status-pill ' + roleClass + '">' + roleLabel + '</span></div>';
+        html += '<div data-label="账号状态"><span class="status-pill ' + statusClass + '">' + statusLabel + '</span><div class="cell-muted">' + (bannedTip || '-') + '</div></div>';
+        html += '<div data-label="今日额度" class="cell-ellipsis">' + e(quotaText) + '<div class="cell-muted">' + e(u.ai_reset_date || '-') + '</div></div>';
+        html += '<div data-label="帖子数" class="cell-muted">' + (u.post_count || 0) + '</div>';
+        html += '<div data-label="最近登录" class="cell-muted">' + e(loginText) + '</div>';
+        html += '<div data-label="操作">' + actionHtml + '</div>';
+        html += '</div>';
+      }
+
+      html += '</div>';
+      document.getElementById('usersList').innerHTML = html;
+    }
+
+    function createManagedUser() {
+      var usernameInput = document.getElementById('createUserUsername');
+      var nicknameInput = document.getElementById('createUserNickname');
+      var passwordInput = document.getElementById('createUserPassword');
+      var username = String(usernameInput.value || '').trim();
+      var nickname = String(nicknameInput.value || '').trim();
+      var password = String(passwordInput.value || '');
+
+      if (!username) {
+        showToast('请输入用户名', 'error');
+        usernameInput.focus();
+        return;
+      }
+      if (password.length < 6) {
+        showToast('密码至少需要 6 位', 'error');
+        passwordInput.focus();
+        return;
+      }
+
+      adminApi('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: username,
+          nickname: nickname,
+          password: password,
+          ai_quota: 100
+        })
+      })
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        usernameInput.value = '';
+        nicknameInput.value = '';
+        passwordInput.value = '';
+        showToast(data.message || '用户创建成功', 'success');
+        loadUsers();
+      })
+      .catch(function(err) {
+        if (String(err && err.message) === 'AUTH_EXPIRED' || String(err && err.message) === 'FORBIDDEN') return;
+        showToast('创建用户失败', 'error');
+      });
+    }
+
+    window.banUser = function(id) {
+      openActionDialog({
+        title: '封禁账号',
+        desc: '可填写封禁原因（选填），用户将无法登录。',
+        placeholder: '例如：违规刷帖',
+        type: 'text',
+        confirmText: '确认封禁'
+      }).then(function(result) {
+        if (!result.confirmed) return;
+        adminApi('/api/admin/users/' + id + '/ban', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: result.value || '' })
+        })
+        .then(function(data) {
+          if (data.error) { showToast(data.error, 'error'); return; }
+          showToast(data.message || '已封禁用户', 'success');
+          loadUsers();
+        })
+        .catch(function(err) {
+          if (String(err && err.message) === 'AUTH_EXPIRED' || String(err && err.message) === 'FORBIDDEN') return;
+          showToast('封禁失败', 'error');
+        });
+      });
+    };
+
+    window.unbanUser = function(id) {
+      adminApi('/api/admin/users/' + id + '/unban', { method: 'POST' })
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        showToast(data.message || '已解除封禁', 'success');
+        loadUsers();
+      })
+      .catch(function(err) {
+        if (String(err && err.message) === 'AUTH_EXPIRED' || String(err && err.message) === 'FORBIDDEN') return;
+        showToast('解封失败', 'error');
+      });
+    };
+
+    window.resetUserQuota = function(id) {
+      openActionDialog({
+        title: '重置今日额度',
+        desc: '设置该用户今天可用的 AI 次数（默认 100）。',
+        placeholder: '输入额度，如 100',
+        type: 'text',
+        defaultValue: '100',
+        confirmText: '确认设置',
+        validate: function(value) {
+          if (!/^\d+$/.test(value)) return '请输入非负整数';
+          var num = Number(value);
+          if (num < 0 || num > 100000) return '额度范围需在 0~100000';
+          return '';
+        }
+      }).then(function(result) {
+        if (!result.confirmed) return;
+        adminApi('/api/admin/users/' + id + '/quota', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quota: Number(result.value) })
+        })
+        .then(function(data) {
+          if (data.error) { showToast(data.error, 'error'); return; }
+          showToast(data.message || '额度设置成功', 'success');
+          loadUsers();
+        })
+        .catch(function(err) {
+          if (String(err && err.message) === 'AUTH_EXPIRED' || String(err && err.message) === 'FORBIDDEN') return;
+          showToast('设置额度失败', 'error');
+        });
+      });
+    };
+
+    window.approveApp = function(id) {
+      openActionDialog({
+        title: '通过申请',
+        desc: '请为该用户设置初始密码（至少 6 位）',
+        placeholder: '输入初始密码',
+        type: 'password',
+        confirmText: '确认通过',
+        validate: function(value) {
+          if (!value || value.length < 6) return '密码至少需要 6 位';
+          return '';
+        }
+      }).then(function(result) {
+        if (!result.confirmed) return;
+        adminApi('/api/admin/approve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ application_id: id, password: result.value }) })
+        .then(function(data) { showToast(data.message || '操作成功', 'success'); loadApplications(); })
+        .catch(function(err) { showToast('操作失败', 'error'); });
+      });
+    };
+
+    window.rejectApp = function(id) {
+      openActionDialog({
+        title: '拒绝申请',
+        desc: '可填写拒绝理由（选填）',
+        placeholder: '例如：本轮名额已满',
+        type: 'text',
+        confirmText: '确认拒绝'
+      }).then(function(result) {
+        if (!result.confirmed) return;
+        adminApi('/api/admin/reject', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ application_id: id, reason: result.value || '' }) })
+        .then(function(data) { showToast('已拒绝', 'success'); loadApplications(); })
+        .catch(function(err) { showToast('操作失败', 'error'); });
+      });
+    };
+
+    window.approvePost = function(id) {
+      adminApi('/api/admin/posts/' + id + '/approve', { method: 'POST' })
+      .then(function(data) { showToast('已通过审核', 'success'); loadPosts(); })
+      .catch(function(err) { showToast('操作失败', 'error'); });
+    };
+
+    window.rejectPost = function(id) {
+      openActionDialog({
+        title: '下架帖子',
+        desc: '可填写下架理由（选填）',
+        placeholder: '例如：内容不符合社区规范',
+        type: 'text',
+        confirmText: '确认下架'
+      }).then(function(result) {
+        if (!result.confirmed) return;
+        adminApi('/api/admin/posts/' + id + '/reject', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: result.value || '' }) })
+        .then(function(data) { showToast('已下架', 'success'); loadPosts(); })
+        .catch(function(err) { showToast('操作失败', 'error'); });
+      });
+    };
+
+    window.autoReviewAll = function() {
+      var pendingCount = postsCache.filter(function(p) { return p.status === 'pending'; }).length;
+      if (pendingCount === 0) {
+        showToast('没有待审核的帖子', 'error');
+        return;
+      }
+      openActionDialog({
+        title: '🤖 AI 批量审核',
+        desc: '将对全部 ' + pendingCount + ' 篇待审帖子进行 AI 审核（安全内容自动通过，违规内容自动拒绝，不确定的保留人工审核）',
+        placeholder: '',
+        type: 'confirm',
+        confirmText: '确认开始'
+      }).then(function(result) {
+        if (!result.confirmed) return;
+        var progressEl = document.getElementById('aiReviewProgress');
+        var btnEl = document.getElementById('aiAutoReviewBtn');
+        progressEl.style.display = 'block';
+        progressEl.innerHTML = '🤖 AI 审核中，请稍候...';
+        btnEl.disabled = true;
+        btnEl.style.opacity = '0.6';
+        adminApi('/api/admin/posts/auto-review-all', { method: 'POST' })
+          .then(function(data) {
+            progressEl.style.display = 'none';
+            btnEl.disabled = false;
+            btnEl.style.opacity = '1';
+            if (data.error) { showToast(data.error, 'error'); return; }
+            showToast(data.message || '批量审核完成', 'success');
+            loadPosts();
+          })
+          .catch(function(err) {
+            progressEl.style.display = 'none';
+            btnEl.disabled = false;
+            btnEl.style.opacity = '1';
+            showToast('审核请求失败', 'error');
+          });
+      });
+    };
+
+    window.aiReviewPost = function(id) {
+      adminApi('/api/admin/posts/' + id + '/auto-review', { method: 'POST' })
+        .then(function(data) {
+          if (data.error) { showToast(data.error, 'error'); return; }
+          var msg = 'AI 审核结果：';
+          if (data.result === 'approved') msg += '✅ 通过';
+          else if (data.result === 'rejected') msg += '❌ 拒绝';
+          else msg += '🤔 需人工判断';
+          showToast(msg, data.result === 'approved' ? 'success' : 'warn');
+          loadPosts();
+        })
+        .catch(function(err) { showToast('操作失败', 'error'); });
+    };
+
+    function e(s) { if (!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function fd(d) { return new Date(d).toLocaleString('zh-CN'); }
+    function shortText(s, maxLen) {
+      var text = String(s || '').replace(/\s+/g, ' ').trim();
+      if (!text) return '-';
+      return text.length > maxLen ? text.substring(0, maxLen) + '...' : text;
+    }
+    function statusText(status) {
+      if (status === 'pending') return '待审核';
+      if (status === 'approved') return '已上线';
+      if (status === 'rejected') return '已下架';
+      return status || '-';
+    }
+    function appStatusText(status) {
+      if (status === 'pending') return '待审核';
+      if (status === 'approved') return '已通过';
+      if (status === 'rejected') return '已拒绝';
+      return status || '-';
+    }
+    function showToast(message, type) {
+      if (!message) return;
+      var wrap = document.getElementById('adminToastWrap');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      var toast = document.createElement('div');
+      toast.className = 'admin-toast ' + (type || 'info');
+      toast.textContent = message;
+      wrap.appendChild(toast);
+      requestAnimationFrame(function() { toast.classList.add('show'); });
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function() {
+        toast.classList.remove('show');
+        setTimeout(function() {
+          if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 180);
+      }, 1300);
+    }
+
+    function showPostModal(post) {
+      document.getElementById('modalTitle').textContent = post.title;
+      document.getElementById('modalMeta').textContent = '👤 ' + (post.nickname || post.username) + ' | 🕐 ' + fd(post.created_at) + ' | 👁 ' + post.views;
+      document.getElementById('modalBody').innerHTML = renderPostBody(post.content || '');
+      var actions = '';
+      if (post.status === 'pending') {
+        actions = '<button class="btn btn-approve" onclick="approvePost(' + post.id + '); closePostModal();">✅ 通过审核</button>';
+        actions += '<button class="btn btn-reject" onclick="rejectPost(' + post.id + '); closePostModal();">❌ 拒绝</button>';
+      } else if (post.status === 'approved') {
+        actions = '<button class="btn btn-reject" onclick="rejectPost(' + post.id + '); closePostModal();">⏸ 下架</button>';
+      } else {
+        actions = '<button class="btn btn-approve" onclick="approvePost(' + post.id + '); closePostModal();">🔄 重新上线</button>';
+      }
+      actions += '<button class="btn" style="background:#666;color:white;" onclick="closePostModal()">关闭</button>';
+      document.getElementById('modalActions').innerHTML = actions;
+      document.getElementById('postModal').style.display = 'flex';
+    }
+
+    function renderPostBody(content) {
+      var html = e(content).replace(/\n/g, '<br>');
+      html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g, function(_, alt, url) {
+        if (!/^\/uploads\/[\w\-./%]+$/i.test(url) && !/^https?:\/\/[^\s]+$/i.test(url)) return _;
+        return '<div style="margin:10px 0;"><img src="' + url + '" alt="' + e(alt || '') + '" style="max-width:100%;border-radius:10px;border:1px solid #dce6ff;box-shadow:0 8px 18px rgba(42,52,88,.14);"></div>';
+      });
+      return html;
+    }
+
+    function showPostById(id) {
+      for (var i = 0; i < window.allPosts.length; i++) {
+        if (window.allPosts[i].id === id) {
+          showPostModal(window.allPosts[i]);
+          return;
+        }
+      }
+    }
+
+    function closePostModal() {
+      document.getElementById('postModal').style.display = 'none';
+    }
+
+    // Close modal on outside click
+    document.getElementById('postModal').addEventListener('click', function(e) {
+      if (e.target === this) closePostModal();
+    });
+
+    document.getElementById('actionModal').addEventListener('click', function(e) {
+      if (e.target === this) closeActionDialog(false);
+    });
+
+    document.getElementById('actionModalInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        closeActionDialog(true);
+      } else if (e.key === 'Escape') {
+        closeActionDialog(false);
+      }
+    });
+
+    function openActionDialog(options) {
+      actionDialogOptions = options || {};
+      document.getElementById('actionModalTitle').textContent = actionDialogOptions.title || '操作确认';
+      document.getElementById('actionModalDesc').textContent = actionDialogOptions.desc || '';
+      document.getElementById('actionModalError').textContent = '';
+
+      var input = document.getElementById('actionModalInput');
+      input.type = actionDialogOptions.type || 'text';
+      input.placeholder = actionDialogOptions.placeholder || '';
+      input.value = actionDialogOptions.defaultValue || '';
+      input.autocomplete = input.type === 'password' ? 'new-password' : 'off';
+
+      document.getElementById('actionModalConfirmBtn').textContent = actionDialogOptions.confirmText || '确认';
+      document.getElementById('actionModal').style.display = 'flex';
+
+      setTimeout(function() { input.focus(); }, 10);
+
+      return new Promise(function(resolve) {
+        actionDialogResolver = resolve;
+      });
+    }
+
+    function closeActionDialog(confirmed) {
+      if (!actionDialogResolver) {
+        document.getElementById('actionModal').style.display = 'none';
+        return;
+      }
+
+      var value = document.getElementById('actionModalInput').value.trim();
+      if (confirmed && actionDialogOptions && typeof actionDialogOptions.validate === 'function') {
+        var err = actionDialogOptions.validate(value);
+        if (err) {
+          document.getElementById('actionModalError').textContent = err;
+          return;
+        }
+      }
+
+      var resolve = actionDialogResolver;
+      actionDialogResolver = null;
+      actionDialogOptions = null;
+      document.getElementById('actionModal').style.display = 'none';
+      resolve({ confirmed: !!confirmed, value: value });
+    }
+
+    if (token) showAdminView();
+    else showLoginView();
+  </script>
+</body>
+</html>

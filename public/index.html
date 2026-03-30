@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>熊猫社区</title>
+  <link rel="stylesheet" href="/css/style.css?v=20260328-8">
+</head>
+
+<body>
+  <div id="petal-rain" aria-hidden="true"></div>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="container header-content">
+        <h1 class="logo" onclick="goHome()">🤝 熊猫社区</h1>
+        <nav class="nav">
+          <div id="weather-widget" class="weather-widget" title="点击切换城市">
+            <span class="weather-loading">🌤️ 天气加载中...</span>
+          </div>
+          <button id="nav-home" class="nav-btn active" onclick="goHome()">首页</button>
+          <button id="nav-toolbox" class="nav-btn" onclick="goToolbox()" style="display:none;">🧰 工具箱</button>
+          <button id="nav-ai" class="nav-btn" onclick="openAIChat()" style="display:none;">🤖 AI助手 <span
+              id="ai-quota-badge"
+              style="background:#ef4444;border-radius:10px;padding:2px 6px;font-size:11px;margin-left:4px;"></span></button>
+          <button id="nav-notif" class="nav-btn" onclick="openNotifications()" style="display:none;">🔔 <span
+              id="notif-badge"
+              style="background:#ef4444;border-radius:10px;padding:2px 6px;font-size:11px;margin-left:2px;display:none;"></span></button>
+          <button id="nav-profile" class="nav-btn" onclick="goProfile()" style="display:none;">我的</button>
+          <button id="nav-settings" class="nav-btn" onclick="goSettings()" style="display:none;">⚙️ 设置</button>
+          <button id="nav-admin" class="nav-btn" onclick="goAdmin()" style="display:none;">🛠 管理</button>
+          <button id="nav-login" class="nav-btn"
+            onclick="document.getElementById('auth-modal').style.display='flex';document.getElementById('auth-form-login').style.display='block';document.getElementById('auth-form-register').style.display='none';">登录</button>
+          <button id="nav-register" class="nav-btn" onclick="goApply()" style="display:none;">内测申请</button>
+          <button id="nav-logout" class="nav-btn" onclick="logout()" style="display:none;">退出</button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Announcement Bar -->
+    <div class="announcement-bar">
+      <!-- Scrolling Announcements -->
+      <div class="announcement-track">
+        <div class="announcement-marquee">
+          <div class="announcement-content">
+            <div class="announcement-item glow">🎉 热烈欢迎 <span class="highlight">成总</span> 大驾光临！🎉</div>
+            <div class="announcement-item">⚡ <span class="highlight">成总</span>乃盖世天神，威震四方！⚡</div>
+            <div class="announcement-item">🚀 欢迎来到熊猫社区，一起探索AI的无限可能！</div>
+            <div class="announcement-item">💬 发帖交流、评论互动，认识志同道合的小伙伴！</div>
+            <div class="announcement-item">📢 社区规则：友好交流，互相尊重，共同成长！</div>
+          </div>
+          <div class="announcement-content" aria-hidden="true">
+            <div class="announcement-item glow">🎉 热烈欢迎 <span class="highlight">成总</span> 大驾光临！🎉</div>
+            <div class="announcement-item">⚡ <span class="highlight">成总</span>乃盖世天神，威震四方！⚡</div>
+            <div class="announcement-item">🚀 欢迎来到熊猫社区，一起探索AI的无限可能！</div>
+            <div class="announcement-item">💬 发帖交流、评论互动，认识志同道合的小伙伴！</div>
+            <div class="announcement-item">📢 社区规则：友好交流，互相尊重，共同成长！</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container">
+      <!-- Home View -->
+      <div id="view-home">
+        <section class="home-hero">
+          <div class="home-hero-grid">
+            <div class="home-hero-main">
+              <div class="hero-badge">FORUM · BUILD TOGETHER</div>
+              <h2>把问题抛出来，把经验沉淀下去</h2>
+              <p>分享实战总结、排障思路和项目进展，在更轻松的氛围里找到同频开发者。</p>
+              <div class="hero-quick-actions">
+                <button class="hero-mini-btn hero-mini-btn-primary" onclick="getUser() ? showNewPost() : showLogin()">发布你的第一条实战帖</button>
+                <button class="hero-mini-btn" onclick="document.getElementById('search-input').focus()">快速搜索话题</button>
+              </div>
+            </div>
+            <div class="hero-data-card" aria-hidden="true">
+              <div class="hero-data-title">社区节奏</div>
+              <div class="hero-stat-list">
+                <div class="hero-stat-item">
+                  <span>讨论氛围</span>
+                  <strong>高质量交流</strong>
+                </div>
+                <div class="hero-stat-item">
+                  <span>内容方向</span>
+                  <strong>AI · 开发 · 实战</strong>
+                </div>
+                <div class="hero-stat-item">
+                  <span>协作方式</span>
+                  <strong>提问 + 复盘 + 共享</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div class="toolbar">
+          <div class="tags-filter" id="tags-filter"></div>
+          <div class="search-box">
+            <input type="text" id="search-input" placeholder="搜索帖子..." onkeyup="handleSearch(event)">
+            <button onclick="searchPosts()">🔍</button>
+          </div>
+          <button class="btn-primary" id="btn-new-post" onclick="showNewPost()" style="display:none;">
+            + 发布帖子
+          </button>
+        </div>
+        <div class="post-list" id="post-list"></div>
+        <div class="pagination" id="pagination"></div>
+        <aside id="panda-playground" class="panda-playground" aria-label="熊猫互动区">
+          <div class="panda-card">
+            <div class="panda-card-title">熊猫乐园</div>
+            <div class="panda-card-subtitle">悬停逗逗它，点击或喂竹子一起玩</div>
+            <div id="panda-scene" class="panda-scene" role="button" tabindex="0" aria-label="点击与熊猫玩耍">
+              <div id="panda-webgl" class="panda-webgl" aria-hidden="true"></div>
+              <div id="panda-hearts" class="panda-hearts" aria-hidden="true"></div>
+              <div class="panda-ground" aria-hidden="true"></div>
+              <div id="panda-character" class="panda-character" aria-hidden="true">
+                <div class="panda-ear panda-ear-left"></div>
+                <div class="panda-ear panda-ear-right"></div>
+                <div class="panda-body"></div>
+                <div class="panda-arm panda-arm-left"></div>
+                <div class="panda-arm panda-arm-right" id="panda-paw-right"></div>
+                <div class="panda-leg panda-leg-left"></div>
+                <div class="panda-leg panda-leg-right"></div>
+                <div class="panda-head">
+                  <div class="panda-eye panda-eye-left"><span class="panda-pupil" id="panda-pupil-left"></span></div>
+                  <div class="panda-eye panda-eye-right"><span class="panda-pupil" id="panda-pupil-right"></span></div>
+                  <div class="panda-nose"></div>
+                  <div class="panda-mouth"></div>
+                  <div class="panda-blush panda-blush-left"></div>
+                  <div class="panda-blush panda-blush-right"></div>
+                </div>
+              </div>
+              <div class="panda-actions">
+                <button type="button" id="panda-feed-btn" class="panda-feed-btn">🎋 喂竹子</button>
+                <span id="panda-play-count" class="panda-play-count">玩耍次数: 0</span>
+              </div>
+              <div id="panda-status" class="panda-status">把鼠标悬停在熊猫上看它跳舞</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Post Detail View -->
+      <div id="view-post" style="display:none;">
+        <div class="view-post-sticky-header">
+          <button class="btn-back" onclick="goHome()">← 返回</button>
+        </div>
+        <div id="post-detail"></div>
+        <div class="comments-section">
+          <h3>评论</h3>
+          <div id="comments-list"></div>
+          <div id="comment-form" style="display:none;">
+            <div id="reply-indicator" style="display:none;margin-bottom:8px;font-size:13px;color:#666;">
+              <span id="reply-to-name"></span>
+              <button onclick="cancelReply()" style="background:none;border:none;color:#999;cursor:pointer;padding:0 4px;">×</button>
+            </div>
+            <textarea id="comment-input" placeholder="写下你的评论..."></textarea>
+            <div class="comment-form-footer">
+              <label class="comment-image-upload" title="上传图片">
+                <input type="file" accept="image/*" onchange="handleCommentImage(event)" style="display:none;">
+                <span>📷</span>
+              </label>
+              <div id="comment-image-preview" style="display:none;margin-top:6px;"></div>
+              <button id="btn-submit-comment" class="btn-primary" onclick="submitComment()">发表评论</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- New Post View -->
+      <div id="view-new-post" style="display:none;">
+        <button class="btn-back" onclick="goHome()">← 返回</button>
+        <div class="form-card">
+          <h2>发布新帖子</h2>
+          <div class="form-group">
+            <label>标题</label>
+            <input type="text" id="post-title" placeholder="输入标题">
+          </div>
+          <div class="form-group">
+            <label>标签</label>
+            <select id="post-tag"></select>
+          </div>
+          <div class="form-group">
+            <label>内容</label>
+            <div class="post-editor-toolbar">
+              <span class="post-editor-tip">支持 Markdown，建议分段书写便于阅读</span>
+              <span class="post-editor-meta" id="post-content-meta">0 字 · 1 行</span>
+            </div>
+            <textarea id="post-content" rows="14" placeholder="输入内容，支持 Markdown 格式"></textarea>
+          </div>
+          <div class="form-group">
+            <label>图片（可选，最多9张）</label>
+            <div class="image-upload-area" id="image-upload-area">
+              <input type="file" id="image-input" accept="image/*" multiple style="display:none;"
+                onchange="handleImageSelect(event)">
+              <div class="upload-placeholder" onclick="document.getElementById('image-input').click()">
+                <span class="upload-icon">📷</span>
+                <span>点击上传图片</span>
+              </div>
+              <div class="image-preview-list" id="image-preview-list"></div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="btn-submit-post" class="btn-primary" onclick="submitPost()">发布</button>
+            <button class="btn-secondary" onclick="goHome()">取消</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile View -->
+      <div id="view-profile" style="display:none;">
+        <button class="btn-back" onclick="goHome()">← 返回</button>
+        <div id="profile-content"></div>
+      </div>
+
+      <!-- Settings View -->
+      <div id="view-settings" style="display:none;">
+        <button class="btn-back" onclick="goHome()">← 返回</button>
+        <div class="form-card">
+          <h2>个人设置</h2>
+
+          <!-- Avatar Section -->
+          <div class="settings-avatar-section">
+            <div class="avatar-preview" id="settings-avatar-preview">
+              <span id="settings-avatar-letter">?</span>
+            </div>
+            <div class="avatar-actions">
+              <input type="file" id="avatar-input" accept="image/*" style="display:none;"
+                onchange="handleAvatarUpload(event)">
+              <button class="btn-secondary" onclick="document.getElementById('avatar-input').click()">上传头像</button>
+              <span class="avatar-tip">支持 jpg/png/gif/webp，最大2MB</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>昵称</label>
+            <input type="text" id="settings-nickname" placeholder="设置你的昵称">
+          </div>
+
+          <div class="form-group">
+            <label>个人介绍</label>
+            <textarea id="settings-bio" placeholder="介绍一下自己吧..." style="min-height:100px;"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>爱好标签（最多选择8个）</label>
+            <div class="hobby-grid" id="hobby-grid"></div>
+          </div>
+
+          <div class="form-group">
+            <label>界面主题</label>
+            <select id="settings-theme">
+              <option value="mint">薄荷海湾（默认）</option>
+              <option value="sunset">日落琥珀</option>
+              <option value="sky">浅空蓝调</option>
+              <option value="cyber">赛博霓虹 (暗夜)</option>
+              <option value="aurora">极光幽林 (暗夜)</option>
+            </select>
+            <p class="theme-help-text">主题仅影响当前设备显示效果。</p>
+          </div>
+
+          <div class="form-group">
+            <label>界面语言</label>
+            <select id="settings-lang" onchange="handleLangChange(this.value)">
+              <option value="zh">简体中文</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+
+          <!-- Account Section -->
+          <div class="form-group">
+            <label>绑定邮箱</label>
+            <div id="email-bind-area">
+              <div class="email-loading">加载中...</div>
+            </div>
+          </div>
+
+          <!-- Push Notification -->
+          <div class="form-group">
+            <label>消息通知</label>
+            <div class="push-toggle-wrap">
+              <input type="checkbox" id="push-toggle" onchange="handlePushToggle(this)">
+              <span>浏览器推送通知（新回复、私信等）</span>
+              <span id="push-status"></span>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button id="btn-save-settings" class="btn-primary" onclick="saveSettings()">保存设置</button>
+            <button class="btn-secondary" onclick="goHome()">取消</button>
+          </div>
+        </div>
+
+        <!-- Check-in Card -->
+        <div class="form-card" id="checkin-card" style="margin-top:16px;">
+          <h2>每日签到</h2>
+          <div id="checkin-status">
+            <div class="checkin-loading">加载中...</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- AI Chat Modal -->
+  <div id="ai-modal" class="modal modal-ai" style="display:none;z-index:1500;">
+    <div class="modal-content ai-modal-content">
+      <aside class="ai-session-panel">
+        <div class="ai-session-header">
+          <div class="ai-session-title">会话记录</div>
+          <button class="ai-session-new-btn" onclick="createNewAIChat()">+ 新建</button>
+        </div>
+        <div id="ai-session-list" class="ai-session-list">
+          <div class="ai-session-empty">暂无会话，开始提问吧</div>
+        </div>
+      </aside>
+
+      <section class="ai-chat-panel">
+        <div class="ai-modal-header">
+          <div class="ai-modal-title-wrap">
+            <span class="ai-modal-title">🤖 AI助手</span>
+            <span id="ai-quota-display" class="ai-quota-text">今日剩余: 10/10</span>
+          </div>
+          <div class="ai-modal-actions">
+            <button class="ai-header-close" onclick="closeAIChat()">×</button>
+          </div>
+        </div>
+
+        <div id="ai-chat-messages" class="ai-chat-messages">
+          <div class="ai-msg ai-msg-assistant">
+            👋 你好！我是AI助手，每天有10次使用额度。有什么问题尽管问我！
+          </div>
+        </div>
+
+        <div class="ai-input-area">
+          <div class="ai-input-row">
+            <select id="ai-provider-select" class="ai-provider-select"></select>
+            <select id="ai-model-select" class="ai-model-select"></select>
+            <input type="text" id="ai-input" placeholder="输入问题..." onkeypress="if(event.key==='Enter')sendAIMessage()">
+            <button onclick="sendAIMessage()" id="ai-send-btn">发送</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Notifications Modal -->
+  <div id="notif-modal" class="modal modal-notif" style="display:none;z-index:1500;">
+    <div class="modal-content notif-modal-content">
+      <div class="notif-modal-header">
+        <div class="notif-title-wrap">
+          <span class="notif-modal-title">🔔 我的通知</span>
+          <span id="notif-unread-count" class="notif-unread-count"></span>
+        </div>
+        <div class="notif-modal-actions">
+          <button class="notif-readall-btn" onclick="markAllNotifRead()">全部已读</button>
+          <button class="notif-close-btn" onclick="closeNotifications()">×</button>
+        </div>
+      </div>
+      <div id="notif-list" class="notif-list">
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="modal" style="display:none;">
+    <div class="modal-content auth-modal-content">
+      <span class="modal-close" onclick="closeModal()">&times;</span>
+      <div id="auth-form-login">
+        <h2>登录</h2>
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" id="login-username">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="login-password">
+        </div>
+        <div class="form-actions">
+          <button id="btn-login-submit" class="btn-primary" onclick="login()">登录</button>
+          <button class="btn-link" onclick="switchToRegister()">没有账号？申请内测</button>
+          <button class="btn-link" style="margin-left:auto;" onclick="showForgotPassword()">忘记密码？</button>
+        </div>
+      </div>
+
+      <div id="auth-form-forgot" style="display:none;">
+        <h2>找回密码</h2>
+        <div id="forgot-step-1">
+          <p style="font-size:13px;color:#888;margin-bottom:12px;">输入您绑定的邮箱地址，我们将发送验证码</p>
+          <div class="form-group">
+            <label>邮箱</label>
+            <input type="email" id="forgot-email" placeholder="输入绑定的邮箱" onkeypress="if(event.key==='Enter')forgotSendCode()">
+          </div>
+          <div id="forgot-verify-row" style="display:none;margin-top:8px;">
+            <div class="form-group">
+              <label>验证码</label>
+              <input type="text" id="forgot-code" placeholder="输入6位验证码" maxlength="6" onkeypress="if(event.key==='Enter')forgotResetPassword()">
+            </div>
+            <div class="form-group">
+              <label>新密码</label>
+              <input type="password" id="forgot-new-password" placeholder="新密码（至少6位，含大小写字母和数字）" onkeypress="if(event.key==='Enter')forgotResetPassword()">
+            </div>
+            <div class="form-group">
+              <label>确认密码</label>
+              <input type="password" id="forgot-confirm-password" placeholder="再次输入新密码" onkeypress="if(event.key==='Enter')forgotResetPassword()">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="btn-forgot-send" class="btn-primary" onclick="forgotSendCode()">发送验证码</button>
+            <button id="btn-forgot-reset" class="btn-primary" style="display:none;" onclick="forgotResetPassword()">重置密码</button>
+            <button class="btn-link" onclick="switchToLoginFromForgot()">返回登录</button>
+          </div>
+          <div id="forgot-msg" style="font-size:13px;margin-top:8px;"></div>
+        </div>
+      </div>
+      <div id="auth-form-register" style="display:none;">
+        <h2>注册</h2>
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" id="register-username">
+        </div>
+        <div class="form-group">
+          <label>昵称</label>
+          <input type="text" id="register-nickname">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="register-password">
+        </div>
+        <div class="form-actions">
+          <button id="btn-register-submit" class="btn-primary" onclick="register()">注册</button>
+          <button class="btn-link" onclick="switchToLogin()">已有账号？去登录</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Captcha Modal (in-page) -->
+  <div id="captcha-modal" class="modal modal-captcha" style="display:none;z-index:2000;">
+    <div class="modal-content captcha-modal-content">
+      <button class="modal-close captcha-close-btn" onclick="closeCaptchaModal()" aria-label="关闭验证">×</button>
+      <div class="captcha-title-wrap">
+        <div class="captcha-title">安全验证</div>
+        <div class="captcha-subtitle">拖动图标与目标位置重合，完成一次快速验证</div>
+      </div>
+
+      <div id="captchaContainer" class="captcha-stage">
+        <div id="captchaBg" class="captcha-stage-bg">
+          <span id="captchaIcon" class="captcha-stage-icon">→</span>
+        </div>
+        <div class="captcha-slider-piece" id="captchaPiece"></div>
+      </div>
+
+      <div id="captchaSliderTrack" class="captcha-track">
+        <div id="captchaSliderThumb" class="captcha-thumb">
+          <span>⇀</span>
+        </div>
+        <div class="captcha-track-label">拖动滑块完成验证</div>
+      </div>
+
+      <div class="captcha-actions">
+        <button class="captcha-btn captcha-btn-ghost" onclick="initCaptchaModal(); return false;">换一张</button>
+        <button id="captchaConfirmBtn" class="captcha-btn captcha-btn-primary"
+          onclick="confirmCaptchaModal(); return false;" disabled>继续</button>
+      </div>
+
+      <div id="captchaMsg" class="captcha-msg">请拖动滑块完成验证</div>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div id="confirm-modal" class="modal" style="display:none;z-index:2100;">
+    <div class="modal-content confirm-modal-content">
+      <div class="confirm-modal-title" id="confirm-modal-title">确认操作</div>
+      <div class="confirm-modal-message" id="confirm-modal-message">确定继续吗？</div>
+      <div class="form-actions" style="justify-content:flex-end;margin-top:14px;">
+        <button class="btn-secondary" id="confirm-modal-cancel">取消</button>
+        <button class="btn-primary" id="confirm-modal-ok">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/vendor/three/build/three.module.js?v=20260327-6",
+        "three/addons/": "/vendor/three/examples/jsm/"
+      }
+    }
+  </script>
+  <script src="/js/app.js?v=20260328-9"></script>
+  <!-- Service Worker for Push Notifications -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/push-sw.js').catch(function(err) {
+          console.warn('SW注册失败:', err);
+        });
+      });
+    }
+  </script>
+</body>
+
+</html>

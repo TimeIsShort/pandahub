@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>后台入口</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      color: #243556;
+      background:
+        radial-gradient(900px 430px at 6% -10%, rgba(93,109,255,.2), transparent 55%),
+        radial-gradient(760px 500px at 94% 0%, rgba(127,88,215,.16), transparent 50%),
+        linear-gradient(160deg, #eef3ff, #f8f7ff 45%, #edf3ff);
+      padding: 20px;
+    }
+    .panel {
+      width: min(92vw, 460px);
+      background: rgba(255,255,255,.9);
+      border: 1px solid #dde6ff;
+      border-radius: 16px;
+      padding: 26px;
+      text-align: center;
+      box-shadow: 0 16px 40px rgba(42, 52, 88, 0.16);
+      backdrop-filter: blur(8px);
+    }
+    h1 {
+      font-size: 22px;
+      margin-bottom: 10px;
+      color: #2d3d68;
+    }
+    p {
+      font-size: 14px;
+      line-height: 1.75;
+      color: #60709a;
+      margin-bottom: 16px;
+    }
+    a {
+      display: inline-block;
+      padding: 10px 14px;
+      border-radius: 10px;
+      text-decoration: none;
+      color: #fff;
+      font-weight: 700;
+      background: linear-gradient(120deg, #5d6dff, #7f58d7);
+      box-shadow: 0 10px 22px rgba(93,109,255,.3);
+    }
+  </style>
+  <meta http-equiv="refresh" content="0; url=/admin-login">
+</head>
+<body>
+  <div class="panel">
+    <h1>后台入口已升级</h1>
+    <p>正在跳转到新版管理后台。如果没有自动跳转，请点击下方按钮。</p>
+    <a href="/admin-login">进入新版后台</a>
+  </div>
+</body>
+</html>

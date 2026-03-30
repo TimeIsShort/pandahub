@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>滑块验证码</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .captcha-modal {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      width: 340px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .captcha-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .captcha-close {
+      cursor: pointer;
+      font-size: 20px;
+      color: #999;
+    }
+    .captcha-img-container {
+      position: relative;
+      width: 290px;
+      height: 160px;
+      background: #f0f0f0;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .captcha-bg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .captcha-slider-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 48px;
+    }
+    .captcha-slider-piece {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      cursor: pointer;
+      user-select: none;
+    }
+    .captcha-slider-track {
+      position: relative;
+      width: 100%;
+      height: 50px;
+      background: #f5f5f5;
+      border-radius: 25px;
+      border: 2px solid #e0e0e0;
+      margin-bottom: 12px;
+    }
+    .captcha-slider-thumb {
+      position: absolute;
+      left: 0;
+      top: -2px;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 50%;
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      box-shadow: 0 2px 10px rgba(102,126,234,0.5);
+      transition: transform 0.1s;
+    }
+    .captcha-slider-thumb:active {
+      cursor: grabbing;
+      transform: scale(0.95);
+    }
+    .captcha-slider-thumb.success {
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 2px 10px rgba(16,185,129,0.5);
+    }
+    .captcha-tip {
+      text-align: center;
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 16px;
+    }
+    .captcha-refresh {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+    .captcha-btn {
+      padding: 8px 20px;
+      border-radius: 20px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .captcha-btn-refresh {
+      background: #f0f0f0;
+      color: #666;
+    }
+    .captcha-btn-refresh:hover {
+      background: #e0e0e0;
+    }
+    .captcha-btn-confirm {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+    .captcha-btn-confirm:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+    }
+    .captcha-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    .captcha-message {
+      text-align: center;
+      font-size: 13px;
+      margin-top: 10px;
+      min-height: 20px;
+    }
+    .captcha-message.success { color: #10b981; }
+    .captcha-message.error { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="captcha-modal">
+    <div class="captcha-title">
+      <span>安全验证</span>
+      <span class="captcha-close" id="closeBtn">×</span>
+    </div>
+    
+    <div class="captcha-img-container" id="captchaContainer">
+      <div class="captcha-slider-bg" id="captchaBg">
+        <span id="captchaIcon">→</span>
+      </div>
+      <div class="captcha-slider-piece" id="captchaPiece" style="display:none;"></div>
+    </div>
+    
+    <div class="captcha-slider-track" id="sliderTrack">
+      <div class="captcha-slider-thumb" id="sliderThumb">
+        <span>⇀</span>
+      </div>
+    </div>
+    
+    <div class="captcha-tip">拖动滑块完成拼图验证</div>
+    
+    <div class="captcha-refresh">
+      <button class="captcha-btn captcha-btn-refresh" onclick="initCaptcha()">🔄 换一张</button>
+      <button class="captcha-btn captcha-btn-confirm" id="confirmBtn" onclick="verifyCaptcha()" disabled>验证</button>
+    </div>
+    
+    <div class="captcha-message" id="captchaMessage"></div>
+  </div>
+
+  <script>
+    const CAPTCHA_THRESHOLD = 10; // pixels tolerance
+    let targetX = 0;
+    let isDragging = false;
+    let startX = 0;
+    let currentX = 0;
+    let solved = false;
+
+    const icons = ['→', '↑', '←', '↓', '➤', '▲', '◀', '▼', '>>', '<<', '◢', '◣', '◤', '◥'];
+
+    function initCaptcha() {
+      solved = false;
+      document.getElementById('confirmBtn').disabled = true;
+      document.getElementById('sliderThumb').classList.remove('success');
+      document.getElementById('sliderThumb').querySelector('span').textContent = '⇀';
+      document.getElementById('captchaMessage').textContent = '';
+      document.getElementById('sliderThumb').style.left = '0px';
+      
+      // Random icon
+      const icon = icons[Math.floor(Math.random() * icons.length)];
+      document.getElementById('captchaIcon').textContent = icon;
+      
+      // Random target position (avoiding edges)
+      const container = document.getElementById('captchaContainer');
+      targetX = 30 + Math.floor(Math.random() * (container.offsetWidth - 110));
+      
+      // Show piece at target position
+      const piece = document.getElementById('captchaPiece');
+      piece.style.display = 'flex';
+      piece.style.left = targetX + 'px';
+      piece.style.top = (container.offsetHeight / 2 - 25) + 'px';
+      piece.innerHTML = icon;
+    }
+
+    function startDrag(e) {
+      if (solved) return;
+      isDragging = true;
+      startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+      document.getElementById('sliderThumb').querySelector('span').textContent = '⟿';
+    }
+
+    function doDrag(e) {
+      if (!isDragging || solved) return;
+      e.preventDefault();
+      currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+      const delta = currentX - startX;
+      const track = document.getElementById('sliderTrack');
+      const maxX = track.offsetWidth - 50;
+      let newX = Math.max(0, Math.min(delta, maxX));
+      document.getElementById('sliderThumb').style.left = newX + 'px';
+    }
+
+    function endDrag() {
+      if (!isDragging || solved) return;
+      isDragging = false;
+      const finalX = parseInt(document.getElementById('sliderThumb').style.left) || 0;
+      
+      if (Math.abs(finalX - targetX) <= CAPTCHA_THRESHOLD) {
+        solved = true;
+        document.getElementById('sliderThumb').classList.add('success');
+        document.getElementById('sliderThumb').querySelector('span').textContent = '✓';
+        document.getElementById('confirmBtn').disabled = false;
+        document.getElementById('captchaMessage').className = 'captcha-message success';
+        document.getElementById('captchaMessage').textContent = '验证成功！';
+      } else {
+        document.getElementById('sliderThumb').style.left = '0px';
+        document.getElementById('sliderThumb').querySelector('span').textContent = '⇀';
+        document.getElementById('captchaMessage').className = 'captcha-message error';
+        document.getElementById('captchaMessage').textContent = '位置不对，再试一次';
+        setTimeout(() => {
+          document.getElementById('captchaMessage').textContent = '';
+        }, 1500);
+      }
+    }
+
+    function verifyCaptcha() {
+      if (!solved) return;
+      // Call opener callback
+      if (window.opener && window.opener.onCaptchaSuccess) {
+        window.opener.onCaptchaSuccess();
+      }
+      if (window.opener && window.opener.closeCaptcha) {
+        window.opener.closeCaptcha();
+      } else {
+        window.close();
+      }
+    }
+
+    // Mouse events
+    document.getElementById('sliderThumb').addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', doDrag);
+    document.addEventListener('mouseup', endDrag);
+
+    // Touch events
+    document.getElementById('sliderThumb').addEventListener('touchstart', startDrag);
+    document.addEventListener('touchmove', doDrag, { passive: false });
+    document.addEventListener('touchend', endDrag);
+
+    // Click on piece to show hint
+    document.getElementById('captchaPiece').addEventListener('click', () => {
+      document.getElementById('captchaMessage').className = 'captcha-message';
+      document.getElementById('captchaMessage').textContent = '把滑块拖动到拼图位置 →';
+      setTimeout(() => {
+        if (!solved) document.getElementById('captchaMessage').textContent = '';
+      }, 2000);
+    });
+
+    initCaptcha();
+
+// Close button
+document.getElementById('closeBtn').addEventListener('click', () => {
+  if (window.opener && window.opener.closeCaptcha) {
+    window.opener.closeCaptcha();
+  }
+  window.close();
+});
+  </script>
+</body>
+</html>

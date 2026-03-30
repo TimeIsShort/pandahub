@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 助手 - 熊猫社区</title>
+  <link rel="stylesheet" href="/css/style.css?v=20260328a">
+  <link rel="stylesheet" href="/css/ai-page.css?v=20260328g">
+  <script>
+    (function () {
+      const theme = localStorage.getItem('forum_theme') || 'mint';
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.setAttribute('data-theme', theme);
+      });
+    })();
+  </script>
+</head>
+<body class="ai-page-body">
+  <div class="ai-layout">
+    <header class="top-nav">
+      <div class="top-nav-left">
+        <div class="top-nav-logo" aria-hidden="true">🤖</div>
+        <div class="top-nav-brand">
+          <div class="top-nav-title">AI 助手</div>
+          <div class="top-nav-subtitle">智能会话与工作台</div>
+        </div>
+      </div>
+
+      <div class="top-nav-center">
+        <div id="ai-current-session-title" class="top-nav-center-title">选座推荐助手</div>
+        <div id="ai-current-session-subtitle" class="top-nav-center-subtitle">支持多轮会话与会话管理</div>
+      </div>
+
+      <div class="top-nav-right">
+        <span id="ai-quota-display" class="status-chip">今日剩余: --/100</span>
+        <span id="ai-model-chip" class="status-chip status-chip-soft">MiniMax · M2.7</span>
+        <div class="top-nav-avatar" aria-label="当前用户">A</div>
+        <button id="ai-session-toggle" class="top-nav-menu" onclick="toggleAISessionPanel()" title="折叠/展开会话记录" aria-label="折叠或展开会话记录" aria-expanded="true">☰</button>
+      </div>
+    </header>
+
+    <main class="main-content" id="ai-main-content">
+      <aside class="sidebar" id="ai-session-panel">
+        <div class="sidebar-header">
+          <a href="/" class="sidebar-back">← 返回社区</a>
+          <div class="sidebar-title-row">
+            <div class="sidebar-title">会话记录</div>
+            <button class="sidebar-filter" type="button" title="筛选会话">筛选</button>
+          </div>
+          <button class="sidebar-new-chat" onclick="createNewAIChat()">+ 新建会话</button>
+        </div>
+
+        <div id="ai-session-list" class="ai-session-list">
+          <div class="ai-session-empty">暂无会话，开始提问吧</div>
+        </div>
+      </aside>
+
+      <section class="chat-workspace">
+        <div class="chat-header">
+          <div>
+            <div class="chat-title">AI 助手</div>
+            <div class="chat-subtitle">已启用选座助理，支持多轮会话管理</div>
+          </div>
+          <div class="chat-header-right">
+            <span id="ai-workspace-model-tag" class="chat-tag">MiniMax · M2.7</span>
+            <button class="chat-more" type="button" onclick="clearAIChat()">清空历史</button>
+          </div>
+        </div>
+
+        <div id="ai-chat-messages" class="ai-chat-messages">
+          <div class="ai-msg-row ai-msg-row-assistant">
+            <div class="ai-msg ai-msg-assistant">
+              <div class="ai-msg-content ai-md">👋 你好！我是AI助手。你可以新建多个会话并分别管理。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer-wrap">
+          <div class="composer">
+            <button class="composer-attach" type="button" title="附件（开发中）" aria-label="附件">+</button>
+            <textarea id="ai-input" class="composer-input" placeholder="给 AI 助手发消息..." rows="1"></textarea>
+            <select id="ai-provider-select" class="composer-select" aria-label="选择模型供应商"></select>
+            <select id="ai-model-select" class="composer-select" aria-label="选择模型"></select>
+            <button onclick="sendAIMessage()" id="ai-send-btn" class="composer-send" aria-label="发送">↑</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="context-panel">
+        <section class="context-card">
+          <div class="context-card-title">当前模型</div>
+          <div id="ai-context-model-name" class="context-model-name">MiniMax M2.7</div>
+          <div class="context-row">
+            <span id="ai-context-model-status" class="context-chip">可用</span>
+          </div>
+          <div id="ai-context-capabilities" class="context-tags">会话管理 / 内容生成</div>
+        </section>
+
+        <section class="context-card">
+          <div class="context-card-title">会话统计</div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-label">今日消息数</div>
+              <div id="ai-stat-messages" class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">平均响应时长</div>
+              <div id="ai-stat-latency" class="stat-value">--</div>
+            </div>
+            <div class="stat-item stat-item-wide">
+              <div class="stat-label">上下文长度</div>
+              <div id="ai-stat-context" class="stat-value">0 tokens(估算)</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="context-card">
+          <div class="context-card-title">快捷操作</div>
+          <div class="action-list">
+            <button id="ai-action-new" class="action-btn" type="button">新建会话</button>
+            <button id="ai-action-export" class="action-btn" type="button">导出记录</button>
+            <button id="ai-action-copy" class="action-btn" type="button">复制摘要</button>
+            <button id="ai-action-switch-model" class="action-btn" type="button">切换模型</button>
+          </div>
+        </section>
+
+        <section class="context-card">
+          <div class="context-card-title">会话摘要</div>
+          <div id="ai-context-summary" class="context-summary">当前会话暂无摘要。发送消息后将自动提取最近一条助手回复。</div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="/js/ai-page.js?v=20260328g"></script>
+</body>
+</html>

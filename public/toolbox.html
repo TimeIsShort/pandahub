@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工具箱 - 熊猫社区</title>
+  <link rel="stylesheet" href="/css/style.css?v=20260328a">
+  <link rel="stylesheet" href="/css/toolbox.css?v=20260328b">
+</head>
+<body class="toolbox-page">
+  <main class="toolbox-app">
+    <header class="toolbox-topbar">
+      <a href="/" class="toolbox-back-link">← 返回首页</a>
+      <div class="toolbox-title-wrap">
+        <span class="toolbox-title-icon">🧰</span>
+        <div>
+          <h1 class="toolbox-title">工具箱 V2</h1>
+          <p class="toolbox-subtitle">结构化工作台 · 本地离线工具集 · 无需后端</p>
+        </div>
+      </div>
+      <div class="toolbox-top-actions">
+        <button id="open-sidebar" class="toolbox-icon-btn" type="button">分类</button>
+      </div>
+    </header>
+
+    <div class="toolbox-shell">
+      <aside id="toolbox-sidebar" class="toolbox-sidebar">
+        <div class="sidebar-head">
+          <h2>工具导航</h2>
+          <p>搜索、分类、最近使用，快速直达</p>
+        </div>
+
+        <div class="sidebar-search-wrap">
+          <input id="tool-search" class="sidebar-search" type="search" placeholder="搜索工具（Ctrl/Cmd + K）" autocomplete="off">
+        </div>
+
+        <div id="category-filter" class="category-filter"></div>
+        <div id="tool-list"></div>
+      </aside>
+
+      <section class="workbench">
+        <div class="workbench-top">
+          <div id="recent-tools"></div>
+          <label class="persist-toggle">
+            <input id="remember-state" type="checkbox" checked>
+            记住输入与历史
+          </label>
+        </div>
+        <div id="tool-panel"></div>
+      </section>
+    </div>
+  </main>
+
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+  <script src="/vendor/toolbox/yaml-lite.js?v=20260328a" defer></script>
+  <script src="/vendor/toolbox/time-lite.js?v=20260328a" defer></script>
+  <script src="/js/toolbox.js?v=20260328b" defer></script>
+</body>
+</html>

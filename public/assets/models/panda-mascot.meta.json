@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2026-03-27T06:46:31.478Z",
+  "modelFile": "public/assets/models/panda-mascot.glb",
+  "fileSizeBytes": 422736,
+  "fileSizeKB": 412.83,
+  "animationClips": [
+    "Idle",
+    "Eat"
+  ],
+  "meshCount": 18,
+  "nodeCount": 43,
+  "materialCount": 5
+}

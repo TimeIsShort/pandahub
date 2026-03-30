@@ -2634,20 +2634,50 @@ function renderContent(str) {
   if (!str) return '';
   let html = escapeHtml(str);
 
+  // Code blocks (```...```) - render as styled pre blocks
+  html = html.replace(/```([\s\S]*?)```/g, function(match, code) {
+    return '<pre class="md-code-block"><code>' + code.trim() + '</code></pre>';
+  });
+
+  // Inline code (`...`)
+  html = html.replace(/`([^`]+)`/g, '<code class="md-inline-code">$1</code>');
+
+  // Bold (**...**)
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+  // Italic (*...*)
+  html = html.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>');
+
+  // Headers (### ...  ## ...  # ...)
+  html = html.replace(/^### (.+)$/gm, '<h3 class="md-h3">$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2 class="md-h2">$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1 class="md-h1">$1</h1>');
+
+  // Links: [text](url)
+  html = html.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="md-link">$1</a>');
+
+  // Unordered lists (- item or * item)
+  html = html.replace(/^[-*] (.+)$/gm, '<li class="md-li">$1</li>');
+  html = html.replace(/(<li class="md-li">.*<\/li>)(?=\n(?!<li))/gs, '$1');
+
+  // Blockquote (> quote)
+  html = html.replace(/^&gt; (.+)$/gm, '<blockquote class="md-quote">$1</blockquote>');
+
   // Convert markdown images to img tags
-  html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g, (match, alt, url) => {
+  html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g, function(match, alt, url) {
     const safeUrl = sanitizeImageUrl(url);
     if (!safeUrl) return match;
-    return `<img class="post-inline-image" src="${safeUrl}" alt="${alt}" loading="lazy">`;
+    return '<img class="post-inline-image" src="' + safeUrl + '" alt="' + alt + '" loading="lazy">';
   });
 
   // Convert standalone upload links to img tags for legacy content
-  html = html.replace(/(^|<br>)(\/uploads\/[^\s<]+?\.(?:png|jpe?g|gif|webp))(?=<br>|$)/gi, (all, prefix, url) => {
+  html = html.replace(/(^|<br>)(\/uploads\/[^\s<]+?\.(?:png|jpe?g|gif|webp))(?=<br>|$)/gi, function(all, prefix, url) {
     const safeUrl = sanitizeImageUrl(url);
     if (!safeUrl) return all;
-    return `${prefix}<img class="post-inline-image" src="${safeUrl}" alt="帖子图片" loading="lazy">`;
+    return prefix + '<img class="post-inline-image" src="' + safeUrl + '" alt="帖子图片" loading="lazy">';
   });
 
+  // Convert newlines to <br> (but preserve existing tags)
   html = html.replace(/\n/g, '<br>');
   return html;
 }

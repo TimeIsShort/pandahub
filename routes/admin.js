@@ -4,6 +4,7 @@ const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
 const { logAction } = require('../middleware/moderationLog');
 const { callBailianModeration, parseModerationResult } = require('../middleware/autoModeration');
+const { sendPushToUser } = require('../utils/pushHelper');
 
 const router = express.Router();
 const AI_DAILY_QUOTA = 100;
@@ -155,6 +156,14 @@ router.post('/posts/:id/approve', authMiddleware, (req, res) => {
       VALUES (?, 'post_approved', '🎉 帖子审核通过', '您的帖子「' || ? || '」已通过审核，现在可以在社区看到了！', ?)
     `).run(post.user_id, post.title, req.params.id);
 
+    // Web Push notification
+    sendPushToUser(post.user_id, {
+      title: '🎉 帖子审核通过',
+      body: '您的帖子「' + post.title + '」已通过审核',
+      url: '/post/' + post.id,
+      tag: 'post-approved'
+    });
+
     res.json({ success: true, message: '帖子已通过审核' });
   } catch (err) {
     console.error(err);
@@ -187,6 +196,14 @@ router.post('/posts/:id/reject', authMiddleware, (req, res) => {
       INSERT INTO notifications (user_id, type, title, content, post_id) 
       VALUES (?, 'post_rejected', '❌ 帖子审核未通过', ?, ?)
     `).run(post.user_id, reasonText, req.params.id);
+
+    // Web Push notification
+    sendPushToUser(post.user_id, {
+      title: '❌ 帖子审核未通过',
+      body: '您的帖子「' + post.title + '」未通过审核' + (reason ? '，原因：' + reason : ''),
+      url: '/post/' + post.id,
+      tag: 'post-rejected'
+    });
 
     res.json({ success: true, message: '帖子已拒绝' });
   } catch (err) {
@@ -408,6 +425,12 @@ router.post('/posts/:id/auto-review', authMiddleware, async (req, res) => {
       INSERT INTO notifications (user_id, type, title, content, post_id)
       VALUES (?, 'post_approved', '🎉 帖子审核通过', '您的帖子「' || ? || '」已通过审核，现在可以在社区看到了！', ?)
     `).run(post.user_id, post.title, post.id);
+    sendPushToUser(post.user_id, {
+      title: '🎉 帖子审核通过',
+      body: '您的帖子「' + post.title + '」已通过 AI 自动审核',
+      url: '/post/' + post.id,
+      tag: 'post-approved'
+    });
     logAction({ adminId: req.user.id, action: 'auto_approve_post', targetType: 'post', targetId: Number(post.id), details: `AI自动通过: ${post.title} | AI回复: ${raw}` });
     return res.json({ success: true, result: 'approved', ai_response: raw, message: 'AI 审核通过，帖子已发布' });
   }
@@ -418,6 +441,12 @@ router.post('/posts/:id/auto-review', authMiddleware, async (req, res) => {
       INSERT INTO notifications (user_id, type, title, content, post_id)
       VALUES (?, 'post_rejected', '❌ 帖子审核未通过', '您的帖子「' || ? || '」未通过审核（AI自动判定），请联系管理员申诉', ?)
     `).run(post.user_id, post.title, post.id);
+    sendPushToUser(post.user_id, {
+      title: '❌ 帖子审核未通过',
+      body: '您的帖子「' + post.title + '」未通过 AI 自动审核，请联系管理员申诉',
+      url: '/post/' + post.id,
+      tag: 'post-rejected'
+    });
     logAction({ adminId: req.user.id, action: 'auto_reject_post', targetType: 'post', targetId: Number(post.id), reason: 'AI自动拒绝', details: `AI拒绝: ${post.title} | AI回复: ${raw}` });
     return res.json({ success: true, result: 'rejected', ai_response: raw, message: 'AI 审核拒绝，帖子已下线' });
   }

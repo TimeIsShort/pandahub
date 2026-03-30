@@ -4,6 +4,7 @@ const { authMiddleware, optionalAuth } = require('../middleware/auth');
 const { containsSensitiveWords, refreshWords } = require('../middleware/wordFilter');
 const { logAction } = require('../middleware/moderationLog');
 const { updatePostFTS, getUserLevel, POINT_COST } = require('../models/database');
+const { sendPushToUser } = require('../utils/pushHelper');
 
 const router = express.Router();
 
@@ -293,6 +294,34 @@ router.post('/:id/comments', authMiddleware, (req, res) => {
 
     // Deduct points
     db.prepare('UPDATE users SET points = points - ? WHERE id = ?').run(cost, req.user.id);
+
+    // Notify post author (if not commenting on own post)
+    if (post.user_id !== req.user.id) {
+      db.prepare(`
+        INSERT INTO notifications (user_id, type, title, content, post_id)
+        VALUES (?, 'new_comment', '💬有新评论', '有人评论了你的帖子「' || ? || '」', ?)
+      `).run(post.user_id, post.title, req.params.id);
+      sendPushToUser(post.user_id, {
+        title: '💬 有新评论',
+        body: '有人评论了你的帖子「' + post.title + '」',
+        url: '/post/' + req.params.id,
+        tag: 'new-comment'
+      });
+    }
+
+    // Notify parent comment author (if this is a reply)
+    if (reply_to_user_id && reply_to_user_id !== req.user.id) {
+      db.prepare(`
+        INSERT INTO notifications (user_id, type, title, content, post_id)
+        VALUES (?, 'new_reply', '💬 有新回复', '有人回复了你的评论', ?)
+      `).run(reply_to_user_id, req.params.id);
+      sendPushToUser(reply_to_user_id, {
+        title: '💬 有新回复',
+        body: '有人回复了你的评论，快去看看吧',
+        url: '/post/' + req.params.id,
+        tag: 'new-reply'
+      });
+    }
 
     res.json({ comment, points_deducted: cost });
   } catch (err) {

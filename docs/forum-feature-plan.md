@@ -803,3 +803,20 @@
 - `routes/posts.js`（评论查询加 like_count）
 - `public/js/app.js`（评论点赞按钮 + voteComment/loadCommentVoteStatus 函数）
 
+
+---
+
+## v1.4 开发记录（续）
+
+### P1 黑暗模式 ✅
+- ✅ CSS 已有 4 套主题（default/sunset/sky/cyber）
+- ✅ 导航栏加 🌙 主题切换按钮（循环切换 4 套主题）
+- ✅ 切换后自动保存 `localStorage.theme`
+- ✅ 页面加载时恢复保存的主题
+- ✅ 未保存时检测系统深色模式偏好，自动切换 cyber 主题
+- ✅ 4 套主题：default（默认蓝）/ sunset（橙红）/ sky（青）/ cyber（深蓝黑）
+
+### 涉及文件
+- `public/index.html` - 导航栏加 `#theme-toggle` 按钮
+- `public/js/app.js` - `toggleTheme()` / `setTheme()` / 加载恢复逻辑
+

@@ -3477,6 +3477,46 @@ async function loadCommentVoteStatus() {
 window.voteComment = voteComment;
 window.loadCommentVoteStatus = loadCommentVoteStatus;
 
+
+// ============ Theme Toggle ============
+var themes = ['default', 'sunset', 'sky', 'cyber'];
+var themeEmoji = { default: '🌙', sunset: '🌅', sky: '🌤️', cyber: '🤖' };
+
+function toggleTheme() {
+  var body = document.body;
+  var current = body.getAttribute('data-theme') || 'default';
+  var idx = themes.indexOf(current);
+  var next = themes[(idx + 1) % themes.length];
+  setTheme(next);
+}
+
+function setTheme(theme) {
+  var body = document.body;
+  if (theme === 'default') {
+    body.removeAttribute('data-theme');
+  } else {
+    body.setAttribute('data-theme', theme);
+  }
+  var btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = themeEmoji[theme] || '🌙';
+  localStorage.setItem('theme', theme);
+}
+
+window.toggleTheme = toggleTheme;
+window.setTheme = setTheme;
+
+// Apply saved theme on load
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved && themes.includes(saved)) {
+    setTheme(saved);
+  } else {
+    // System preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setTheme('cyber');
+    }
+  }
+})();
 // ============ Messages ============
 let currentMsgPartner = null;
 

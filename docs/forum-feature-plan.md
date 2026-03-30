@@ -674,3 +674,24 @@
 - `public/js/app.js` - editPost 函数 + submitPost 编辑模式 + showNewPost 重置
 - `routes/posts.js` - PUT/DELETE API（已有，无需修改）
 
+
+---
+
+## v1.3 开发记录（续）
+
+### P0 积分排行榜 ✅
+- ✅ `routes/leaderboard.js` 新建（GET /leaderboard?limit=10）
+- ✅ API 返回 top 用户：积分/昵称/头像/等级/等级图标/等级颜色
+- ✅ 首页工具栏加「🏆 排行榜」按钮（橙色渐变）
+- ✅ 排行榜面板：渐变卡片 + top 10 用户列表
+- ✅ 前三名 🥇🥈🥉 奖牌样式 + 黄色背景
+- ✅ 每条显示：排名/头像/昵称/等级/积分
+- ✅ `toggleLeaderboard()` / `loadLeaderboard()` JS函数
+- ✅ 收起/展开切换，内容懒加载
+
+### 涉及文件
+- `routes/leaderboard.js`（新建）
+- `index.js`（注册 leaderboard 路由）
+- `public/index.html`（排行榜面板HTML + 工具栏按钮）
+- `public/js/app.js`（toggleLeaderboard / loadLeaderboard 函数）
+

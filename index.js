@@ -50,6 +50,7 @@ const pushRoutes = require('./routes/push');
 const i18nRoutes = require('./routes/i18n');
 const sitemapRoutes = require('./routes/sitemap');
 const messageRoutes = require('./routes/messages');
+const leaderboardRoutes = require('./routes/leaderboard');
 const followRoutes = require('./routes/follow');
 const favoritesRoutes = require('./routes/favorites');
 
@@ -121,6 +122,7 @@ app.use('/api/push', pushRoutes);
 app.use('/api/i18n', i18nRoutes);
 app.use('/sitemap.xml', sitemapRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api', followRoutes);
 app.use('/api/favorites', favoritesRoutes);
 

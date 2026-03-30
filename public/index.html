@@ -115,8 +115,20 @@
           <button class="btn-primary" id="btn-new-post" onclick="showNewPost()" style="display:none;">
             + 发布帖子
           </button>
+          <button id="btn-leaderboard" onclick="toggleLeaderboard()" style="padding:8px 14px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">
+            🏆 排行榜
+          </button>
         </div>
         <div class="post-list" id="post-list"></div>
+        <aside id="leaderboard-panel" style="display:none;padding:0 16px 16px;">
+          <div style="background:linear-gradient(135deg,#667eea22,#764ba222);border:1px solid #d5ddff;border-radius:16px;padding:16px;margin-top:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <h3 style="font-size:15px;color:#667eea;font-weight:700;margin:0;">🏆 积分排行榜</h3>
+              <button onclick="toggleLeaderboard()" style="background:none;border:none;font-size:12px;color:#94a3b8;cursor:pointer;">收起 ×</button>
+            </div>
+            <div id="leaderboard-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+        </aside>
         <div class="pagination" id="pagination"></div>
         <aside id="panda-playground" class="panda-playground" aria-label="熊猫互动区">
           <div class="panda-card">

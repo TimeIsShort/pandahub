@@ -3253,6 +3253,49 @@ async function loadFavoritesList() {
 
 window.loadFavoritesList = loadFavoritesList;
 
+// ============ Leaderboard ============
+let leaderboardLoaded = false;
+
+window.toggleLeaderboard = function() {
+  var panel = document.getElementById('leaderboard-panel');
+  if (!panel) return;
+  if (panel.style.display === 'none') {
+    panel.style.display = '';
+    if (!leaderboardLoaded) loadLeaderboard();
+  } else {
+    panel.style.display = 'none';
+  }
+};
+
+async function loadLeaderboard() {
+  var el = document.getElementById('leaderboard-list');
+  if (!el) return;
+  leaderboardLoaded = true;
+  el.innerHTML = '<div style="text-align:center;padding:16px;color:#94a3b8;">加载中...</div>';
+  try {
+    var res = await api('/leaderboard?limit=10');
+    var users = res.users || [];
+    if (users.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:16px;color:#94a3b8;">暂无数据</div>';
+      return;
+    }
+    el.innerHTML = users.map(function(u) {
+      var name = u.nickname || u.username;
+      var rank = u.rank;
+      var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank + 'th';
+      var bg = rank <= 3 ? 'background:linear-gradient(135deg,#fef3c7,#fde68a);border-color:#f59e0b;' : 'background:#fff;border-color:#e2e8f0;';
+      var levelColor = u.level_color || '#667eea';
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1.5px solid;' + bg + '">' +
+        '<span style="font-size:18px;width:28px;text-align:center;">' + medal + '</span>' +
+        '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,' + levelColor + ',#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;">' + (u.avatar ? '<img src="' + u.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' : name[0].toUpperCase()) + '</div>' +
+        '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:#1e3a5f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div><div style="font-size:11px;color:' + levelColor + ';">' + u.level_icon + ' ' + u.level_name + '</div></div>' +
+        '<div style="text-align:right;"><div style="font-size:14px;font-weight:800;color:#f59e0b;">' + u.points + '</div><div style="font-size:10px;color:#94a3b8;">积分</div></div></div>';
+    }).join('');
+  } catch (e) {
+    el.innerHTML = '<div style="text-align:center;padding:16px;color:#ef4444;">加载失败</div>';
+  }
+}
+
 // ============ Messages ============
 let currentMsgPartner = null;
 

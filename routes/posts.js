@@ -266,6 +266,18 @@ router.post('/:id/comments', authMiddleware, (req, res) => {
       }
     }
 
+    // Check points before commenting
+    const cost = POINT_COST.create_comment || 2;
+    const user = db.prepare('SELECT points FROM users WHERE id = ?').get(req.user.id);
+    const currentPoints = Number(user.points) || 0;
+    if (currentPoints < cost) {
+      return res.status(403).json({
+        error: `积分不足，评论需要 ${cost} 积分，当前剩余 ${currentPoints} 积分`,
+        need_points: cost,
+        current_points: currentPoints
+      });
+    }
+
     const result = db.prepare(
       'INSERT INTO comments (post_id, user_id, content, parent_id, reply_to_user_id) VALUES (?, ?, ?, ?, ?)'
     ).run(req.params.id, req.user.id, content, parent_id || null, reply_to_user_id || null);
@@ -279,7 +291,10 @@ router.post('/:id/comments', authMiddleware, (req, res) => {
       WHERE c.id = ?
     `).get(result.lastInsertRowid);
 
-    res.json({ comment });
+    // Deduct points
+    db.prepare('UPDATE users SET points = points - ? WHERE id = ?').run(cost, req.user.id);
+
+    res.json({ comment, points_deducted: cost });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '评论失败' });

@@ -1510,10 +1510,15 @@ async function submitComment() {
       payload.reply_to_user_id = currentReplyTo.userId;
     }
 
-    await api(`/posts/${currentPostId}/comments`, {
+    const res = await api(`/posts/${currentPostId}/comments`, {
       method: 'POST',
       body: JSON.stringify(payload)
     });
+    if (res.error) {
+      showToast(res.error, 'error');
+      return;
+    }
+    showToast(res.points_deducted ? '评论成功，-' + res.points_deducted + '积分' : '评论成功', 'success');
     document.getElementById('comment-input').value = '';
     commentImages = [];
     uploadedImageUrls = [];

@@ -1,7 +1,7 @@
 # pandahub.cloud 论坛功能规划
 
 > 更新时间：2026-03-30
-> 当前状态：P0~P4 ✅ 完成 | v1.1 P1~P2 ✅ 完成 | P3 Web Push ✅ | P3 Markdown 渲染 ✅
+> 当前状态：v1.1 全部功能完成 ✅ | https://github.com/TimeIsShort/pandahub
 
 ---
 
@@ -442,4 +442,20 @@
 - ✅ 支持标题（# / ## / ###）、加粗、斜体、行内代码、代码块、链接、列表、引用
 - ✅ 深色代码块样式 + 浅色行内代码样式
 - ✅ 用户发帖时可直接使用 Markdown 语法
+
+
+---
+
+## P4 开发记录（2026-03-30 下午）
+
+### 分享功能 ✅
+- ✅ 每个帖子详情页底部新增「🔗 分享」按钮
+- ✅ 一键复制帖子链接到剪贴板
+- ✅ 涉及文件：`public/js/app.js`（`sharePost` 函数）
+
+### SEO 优化 ✅
+- ✅ `robots.txt` - 允许搜索引擎收录
+- ✅ `sitemap.xml` - 自动生成（首页 + 标签页 + 所有帖子页，最多 500 条）
+- ✅ `public/index.html` - 新增 meta description / og:title / og:description / twitter:card
+- ✅ 涉及文件：`routes/sitemap.js`（新建）、`public/index.html`
 

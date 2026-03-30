@@ -1408,7 +1408,8 @@ async function viewPost(id) {
         <div class="post-detail-content">${renderContent(res.post.content)}</div>
         ${user ? `
         <div class="post-actions">
-          <button onclick="deletePost(${res.post.id})" style="color:#ef4444">🗑 删除</button>
+          <button onclick="sharePost(${res.post.id}, '${escapeHtml(res.post.title)}')">🔗 分享</button>
+          ${res.user && res.user.id === res.post.user_id || (user && user.role === 'admin') ? `<button onclick="deletePost(${res.post.id})" style="color:#ef4444">🗑 删除</button>` : ''}
         </div>` : ''}
       </div>
     `;
@@ -1593,6 +1594,28 @@ function removeCommentImage(index) {
     });
   }
 }
+
+window.sharePost = function(id, title) {
+  const url = window.location.origin + '/#/post/' + id;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() {
+      showToast('链接已复制到剪贴板', 'success');
+    }, function() {
+      showToast('复制失败，请手动复制链接', 'error');
+    });
+  } else {
+    // Fallback
+    var ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('链接已复制到剪贴板', 'success');
+  }
+};
 
 async function deletePost(id) {
   const ok = await askConfirm('删除后不可恢复，确定要继续吗？', '删除帖子');

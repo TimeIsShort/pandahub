@@ -48,6 +48,7 @@ const emailRoutes = require('./routes/email');
 const searchRoutes = require('./routes/search');
 const pushRoutes = require('./routes/push');
 const i18nRoutes = require('./routes/i18n');
+const sitemapRoutes = require('./routes/sitemap');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -115,6 +116,7 @@ app.use('/api/email', emailRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/i18n', i18nRoutes);
+app.use('/sitemap.xml', sitemapRoutes);
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));

@@ -610,6 +610,7 @@
         <button class="tab-btn" id="tabLogsBtn">📊 操作日志</button>
         <button class="tab-btn" id="tabChartsBtn">📈 统计看板</button>
         <button class="tab-btn" id="tabTagsBtn">🏷️ 标签管理</button>
+        <button class="tab-btn" id="tabReportsBtn">🚩 举报管理<span id="pendingReportsBadge"></span></button>
       </div>
       <div id="tabApps">
         <div class="card">
@@ -703,6 +704,24 @@
             </div>
           </div>
           <div id="tagsList"></div>
+        </div>
+      </div>
+      <!-- Reports Tab -->
+      <div id="tabReports" class="hidden">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <h2>🚩 举报管理</h2>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select id="reportStatusFilter" onchange="loadReports(1)" style="padding:8px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:13px;">
+                <option value="pending">待处理</option>
+                <option value="resolved">已处理</option>
+                <option value="dismissed">已忽略</option>
+                <option value="all">全部</option>
+              </select>
+            </div>
+          </div>
+          <div id="reportsList"></div>
+          <div id="reportsPagination" style="display:flex;gap:8px;justify-content:center;margin-top:16px;"></div>
         </div>
       </div>
       <div id="tabUsers" class="hidden">
@@ -861,7 +880,7 @@
 
     function setActiveTab(tab) {
       currentTab = tab;
-      var tabs = ['apps', 'posts', 'users', 'words', 'logs', 'charts', 'tags'];
+      var tabs = ['apps', 'posts', 'users', 'words', 'logs', 'charts', 'tags', 'reports'];
       for (var i = 0; i < tabs.length; i++) {
         var key = tabs[i];
         var panel = document.getElementById('tab' + key.charAt(0).toUpperCase() + key.slice(1));
@@ -892,6 +911,7 @@
     document.getElementById('tabLogsBtn').onclick = function() { setActiveTab('logs'); };
     document.getElementById('tabChartsBtn').onclick = function() { setActiveTab('charts'); };
     document.getElementById('tabTagsBtn').onclick = function() { setActiveTab('tags'); };
+    document.getElementById('tabReportsBtn').onclick = function() { setActiveTab('reports'); loadReports(); };
 
     document.getElementById('appsSearchInput').addEventListener('input', function() { renderApplications(); });
     document.getElementById('appsStatusFilter').addEventListener('change', function() { renderApplications(); });
@@ -914,6 +934,7 @@
         loadApplications();
         loadPosts();
         loadUsers();
+        loadReportsBadge();
       })
       .catch(function(err) {
         if (String(err && err.message) !== 'AUTH_EXPIRED' && String(err && err.message) !== 'FORBIDDEN') {
@@ -925,6 +946,16 @@
     function showLoginView() {
       document.getElementById('loginView').classList.remove('hidden');
       document.getElementById('adminView').classList.add('hidden');
+    }
+
+    function loadReportsBadge() {
+      adminApi('/api/reports/admin/count')
+      .then(function(data) {
+        if (data.error) return;
+        var badge = document.getElementById('pendingReportsBadge');
+        if (badge) badge.innerHTML = data.count > 0 ? '<span class="badge">' + data.count + '</span>' : '';
+      })
+      .catch(function() {});
     }
 
     function loadApplications() {
@@ -1042,6 +1073,99 @@
     // ============ Moderation Logs ============
     var logsCache = [];
     var logsPage = 1;
+
+    var reportsPage = 1;
+    var reportsCache = [];
+
+    function loadReports(page) {
+      reportsPage = page || 1;
+      var status = document.getElementById('reportStatusFilter') ? document.getElementById('reportStatusFilter').value : 'pending';
+      adminApi('/api/reports/admin?status=' + status + '&page=' + reportsPage + '&limit=20')
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        reportsCache = data.reports || [];
+        renderReports(data);
+      })
+      .catch(function() { showToast('加载举报列表失败', 'error'); });
+    }
+
+    function renderReports(data) {
+      var el = document.getElementById('reportsList');
+      if (!reportsCache.length) {
+        el.innerHTML = '<div style="padding:30px;text-align:center;color:#888;font-size:14px;">暂无举报记录</div>';
+        document.getElementById('reportsPagination').innerHTML = '';
+        return;
+      }
+      var statusClass = { pending: 'status-pending', resolved: 'status-approved', dismissed: 'status-rejected' };
+      var statusName = { pending: '待处理', resolved: '已处理', dismissed: '已忽略' };
+      var reasonName = {
+        spam: '🚨 垃圾广告',
+        harmful: '⚠️ 有害信息',
+        harassment: '😠 人身攻击',
+        misinformation: '📰 虚假信息',
+        copyright: '©️ 侵权抄袭',
+        other: '📝 其他'
+      };
+      var html = '<div class="table-wrap"><div class="row-head" style="grid-template-columns:100px 80px 80px 1fr 120px 120px;">';
+      html += '<div>时间</div><div>类型</div><div>原因</div><div>内容</div><div>举报人</div><div>操作</div></div>';
+      for (var i = 0; i < reportsCache.length; i++) {
+        var r = reportsCache[i];
+        html += '<div class="row-item" style="grid-template-columns:100px 80px 80px 1fr 120px 120px;align-items:center;">';
+        html += '<div style="font-size:11px;color:#666;">' + fd(r.created_at) + '</div>';
+        html += '<div style="font-size:11px;"><span class="status-pill" style="background:#667eea22;color:#667eea;">' + (r.target_type === 'post' ? '📝帖子' : '💬评论') + '</span></div>';
+        html += '<div style="font-size:11px;color:#555;">' + (reasonName[r.reason] || r.reason) + '</div>';
+        html += '<div style="font-size:11px;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + e(r.target_content || '') + '">' + e(r.target_content || '(已删除)') + '</div>';
+        html += '<div style="font-size:11px;">' + e(r.reporter_nickname || r.reporter_username || '-') + '</div>';
+        html += '<div style="display:flex;gap:4px;flex-wrap:wrap;">';
+        if (r.status === 'pending') {
+          html += '<button class="btn btn-sm" onclick="dismissReport(' + r.id + ')" style="padding:3px 8px;background:#94a3b8;color:#fff;font-size:11px;border:none;border-radius:6px;cursor:pointer;">忽略</button>';
+          html += '<button class="btn btn-sm" onclick="actionReport(' + r.id + ', \'delete_target\')" style="padding:3px 8px;background:#ef4444;color:#fff;font-size:11px;border:none;border-radius:6px;cursor:pointer;">删内容</button>';
+          html += '<button class="btn btn-sm" onclick="actionReport(' + r.id + ', \'ban_user\')" style="padding:3px 8px;background:#7c3aed;color:#fff;font-size:11px;border:none;border-radius:6px;cursor:pointer;">封号</button>';
+        } else {
+          html += '<span class="status-pill ' + (statusClass[r.status] || '') + '">' + (statusName[r.status] || r.status) + '</span>';
+        }
+        html += '</div></div>';
+      }
+      html += '</div>';
+
+      // Pagination
+      var totalPages = Math.ceil(data.total / data.limit);
+      var pagEl = document.getElementById('reportsPagination');
+      if (totalPages > 1) {
+        var pHtml = '';
+        pHtml += '<button ' + (reportsPage <= 1 ? 'disabled' : '') + ' onclick="loadReports(' + (reportsPage - 1) + ')" style="padding:6px 12px;border-radius:8px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;font-size:12px;">上一页</button>';
+        pHtml += '<span style="font-size:12px;color:#666;padding:0 8px;">第 ' + reportsPage + ' / ' + totalPages + ' 页</span>';
+        pHtml += '<button ' + (reportsPage >= totalPages ? 'disabled' : '') + ' onclick="loadReports(' + (reportsPage + 1) + ')" style="padding:6px 12px;border-radius:8px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;font-size:12px;">下一页</button>';
+        pagEl.innerHTML = pHtml;
+      } else {
+        pagEl.innerHTML = '';
+      }
+    }
+
+    function dismissReport(id) {
+      adminApi('/api/reports/admin/' + id + '/dismiss', { method: 'POST' })
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        showToast('已忽略该举报', 'success');
+        loadReports(reportsPage);
+      })
+      .catch(function() { showToast('操作失败', 'error'); });
+    }
+
+    function actionReport(id, action) {
+      var note = prompt('请输入处理备注（可选）：');
+      adminApi('/api/reports/admin/' + id + '/action', {
+        method: 'POST',
+        body: JSON.stringify({ action: action, admin_note: note || '' })
+      })
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        var msg = action === 'delete_target' ? '已删除内容' : action === 'ban_user' ? '已封禁用户' : '处理成功';
+        showToast(msg, 'success');
+        loadReports(reportsPage);
+      })
+      .catch(function() { showToast('操作失败', 'error'); });
+    }
 
     function loadLogs(page) {
       logsPage = page || 1;

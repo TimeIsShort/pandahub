@@ -54,6 +54,7 @@ const messageRoutes = require('./routes/messages');
 const leaderboardRoutes = require('./routes/leaderboard');
 const followRoutes = require('./routes/follow');
 const favoritesRoutes = require('./routes/favorites');
+const reportRoutes = require('./routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -127,6 +128,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api', followRoutes);
 app.use('/api/favorites', favoritesRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));

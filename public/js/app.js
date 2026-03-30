@@ -1446,6 +1446,7 @@ async function viewPost(id) {
         <div class="post-actions">
           <button id="btn-favorite" onclick="toggleFavorite(${res.post.id})">☆ 收藏</button>
           <button onclick="sharePost(${res.post.id}, '${escapeHtml(res.post.title)}')">🔗 分享</button>
+          ${user && user.id !== res.post.user_id ? `<button onclick="openReportModal('post', ${res.post.id}, '${escapeHtml(res.post.title.replace(/'/g, "\\'"))}')" style="color:#94a3b8;">🚩 举报</button>` : ''}
           ${res.user && res.user.id === res.post.user_id || (user && user.role === 'admin') ? `<button onclick="editPost(${res.post.id})" style="color:#5d6dff">✏️ 编辑</button>` : ''}
           ${res.user && res.user.id === res.post.user_id || (user && user.role === 'admin') ? `<button onclick="deletePost(${res.post.id})" style="color:#ef4444">🗑 删除</button>` : ''}
         </div>` : ''}
@@ -1481,6 +1482,7 @@ async function viewPost(id) {
               <button class="comment-action-btn comment-like-btn" id="clike-btn-${r.id}" onclick="voteComment(${r.id})" style="color:#94a3b8;">
                 👍 <span id="clike-count-${r.id}">${r.like_count || 0}</span>
               </button>
+              ${user && user.id !== r.user_id ? `<button class="comment-action-btn" onclick="openReportModal('comment', ${r.id})" style="color:#94a3b8;">🚩 举报</button>` : ''}
               ${user ? `<button class="comment-action-btn" onclick="startReply(${r.id}, ${r.user_id}, '${escapeHtml(r.nickname || r.username)}')">回复</button>` : ''}
             </div>
           </div>`).join('');
@@ -1498,6 +1500,7 @@ async function viewPost(id) {
             <button class="comment-action-btn comment-like-btn" id="clike-btn-${comment.id}" onclick="voteComment(${comment.id})" title="赞一个" style="color:#94a3b8;">
               👍 <span id="clike-count-${comment.id}">${comment.like_count || 0}</span>
             </button>
+            ${user && user.id !== comment.user_id ? `<button class="comment-action-btn" onclick="openReportModal('comment', ${comment.id})" style="color:#94a3b8;">🚩 举报</button>` : ''}
             ${user ? `<button class="comment-action-btn" onclick="startReply(${comment.id}, ${comment.user_id}, '${escapeHtml(comment.nickname || comment.username)}')">回复</button>` : ''}
           </div>
           ${directReplies ? `<div class="reply-list">${directReplies}</div>` : ''}
@@ -1735,6 +1738,106 @@ window.sharePost = function(id, title) {
 };
 
 async function deletePost(id) {
+
+// ============ Report ============
+var _currentReport = { targetType: null, targetId: null };
+
+var REPORT_REASONS = [
+  { value: 'spam', label: '🚨 垃圾广告' },
+  { value: 'harmful', label: '⚠️ 有害信息' },
+  { value: 'harassment', label: '😠 人身攻击' },
+  { value: 'misinformation', label: '📰 虚假信息' },
+  { value: 'copyright', label: '©️ 侵权抄袭' },
+  { value: 'other', label: '📝 其他问题' },
+];
+
+async function openReportModal(targetType, targetId, targetTitle) {
+  var user = getUser();
+  if (!user) { showToast('请先登录', 'error'); return; }
+
+  _currentReport = { targetType: targetType, targetId: targetId };
+
+  var modal = document.getElementById('report-modal');
+  var targetEl = document.getElementById('report-target');
+  var reasonsEl = document.getElementById('report-reasons');
+  var descEl = document.getElementById('report-description');
+
+  targetEl.textContent = targetTitle
+    ? (targetType === 'post' ? '帖子：' + targetTitle : '评论：' + targetTitle)
+    : (targetType === 'post' ? '这篇帖子' : '这条评论');
+
+  // Render reason buttons
+  reasonsEl.innerHTML = REPORT_REASONS.map(function(r) {
+    return '<button onclick="selectReportReason(this, \'' + r.value + '\')" data-reason="' + r.value + '" style="padding:6px 12px;border-radius:20px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;color:#627582;cursor:pointer;transition:all 0.2s;">' + r.label + '</button>';
+  }).join('');
+
+  if (descEl) descEl.value = '';
+  if (modal) modal.style.display = 'flex';
+}
+
+function selectReportReason(btn, value) {
+  // Deselect all, select this one
+  var reasonsEl = document.getElementById('report-reasons');
+  reasonsEl.querySelectorAll('button').forEach(function(b) {
+    b.style.background = '#fff';
+    b.style.borderColor = '#e2e8f0';
+    b.style.color = '#627582';
+  });
+  btn.style.background = 'linear-gradient(135deg,#ef444422,#dc262622)';
+  btn.style.borderColor = '#ef4444';
+  btn.style.color = '#ef4444';
+  btn.dataset.selected = '1';
+}
+
+function closeReportModal() {
+  var modal = document.getElementById('report-modal');
+  if (modal) modal.style.display = 'none';
+  _currentReport = { targetType: null, targetId: null };
+}
+
+async function submitReport() {
+  if (!_currentReport.targetType || !_currentReport.targetId) {
+    showToast('举报信息不完整', 'error');
+    return;
+  }
+
+  // Get selected reason
+  var reasonsEl = document.getElementById('report-reasons');
+  var selectedBtn = reasonsEl.querySelector('button[data-selected="1"]');
+  var reason = selectedBtn ? selectedBtn.dataset.reason : null;
+  if (!reason) {
+    showToast('请选择举报原因', 'error');
+    return;
+  }
+
+  var descEl = document.getElementById('report-description');
+  var description = descEl ? descEl.value.trim() : '';
+
+  try {
+    var res = await api('/reports', {
+      method: 'POST',
+      body: JSON.stringify({
+        target_type: _currentReport.targetType,
+        target_id: _currentReport.targetId,
+        reason: reason,
+        description: description
+      })
+    });
+    if (res.error) {
+      showToast(res.error, 'error');
+      return;
+    }
+    showToast('举报已提交，感谢您的反馈', 'success');
+    closeReportModal();
+  } catch (e) {
+    showToast('提交失败，请稍后重试', 'error');
+  }
+}
+
+window.openReportModal = openReportModal;
+window.closeReportModal = closeReportModal;
+window.submitReport = submitReport;
+window.selectReportReason = selectReportReason;
   const ok = await askConfirm('删除后不可恢复，确定要继续吗？', '删除帖子');
   if (!ok) return;
   try {

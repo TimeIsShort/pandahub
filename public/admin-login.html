@@ -582,6 +582,8 @@
         <button class="tab-btn active" id="tabAppsBtn">📋 账号申请</button>
         <button class="tab-btn" id="tabPostsBtn">📝 帖子管理<span id="pendingPostsBadge"></span></button>
         <button class="tab-btn" id="tabUsersBtn">👥 用户管理</button>
+        <button class="tab-btn" id="tabWordsBtn">🛡️ 敏感词</button>
+        <button class="tab-btn" id="tabLogsBtn">📊 操作日志</button>
       </div>
       <div id="tabApps">
         <div class="card">
@@ -633,6 +635,44 @@
             </select>
           </div>
           <div id="usersList"></div>
+        </div>
+      </div>
+
+      <!-- 敏感词管理 -->
+      <div id="tabWords" class="hidden">
+        <div class="card">
+          <h2>🛡️ 敏感词管理</h2>
+          <div class="list-toolbar">
+            <input id="wordInput" type="text" placeholder="输入敏感词（粘贴或逐个输入）" style="flex:1;">
+            <button class="btn btn-approve" id="addWordBtn" style="padding:9px 16px;">添加</button>
+          </div>
+          <p style="font-size:12px;color:#888;margin-bottom:10px;">支持批量添加，每行一个词</p>
+          <div id="wordsList"></div>
+        </div>
+      </div>
+
+      <!-- 操作日志 -->
+      <div id="tabLogs" class="hidden">
+        <div class="card">
+          <h2>📊 操作日志</h2>
+          <div class="list-toolbar">
+            <select id="logActionFilter" style="padding:8px 12px;border:1px solid #dce5ff;border-radius:8px;font-size:13px;">
+              <option value="">全部动作</option>
+              <option value="approve_application">通过申请</option>
+              <option value="reject_application">拒绝申请</option>
+              <option value="approve_post">通过帖子</option>
+              <option value="reject_post">拒绝帖子</option>
+              <option value="delete_post">删除帖子</option>
+              <option value="ban_user">封禁用户</option>
+              <option value="unban_user">解封用户</option>
+              <option value="auto_approve_post">AI自动通过</option>
+              <option value="auto_reject_post">AI自动拒绝</option>
+              <option value="add_word_filter">添加敏感词</option>
+              <option value="remove_word_filter">删除敏感词</option>
+            </select>
+          </div>
+          <div id="logsList"></div>
+          <div id="logsPagination" style="margin-top:14px;display:flex;gap:8px;align-items:center;justify-content:center;"></div>
         </div>
       </div>
     </div>
@@ -733,7 +773,7 @@
 
     function setActiveTab(tab) {
       currentTab = tab;
-      var tabs = ['apps', 'posts', 'users'];
+      var tabs = ['apps', 'posts', 'users', 'words', 'logs'];
       for (var i = 0; i < tabs.length; i++) {
         var key = tabs[i];
         var panel = document.getElementById('tab' + key.charAt(0).toUpperCase() + key.slice(1));
@@ -751,11 +791,15 @@
       if (tab === 'apps') loadApplications();
       if (tab === 'posts') loadPosts();
       if (tab === 'users') loadUsers();
+      if (tab === 'words') loadWords();
+      if (tab === 'logs') loadLogs(1);
     }
 
     document.getElementById('tabAppsBtn').onclick = function() { setActiveTab('apps'); };
     document.getElementById('tabPostsBtn').onclick = function() { setActiveTab('posts'); };
     document.getElementById('tabUsersBtn').onclick = function() { setActiveTab('users'); };
+    document.getElementById('tabWordsBtn').onclick = function() { setActiveTab('words'); };
+    document.getElementById('tabLogsBtn').onclick = function() { setActiveTab('logs'); };
 
     document.getElementById('appsSearchInput').addEventListener('input', function() { renderApplications(); });
     document.getElementById('appsStatusFilter').addEventListener('change', function() { renderApplications(); });
@@ -834,6 +878,137 @@
         showToast('加载用户列表失败', 'error');
       });
     }
+
+    // ============ Sensitive Words Management ============
+    function loadWords() {
+      adminApi('/api/admin/word-filter')
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        renderWords(data.words || []);
+      })
+      .catch(function(err) { showToast('加载敏感词失败', 'error'); });
+    }
+
+    function renderWords(words) {
+      var el = document.getElementById('wordsList');
+      if (!words.length) {
+        el.innerHTML = '<div style="padding:20px;text-align:center;color:#888;font-size:14px;">暂无敏感词，请添加</div>';
+        return;
+      }
+      var html = '<div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;">';
+      for (var i = 0; i < words.length; i++) {
+        html += '<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:20px;font-size:13px;color:#991b1b;">'
+          + e(words[i])
+          + '<button onclick="removeWord(\'' + e(words[i]) + '\')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:16px;line-height:1;padding:0;">×</button>'
+          + '</span>';
+      }
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    document.getElementById('addWordBtn').onclick = function() {
+      var input = document.getElementById('wordInput');
+      var val = input.value.trim();
+      if (!val) { showToast('请输入敏感词', 'error'); return; }
+      var words = val.split(/\r?\n/).map(function(w) { return w.trim(); }).filter(function(w) { return w; });
+      if (!words.length) { showToast('未检测到有效敏感词', 'error'); return; }
+      var btn = this;
+      btn.disabled = true;
+      btn.textContent = '添加中...';
+      adminApi('/api/admin/word-filter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ words: words })
+      }).then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); btn.disabled = false; btn.textContent = '添加'; return; }
+        showToast('成功添加 ' + words.length + ' 个敏感词', 'success');
+        input.value = '';
+        loadWords();
+        btn.disabled = false;
+        btn.textContent = '添加';
+      }).catch(function() {
+        showToast('添加失败', 'error');
+        btn.disabled = false;
+        btn.textContent = '添加';
+      });
+    };
+
+    window.removeWord = function(word) {
+      if (!confirm('确认删除敏感词「' + word + '」？')) return;
+      adminApi('/api/admin/word-filter', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: word })
+      }).then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        showToast('已删除「' + word + '」', 'success');
+        loadWords();
+      }).catch(function() { showToast('删除失败', 'error'); });
+    };
+
+    // ============ Moderation Logs ============
+    var logsCache = [];
+    var logsPage = 1;
+
+    function loadLogs(page) {
+      logsPage = page || 1;
+      var action = document.getElementById('logActionFilter') ? document.getElementById('logActionFilter').value : '';
+      adminApi('/api/admin/moderation-log?page=' + logsPage + '&limit=30&action=' + encodeURIComponent(action || ''))
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        logsCache = data.logs || [];
+        renderLogs(data);
+      })
+      .catch(function() { showToast('加载日志失败', 'error'); });
+    }
+
+    function renderLogs(data) {
+      var el = document.getElementById('logsList');
+      if (!logsCache.length) {
+        el.innerHTML = '<div style="padding:30px;text-align:center;color:#888;font-size:14px;">暂无操作日志</div>';
+        document.getElementById('logsPagination').innerHTML = '';
+        return;
+      }
+      var actionNames = {
+        'approve_application': '✅通过申请',
+        'reject_application': '❌拒绝申请',
+        'approve_post': '✅通过帖子',
+        'reject_post': '❌拒绝帖子',
+        'delete_post': '🗑️删除帖子',
+        'ban_user': '🔨封禁用户',
+        'unban_user': '🔓解封用户',
+        'auto_approve_post': '🤖AI通过',
+        'auto_reject_post': '🤖AI拒绝',
+        'auto_review_post': '🤖AI审核',
+        'add_word_filter': '➕添加敏感词',
+        'remove_word_filter': '➖删除敏感词',
+      };
+      var html = '<div class="table-wrap"><div class="row-head" style="grid-template-columns:140px 120px 100px 1fr;">';
+      html += '<div>时间</div><div>操作人</div><div>动作</div><div>详情</div></div>';
+      for (var i = 0; i < logsCache.length; i++) {
+        var log = logsCache[i];
+        html += '<div class="row-item" style="grid-template-columns:140px 120px 100px 1fr;">';
+        html += '<div style="font-size:12px;color:#666;">' + fd(log.created_at) + '</div>';
+        html += '<div style="font-size:13px;">' + e(log.admin_nickname || log.admin_username || '系统') + '</div>';
+        html += '<div style="font-size:12px;color:#555;"><span class="status-pill">' + (actionNames[log.action] || log.action) + '</span></div>';
+        html += '<div style="font-size:12px;color:#888;">' + e(log.details || log.reason || '-') + '</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+      el.innerHTML = html;
+
+      // Pagination
+      var pages = Math.ceil((data.total || 0) / (data.limit || 30));
+      var pagination = document.getElementById('logsPagination');
+      if (pages <= 1) { pagination.innerHTML = ''; return; }
+      var html2 = '';
+      if (logsPage > 1) html2 += '<button class="btn btn-secondary" onclick="loadLogs(' + (logsPage - 1) + ')">上一页</button>';
+      html2 += '<span style="font-size:13px;color:#666;padding:0 10px;">第 ' + logsPage + ' / ' + pages + ' 页</span>';
+      if (logsPage < pages) html2 += '<button class="btn btn-secondary" onclick="loadLogs(' + (logsPage + 1) + ')">下一页</button>';
+      pagination.innerHTML = html2;
+    }
+
+    document.getElementById('logActionFilter').addEventListener('change', function() { loadLogs(1); });
 
     function updateOverviewStats() {
       var appTotal = applicationsCache.length;

@@ -744,3 +744,24 @@
 - `public/css/style.css` - `.vote-inline-btn` 样式
 - `routes/posts.js` - 热度排序（已有）
 
+
+---
+
+## v1.3 开发记录（续）
+
+### P2 精选/置顶 ✅
+- ✅ 数据库加 `is_pinned`（置顶）和 `is_featured`（加精）字段
+- ✅ 后端 `POST /api/admin/posts/:id/pin`（置顶/取消）
+- ✅ 后端 `POST /api/admin/posts/:id/feature`（加精/取消）
+- ✅ 帖子列表：置顶帖显示🏆橙色标签，加精帖显示⭐粉色标签
+- ✅ 帖子列表排序：置顶帖优先排在最前
+- ✅ 帖子详情页：标题旁显示🏆置顶/⭐精选标签
+- ✅ 管理后台帖子列表：已上线帖子旁显示🏆置顶/⭐加精按钮
+
+### 涉及文件
+- `models/database.js` - `is_pinned` / `is_featured` 字段
+- `routes/admin.js` - `/posts/:id/pin` 和 `/posts/:id/feature` API
+- `routes/posts.js` - 排序加 `p.is_pinned DESC` 优先
+- `public/js/app.js` - 帖子列表/详情页加标签
+- `public/admin-login.html` - 管理后台帖子列表加按钮
+

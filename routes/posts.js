@@ -43,10 +43,10 @@ router.get('/', optionalAuth, (req, res) => {
     }
 
     // Sort order
-    let orderBy = 'p.created_at DESC';
+    let orderBy = 'p.is_pinned DESC, p.created_at DESC';
     if (sort === 'hot') {
       // Hot = views + likes + comments weighted
-      orderBy = '(p.views + COALESCE(p.like_count, 0) * 5 + COALESCE(p.dislike_count, 0) * -3 + (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) * 3) DESC';
+      orderBy = 'p.is_pinned DESC, (p.views + COALESCE(p.like_count, 0) * 5 + COALESCE(p.dislike_count, 0) * -3 + (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) * 3) DESC';
     }
 
     const countResult = db.prepare(`

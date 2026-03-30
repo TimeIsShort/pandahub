@@ -1173,21 +1173,29 @@
       for (var i = 0; i < filtered.length; i++) {
         var p = filtered[i];
         var excerpt = shortText(p.content || '', 70);
+        var pinBtn = p.is_pinned
+          ? '<button class="btn" onclick="event.stopPropagation(); togglePinPost(' + p.id + ')" style="background:#f59e0b;color:#fff;padding:5px 8px;font-size:11px;border:none;">🏆 取消</button>'
+          : '<button class="btn" onclick="event.stopPropagation(); togglePinPost(' + p.id + ')" style="background:#fff;color:#f59e0b;padding:5px 8px;font-size:11px;border:1px solid #f59e0b;">🏆 置顶</button>';
+        var featBtn = p.is_featured
+          ? '<button class="btn" onclick="event.stopPropagation(); toggleFeaturePost(' + p.id + ')" style="background:#ec4899;color:#fff;padding:5px 8px;font-size:11px;border:none;">⭐ 取消</button>'
+          : '<button class="btn" onclick="event.stopPropagation(); toggleFeaturePost(' + p.id + ')" style="background:#fff;color:#ec4899;padding:5px 8px;font-size:11px;border:1px solid #ec4899;">⭐ 加精</button>';
         var actions = '';
         if (p.status === 'pending') {
           actions = '<div class="row-actions">'
             + '<button class="btn btn-approve" onclick="event.stopPropagation(); approvePost(' + p.id + ')">通过</button>'
             + '<button class="btn btn-reject" onclick="event.stopPropagation(); rejectPost(' + p.id + ')">拒绝</button>'
-            + '<button class="btn" onclick="event.stopPropagation(); aiReviewPost(' + p.id + ')" style="background:#7c3aed;color:#fff;padding:6px 10px;font-size:12px;">🤖 AI</button>'
+            + '<button class="btn" onclick="event.stopPropagation(); aiReviewPost(' + p.id + ')" style="background:#7c3aed;color:#fff;padding:5px 8px;font-size:11px;">🤖 AI</button>'
             + '</div>';
         } else if (p.status === 'approved') {
-          actions = '<div class="row-actions"><button class="btn btn-reject" onclick="event.stopPropagation(); rejectPost(' + p.id + ')">下架</button></div>';
+          actions = '<div class="row-actions">' + pinBtn + featBtn + '<button class="btn btn-reject" onclick="event.stopPropagation(); rejectPost(' + p.id + ')">下架</button></div>';
         } else {
           actions = '<div class="row-actions"><button class="btn btn-approve" onclick="event.stopPropagation(); approvePost(' + p.id + ')">重新上线</button></div>';
         }
-
+        var badgeStr = '';
+        if (p.is_pinned) badgeStr += ' <span style="background:#f59e0b;color:#fff;font-size:10px;padding:1px 5px;border-radius:8px;">🏆置顶</span>';
+        if (p.is_featured) badgeStr += ' <span style="background:#ec4899;color:#fff;font-size:10px;padding:1px 5px;border-radius:8px;">⭐精选</span>';
         html += '<div class="row-item posts-grid post-row" onclick="showPostById(' + p.id + ')">';
-        html += '<div data-label="标题" class="row-title" title="' + e(p.title) + '">' + e(p.title) + '</div>';
+        html += '<div data-label="标题" class="row-title" title="' + e(p.title) + '">' + e(p.title) + badgeStr + '</div>';
         html += '<div data-label="作者" class="cell-ellipsis">' + e(p.nickname || p.username) + '</div>';
         html += '<div data-label="状态"><span class="status-pill ' + p.status + '">' + statusText(p.status) + '</span></div>';
         html += '<div data-label="发布时间" class="cell-muted">' + fd(p.created_at) + '</div>';
@@ -1434,6 +1442,25 @@
         .then(function(data) { showToast('已下架', 'success'); loadPosts(); })
         .catch(function(err) { showToast('操作失败', 'error'); });
       });
+    };
+
+
+    window.togglePinPost = function(id) {
+      adminApi('/api/admin/posts/' + id + '/pin', { method: 'POST' })
+        .then(function(data) {
+          showToast(data.message, 'success');
+          loadPosts();
+        })
+        .catch(function(err) { showToast('操作失败', 'error'); });
+    };
+
+    window.toggleFeaturePost = function(id) {
+      adminApi('/api/admin/posts/' + id + '/feature', { method: 'POST' })
+        .then(function(data) {
+          showToast(data.message, 'success');
+          loadPosts();
+        })
+        .catch(function(err) { showToast('操作失败', 'error'); });
     };
 
     window.autoReviewAll = function() {

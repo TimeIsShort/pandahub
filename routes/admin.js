@@ -216,6 +216,39 @@ router.post('/posts/:id/reject', authMiddleware, (req, res) => {
   }
 });
 
+
+// Pin / Unpin a post (toggle)
+router.post('/posts/:id/pin', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: '需要管理员权限' });
+  }
+  try {
+    const post = db.prepare('SELECT id, title, is_pinned FROM posts WHERE id = ?').get(req.params.id);
+    if (!post) return res.status(404).json({ error: '帖子不存在' });
+    const newVal = post.is_pinned ? 0 : 1;
+    db.prepare('UPDATE posts SET is_pinned = ? WHERE id = ?').run(newVal, req.params.id);
+    res.json({ success: true, is_pinned: newVal, message: newVal ? '已置顶' : '已取消置顶' });
+  } catch (err) {
+    res.status(500).json({ error: '操作失败' });
+  }
+});
+
+// Feature / Unfeature a post (toggle)
+router.post('/posts/:id/feature', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: '需要管理员权限' });
+  }
+  try {
+    const post = db.prepare('SELECT id, title, is_featured FROM posts WHERE id = ?').get(req.params.id);
+    if (!post) return res.status(404).json({ error: '帖子不存在' });
+    const newVal = post.is_featured ? 0 : 1;
+    db.prepare('UPDATE posts SET is_featured = ? WHERE id = ?').run(newVal, req.params.id);
+    res.json({ success: true, is_featured: newVal, message: newVal ? '已加精' : '已取消加精' });
+  } catch (err) {
+    res.status(500).json({ error: '操作失败' });
+  }
+});
+
 // Get all posts with status (for admin view)
 router.get('/all-posts', authMiddleware, (req, res) => {
   if (req.user.role !== 'admin') {

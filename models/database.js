@@ -195,6 +195,8 @@ ensureColumn('posts', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
 ensureColumn('posts', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
 ensureColumn('posts', 'like_count', 'INTEGER DEFAULT 0');
 ensureColumn('posts', 'dislike_count', 'INTEGER DEFAULT 0');
+ensureColumn('posts', 'is_pinned', 'INTEGER DEFAULT 0');
+ensureColumn('posts', 'is_featured', 'INTEGER DEFAULT 0');
 ensureColumn('comments', 'parent_id', 'INTEGER');
 ensureColumn('comments', 'reply_to_user_id', 'INTEGER');
 ensureColumn('users', 'points', 'INTEGER DEFAULT 0');

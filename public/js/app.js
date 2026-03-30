@@ -1323,6 +1323,8 @@ async function loadPosts() {
       <div class="post-card" data-post-id="${post.id}" onclick="viewPost(${post.id})">
         <div class="post-title">${escapeHtml(post.title)}</div>
         <div class="post-meta">
+          ${post.is_pinned ? '<span style="background:#f59e0b;color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:3px;">🏆 置顶</span>' : ''}
+          ${post.is_featured ? '<span style="background:#ec4899;color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:3px;">⭐ 精选</span>' : ''}
           ${post.tag_name ? `<span class="post-tag" style="background:${post.tag_color}">${escapeHtml(post.tag_name)}</span>` : ''}
           <span class="avatar-small">${post.avatar ? `<img src="${post.avatar}" alt="avatar">` : (post.nickname || post.username)[0].toUpperCase()}</span>
           <span>${escapeHtml(post.nickname || post.username)}</span>
@@ -1422,7 +1424,7 @@ async function viewPost(id) {
 
     postDetailEl.innerHTML = `
       <div class="post-detail-card">
-        <div class="post-detail-title">${escapeHtml(res.post.title)}</div>
+        <div class="post-detail-title">${res.post.is_pinned ? '<span style="background:#f59e0b;color:#fff;font-size:12px;padding:2px 8px;border-radius:10px;margin-right:8px;">🏆 置顶</span>' : ''}${res.post.is_featured ? '<span style="background:#ec4899;color:#fff;font-size:12px;padding:2px 8px;border-radius:10px;margin-right:8px;">⭐ 精选</span>' : ''}${escapeHtml(res.post.title)}</div>
         <div class="post-meta">
           ${res.post.tag_name ? `<span class="post-tag" style="background:${res.post.tag_color}">${escapeHtml(res.post.tag_name)}</span>` : ''}
           <span class="avatar-small">${res.post.avatar ? `<img src="${res.post.avatar}" alt="avatar">` : (res.post.nickname || res.post.username)[0].toUpperCase()}</span>

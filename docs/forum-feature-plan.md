@@ -481,3 +481,20 @@
 - `public/js/app.js` - 私信函数（loadMsgConversations/openMsgDetail/sendMsg 等）
 - `public/css/style.css` - 气泡样式 + msg-author-btn 按钮样式
 
+
+---
+
+## v1.2 开发记录（续）
+
+### P1.3 关注系统 ✅
+- ✅ 新建 `routes/follow.js`：`POST /follow/:userId`、`DELETE /follow/:userId`、`GET /followers/:userId`、`GET /following/:userId`、`GET /follow/status/:userId`
+- ✅ 用户主页已有关注按钮（之前 UI 已埋入），补全 `toggleFollow()` + `loadFollowStatus()` JS 函数
+- ✅ 关注后按钮变绿色「已关注 ✓」，取消后恢复紫色「+ 关注」
+- ✅ 关注/粉丝数实时更新显示
+
+### 涉及文件
+- `routes/follow.js`（新建）
+- `public/js/app.js` - toggleFollow / loadFollowStatus 函数
+- `public/css/style.css` - .btn-follow 样式
+- `models/database.js` - follows 表（建表）
+

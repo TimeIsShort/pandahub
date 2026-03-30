@@ -50,6 +50,7 @@ const pushRoutes = require('./routes/push');
 const i18nRoutes = require('./routes/i18n');
 const sitemapRoutes = require('./routes/sitemap');
 const messageRoutes = require('./routes/messages');
+const followRoutes = require('./routes/follow');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -119,6 +120,7 @@ app.use('/api/push', pushRoutes);
 app.use('/api/i18n', i18nRoutes);
 app.use('/sitemap.xml', sitemapRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api', followRoutes);
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));

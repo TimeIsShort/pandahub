@@ -2738,6 +2738,72 @@ function closeNotifications() {
   document.getElementById('notif-modal').style.display = 'none';
 }
 
+// ============ Follow System ============
+let followCache = {}; // userId -> { isFollowing, followers_count, following_count }
+
+async function toggleFollow(targetId) {
+  if (!user) { showToast('请先登录', 'error'); return; }
+  var btn = document.getElementById('btn-follow');
+  var currentState = followCache[targetId] && followCache[targetId].isFollowing;
+
+  try {
+    if (currentState) {
+      // Unfollow
+      var res = await api('/follow/' + targetId, { method: 'DELETE' });
+      if (res.error) { showToast(res.error, 'error'); return; }
+      showToast('已取消关注', 'success');
+      if (followCache[targetId]) followCache[targetId].isFollowing = false;
+    } else {
+      // Follow
+      var res2 = await api('/follow/' + targetId, { method: 'POST' });
+      if (res2.error) { showToast(res2.error, 'error'); return; }
+      showToast('关注成功！', 'success');
+      if (followCache[targetId]) followCache[targetId].isFollowing = true;
+    }
+    // Update button
+    if (btn) {
+      btn.textContent = currentState ? '+ 关注' : '已关注 ✓';
+      btn.style.background = currentState ? '' : 'linear-gradient(135deg,#10b981,#059669)';
+      btn.style.color = currentState ? '' : '#fff';
+      btn.style.borderColor = currentState ? '' : 'transparent';
+    }
+    // Update counts in header if shown
+    var followerEl = document.getElementById('follower-count');
+    if (followerEl && followCache[targetId]) {
+      var delta = currentState ? -1 : 1;
+      var newCount = (followCache[targetId].followers_count || 0) + delta;
+      followerEl.textContent = newCount + ' 粉丝';
+    }
+  } catch (e) {
+    showToast('操作失败，请重试', 'error');
+  }
+}
+
+async function loadFollowStatus(targetId) {
+  try {
+    var res = await api('/follow/status/' + targetId);
+    if (res.error) return;
+    followCache[targetId] = {
+      isFollowing: res.is_following,
+      followers_count: res.followers_count,
+      following_count: res.following_count
+    };
+    var btn = document.getElementById('btn-follow');
+    if (btn) {
+      btn.textContent = res.is_following ? '已关注 ✓' : '+ 关注';
+      btn.style.background = res.is_following ? 'linear-gradient(135deg,#10b981,#059669)' : '';
+      btn.style.color = res.is_following ? '#fff' : '';
+      btn.style.borderColor = res.is_following ? 'transparent' : '';
+    }
+    var fcEl = document.getElementById('follower-count');
+    if (fcEl) fcEl.textContent = res.followers_count + ' 粉丝';
+    var fingEl = document.getElementById('following-count');
+    if (fingEl) fingEl.textContent = res.following_count + ' 关注';
+  } catch (e) {}
+}
+
+window.toggleFollow = toggleFollow;
+
 // ============ Messages ============
 let currentMsgPartner = null;
 

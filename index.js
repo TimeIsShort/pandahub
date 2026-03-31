@@ -127,6 +127,7 @@ app.use('/api/push', pushRoutes);
 app.use('/api/i18n', i18nRoutes);
 app.use('/sitemap.xml', sitemapRoutes);
 app.use('/feed.xml', rssRoutes);
+app.use('/feed.xml', rssRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api', followRoutes);

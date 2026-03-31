@@ -594,15 +594,6 @@ main.container {
   background: radial-gradient(circle, rgba(255, 207, 126, 0.22), transparent 70%);
 }
 
-.home-hero-grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.8fr);
-  gap: 14px;
-  align-items: stretch;
-}
-
 .home-hero-main {
   min-width: 0;
 }
@@ -3298,11 +3289,6 @@ select:focus-visible {
   .home-hero {
     padding: 20px 18px 18px;
     border-radius: 24px;
-  }
-
-  .home-hero-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
   }
 
   .home-hero h2 {

@@ -4,21 +4,64 @@
 
 ---
 
+## P0 功能
+
+### P0 Bug修复
+**目标**：上线前必须消灭的"一眼毛坯房"痕迹
+
+- [x] 帖子摘要去 Markdown 源码：新增 `stripMarkdown()` 过滤所有 Markdown 语法（图片/加粗/链接等），摘要只显示纯文本前120字符
+- [x] JS Bug 修复：`goCheckin` 函数缺失（已添加）；`startChat` 函数缺失（已添加）；`loadPosts` 中 `user` 变量定义顺序错误（已修复）
+
 ## P1 功能
 
-### 1.1 防机器人措施增强
+### 1.1 防机器人措施增强 ✅
 **目标**：增强现有防机器人机制，阻止批量注册和暴力破解
 
-**功能**：
 - [x] 登录失败锁定：同一账号或IP连续5次登录失败，锁定1小时
 - [x] `login_attempts` 表：记录每次登录尝试（IP/user_id/username/success/时间）
 - [x] IP注册频率限制：同一IP 1小时内最多注册5个账号
 - [x] 注册表单蜜罐字段：隐藏的 `website` 字段，机器人会填写、人类不会
 - [x] 注册时间检测：表单显示到提交需超过2秒（机器人提交极快）
-- [ ] 管理后台查看被锁定的账号/IP（查看 login_attempts 表）
+- [ ] 管理后台查看被锁定的账号/IP
 
 **涉及文件**：
 - `models/database.js` - login_attempts 表
 - `routes/auth.js` - checkLoginAttempts / recordLoginAttempt / checkRegistrationRate / recordRegistrationAttempt / getClientIp
-- `public/index.html` - 蜜罐字段
+- `public/index.html` - 蜜罐字段 `#reg-website` + 时间戳 `#reg-form-ts`
 - `public/js/app.js` - showRegister() 初始化时间戳，sendRegCode() 发送蜜罐+时间戳
+
+### 1.2 版面收纳术（UI整理）
+**目标**：减少视觉拥挤，让页面呼吸
+
+- [x] 顶部导航「瘦身」：设置/管理/退出移入头像下拉菜单（`nav-user-menu`）
+- [x] 公告栏改造：去掉跑马灯，改简洁可关闭通知条（localStorage 记住关闭状态）
+- [x] 筛选区分双层：第一层标签横向滚动，第二层搜索框+下拉选择器+发布按钮
+- [x] 排行榜按钮保留在首页右侧边栏收起面板
+
+**涉及文件**：
+- `public/index.html` - 导航栏重构（头像下拉菜单）/ 公告栏简化 / 筛选区双层布局
+- `public/js/app.js` - updateNav() 加 null 检查 / toggleUserMenu() / closeUserMenu() / dismissAnnouncement()
+- `public/css/style.css` - dropdown 动画样式 / tags-filter 横向滚动 / announcement-bar 高度过渡
+
+### 1.3 前端 i18n 接入
+**目标**：为中英文切换奠基
+
+- [ ] 基础设施接入（进行中）
+- [ ] 各页面逐步启用
+
+---
+
+## P2 功能
+
+### 2.1 每日签到提醒
+**目标**：管理后台设置提醒时间，到点 Web Push 推送
+
+### 2.2 前端 i18n 逐步启用
+**目标**：关键页面中英文切换
+
+---
+
+## P3 功能
+
+### 3.1 资源缓存优化
+**目标**：Service Worker / 静态资源长期缓存

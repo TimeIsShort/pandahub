@@ -227,6 +227,7 @@ router.post('/posts/:id/pin', authMiddleware, (req, res) => {
     if (!post) return res.status(404).json({ error: '帖子不存在' });
     const newVal = post.is_pinned ? 0 : 1;
     db.prepare('UPDATE posts SET is_pinned = ? WHERE id = ?').run(newVal, req.params.id);
+    logAction({ adminId: req.user.id, action: newVal ? 'pin_post' : 'unpin_post', targetType: 'post', targetId: Number(req.params.id), details: (newVal ? '置顶' : '取消置顶') + ': ' + post.title });
     res.json({ success: true, is_pinned: newVal, message: newVal ? '已置顶' : '已取消置顶' });
   } catch (err) {
     res.status(500).json({ error: '操作失败' });
@@ -243,6 +244,7 @@ router.post('/posts/:id/feature', authMiddleware, (req, res) => {
     if (!post) return res.status(404).json({ error: '帖子不存在' });
     const newVal = post.is_featured ? 0 : 1;
     db.prepare('UPDATE posts SET is_featured = ? WHERE id = ?').run(newVal, req.params.id);
+    logAction({ adminId: req.user.id, action: newVal ? 'feature_post' : 'unfeature_post', targetType: 'post', targetId: Number(req.params.id), details: (newVal ? '加精' : '取消加精') + ': ' + post.title });
     res.json({ success: true, is_featured: newVal, message: newVal ? '已加精' : '已取消加精' });
   } catch (err) {
     res.status(500).json({ error: '操作失败' });

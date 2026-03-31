@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../models/database');
 const { JWT_SECRET, authMiddleware } = require('../middleware/auth');
 const { getUserLevel } = require('../models/database');
+const { logAction } = require('../middleware/moderationLog');
 
 const router = express.Router();
 
@@ -199,6 +200,11 @@ router.post('/login', async (req, res) => {
     // Update last login
     db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
 
+    // Log admin login
+    if (user.role === 'admin') {
+      logAction({ adminId: user.id, action: 'admin_login', targetType: 'user', targetId: user.id, details: '管理员登录: ' + user.username });
+    }
+
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     
     const level = getUserLevel(user.points);
@@ -236,6 +242,14 @@ router.get('/me', authMiddleware, (req, res) => {
   user.level_icon = level.icon;
   user.level_color = level.color;
   res.json({ user });
+});
+
+// Admin logout - log the action
+router.post('/logout', authMiddleware, (req, res) => {
+  if (req.user.role === 'admin') {
+    logAction({ adminId: req.user.id, action: 'admin_logout', targetType: 'user', targetId: req.user.id, details: '管理员登出: ' + req.user.username });
+  }
+  res.json({ success: true });
 });
 
 module.exports = router;

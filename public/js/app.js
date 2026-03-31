@@ -1345,6 +1345,10 @@ async function register() {
 }
 
 function logout() {
+  // Notify server (admin logout is logged)
+  if (getUser() && getUser().role === 'admin') {
+    api('/auth/logout', { method: 'POST' }).catch(function() {});
+  }
   clearAuth();
   goHome();
 }

@@ -4,173 +4,93 @@
 
 ---
 
-## P1 功能（最重要，优先开发）
+## P1 功能
 
-### 1.1 COS 图片存储（基础设施）
-**优先级**：🔴 最高
-**目标**：用户发帖上传的图片存到腾讯云 COS，绑定 CDN 域名
-**工作量**：中等
+### 1.1 COS 图片存储 ⏳ 待开发
+**目标**：用户发帖上传的图片存到腾讯云 COS，CDN 全球加速分发
 **方案**：
-1. 开通腾讯云 COS（已有腾讯云账号）
+1. 开通腾讯云 COS + CI 图片处理
 2. 新增 `/api/upload/image` 路由调用 COS SDK，返回 CDN URL
 3. 前端发帖图片上传改用 COS URL
 4. 存量 `/uploads/` 图片迁移到 COS
-5. COS bucket 绑定 CDN 自定义域名
+5. COS bucket 绑定自定义域名，Cloudflare 回源 COS
 
 ---
 
-### 1.2 管理后台 - 安全管控
-**优先级**：🔴 最高
-**目标**：查看和管理被锁定的账号/IP
-**方案**：
-- 管理后台新增「安全日志」Tab
-- 展示 `login_attempts` 表记录（IP/user/success/time）
-- 支持按 IP 或用户名筛选
-- 支持手动解锁被锁账号
-- 展示注册频率异常的 IP
+### 1.2 管理后台 - 安全管控 ✅ 已完成
+**文件**：`routes/admin.js`（新增 `/api/admin/security-logs` + `/api/admin/unlock-ip`）
+**commit**：feature-next
 
 ---
 
-### 1.3 帖子评论楼内回复嵌套展示
-**优先级**：🔴 最高
-**目标**：评论被回复时以嵌套缩进样式展示，而非平铺
-**现状**：v1.4 已有基础结构，但展示效果需优化
-**方案**：
-- 评论列表按 `parent_id` 嵌套，缩进显示
-- 加连接线或树形线引导视线
-- 支持最多 3 层嵌套，3 层后扁平展示
-- 回复按钮直接触发内联回复框
+### 1.3 评论楼内回复嵌套展示 ✅ 已完成
+**优化内容**：
+- 竖线醒目：depth-1 紫色渐变 3px 竖线 + 左端点连接（::before）；depth-2 更细浅紫
+- 展开动画：max-height Q弹展开 + opacity 淡入（cubic-bezier 回弹曲线）
+- 内嵌回复输入框：点「回复」直接在楼层下方出现输入框，Enter 发送，取消消失
+- 深层评论分页：每次最多显示 10 条，「加载更多」按钮逐步展开
+**commit**：feature-next
 
 ---
 
-## P2 功能（重要）
+## P2 功能
 
-### 2.1 每日签到提醒（Web Push）
-**优先级**：🟡 高
-**状态**：✅ 已完成（feature-next，commit 173af58）
-**实现**：
-- 管理后台设置提醒时间（未来扩展）
-- 用户自定义提醒时间（08:00~21:00）和推送日期（周一~周日）
-- Web Push：Service Worker（sw.js）接收并展示系统通知
-- 定时调度：node-cron 每分钟检查，到点推送「🐼 签到提醒」
-- 用户首次启用时自动请求浏览器通知权限
-- 签到面板内直接管理提醒设置
-- VAPID 密钥已配置（.env）
-**文件**：services/reminderScheduler.js / routes/reminder.js / public/sw.js
-- 用户可设置「每日提醒时间」（如每天 9:00）
-- 启用 Service Worker 接收 Push
-- 到点推送「今日签到提醒」
-- 结合签到积分激励机制
+### 2.1 每日签到提醒（Web Push）✅ 已完成
+**文件**：`services/reminderScheduler.js` / `routes/reminder.js` / `public/sw.js`
+**commit**：feature-next（173af58）
 
 ---
 
 ### 2.2 前端 i18n（国际化）✅ 已完成
-**实现**：
-- \`public/i18n/zh.json\` + \`en.json\` 两套翻译文件
-- \`public/js/i18n.js\` 核心：\`i18n.t(key)\` / \`i18n.switchLang(lang)\` / 自动应用 \`data-i18n\` 属性
-- 导航栏右上角 **EN/中文** 切换按钮，点击实时切换
-- 首页 Hero 标题、副标题、搜索框占位符接入 i18n
-- 语言偏好存 \`localStorage.setItem('lang')\`，刷新保持
-**分支**：feature-next（commit 76a6223）
-**目标**：关键页面支持中英文切换
-**方案**：
-- 建立 `/public/i18n/zh.json` 和 `en.json`
-- 封装 `i18n(key)` 函数
-- 首页、帖子详情、用户页面逐步启用
-- 用户设置里切换语言
+**文件**：`public/i18n/zh.json` / `en.json` / `public/js/i18n.js`
+**commit**：feature-next（76a6223）
 
 ---
 
-### 2.3 回复通知推送
-**优先级**：🟡 高
-**目标**：评论被回复时实时通知
-**方案**：
-- 被回复时写入 `notifications` 表
-- 前端 WebSocket 或轮询拉取未读通知
-- 导航栏通知图标显示红点数字
-- 支持「@提及」通知
+### 2.3 回复通知推送 ✅ 已完成
+**说明**：v1.4 已完整实现（通知表 + API + 导航栏通知按钮 + 轮询）
+**commit**：v1.4
 
 ---
 
-## P3 功能（体验优化）
+## P3 功能
 
 ### 3.1 Service Worker + 资源缓存优化 ✅ 已完成
-**实现**：
-- public/sw.js 升级为完整缓存策略（原有 push 通知功能保留）
-- init() 时自动注册 Service Worker
-- Cache-First：JS/CSS/图片/字体 → 优先读缓存，后台更新
-- Network-First：API 调用 → 优先网络，失败回退缓存
-- 导航请求：Network-First + Shell 缓存兜底，保证离线可用
-- 缓存版本控制：CACHE_VERSION = v2，升级版本号自动清理旧缓存
-- 注册 SW 拦截 `/js/` `/css/` `/assets/` 请求
-- 缓存优先，CDN 辅助
-- 版本号更新时强制刷新缓存
-- 参考：Workbox 库
+**文件**：`public/sw.js`（完整缓存策略升级）
+**commit**：feature-next（0ce4776）
 
 ---
 
 ### 3.2 用户关注/粉丝系统 ✅ 已完成
-**实现**：
-- `follows` 表（follower_id / following_id）已创建
-- 后端 API：`/follow/:id`（POST/DELETE）、`/follow/status/:id`、`/followers/:id`、`/following/:id`
-- 个人主页（Profile）：展示关注/粉丝数量、关注按钮、用户帖子列表
-- 关注弹窗：点击粉丝/关注数可查看用户列表
-- 首页筛选：「关注」sort 选项，仅显示关注的人的帖子
-- 未登录时点关注 → 弹出登录框
-**分支**：feature-next（commit f6317bc）
-**方案**：
-- 新增 `follows` 表（follower_id / following_id）
-- 个人主页展示「关注」和「粉丝」数量
-- 关注后首页信息流可优先展示关注的人的帖子
+**文件**：`routes/follow.js` / `models/database.js`（新增 follows 表）/ `public/js/app.js`
+**commit**：feature-next（f6317bc）
 
 ---
 
-### 3.3 帖子评分/精华标记
-**目标**：管理员可将优质帖子标记为精华
-**方案**：
-- `posts.is_featured` 字段已有
-- 管理后台加「设为精华」按钮
-- 精华帖在列表加权展示特殊徽章
-- 独立「精华帖」筛选 Tab
+### 3.3 精华帖标记 ⏳ 待开发
+**目标**：管理员可将优质帖子标记为精华，首页增加「精华帖」筛选 Tab
 
 ---
 
-## P4 功能（长期）
+## P4 功能
 
-### 4.1 AI 对话历史分页
-**目标**：AI 对话历史支持翻页，不只是最新 20 条
-**方案**：
-- AI 会话表 `ai_messages` 支持分页（page/limit）
-- 前端加载更多按钮或滚动加载
+### 4.1 AI 对话历史分页 ⏳ 待开发
+### 4.2 帖子多条件筛选增强 ⏳ 待开发
 
 ---
 
-### 4.2 帖子多条件筛选增强
-**目标**：支持按标签+时间+积分范围组合筛选
-**方案**：
-- 工具栏筛选器增加「积分范围」下拉
-- 搜索结果页支持 URL 参数化分享
-
----
-
-## 已完成（v1.5 及之前）
+## 已完成汇总
 
 | 功能 | 版本 | 状态 |
 |------|------|------|
-| 登录注册安全增强（P0）| v1.5 | ✅ |
-| 首页视觉减肥 | v1.5 | ✅ |
-| 帖子卡片微交互 | v1.5 | ✅ |
-| 代码块高定西装 | v1.5 | ✅ |
-| 帖子图片修复 | v1.5 | ✅ |
-| RSS 订阅 | v1.4 | ✅ |
-| 评论点赞 | v1.4 | ✅ |
-| 黑暗模式5套主题 | v1.4 | ✅ |
-
-
-
-### P1.3 评论嵌套四大优化（2026-03-31）
-**优化1 - 竖线醒目**：depth-1 用紫色渐变竖线（3px）+ 左侧横线连接点（::before）；depth-2 更细紫线
-**优化2 - 展开动画**：展开时 max-height 从 0 撑开，配合 opacity 淡入，使用 cubic-bezier 回弹曲线
-**优化3 - 内嵌回复输入框**：点「回复」直接在楼层下方出现输入框，Enter 发送，取消消失，无需滚动到顶部
-**优化4 - 深层分页**：深层评论每次最多显示10条，「加载更多」按钮逐步展开，避免大量 DOM 卡顿
-**版本**：feature-next（commit 69fa6db）
+| P1.2 管理后台安全管控 | feature-next | ✅ |
+| P1.3 评论嵌套四大优化 | feature-next | ✅ |
+| P2.1 每日签到提醒 | feature-next | ✅ |
+| P2.2 前端 i18n | feature-next | ✅ |
+| P2.3 回复通知推送 | v1.4 | ✅ |
+| P3.1 SW 缓存优化 | feature-next | ✅ |
+| P3.2 关注/粉丝系统 | feature-next | ✅ |
+| COS 图片存储 | 待开发 | ⏳ |
+| P3.3 精华帖标记 | 待开发 | ⏳ |
+| P4.1 AI 对话分页 | 待开发 | ⏳ |
+| P4.2 多条件筛选 | 待开发 | ⏳ |

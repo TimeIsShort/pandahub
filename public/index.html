@@ -78,6 +78,13 @@
     <main class="container">
       <!-- Home View -->
       <div id="view-home">
+        <!-- Email verification banner for unverified users -->
+        <div id="email-verify-banner" style="display:none;background:linear-gradient(135deg,#fef3c7,#fde68a);border-bottom:1px solid #f59e0b;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:13px;color:#92400e;flex-wrap:wrap;">
+          <span style="font-size:18px;">📧</span>
+          <span style="flex:1;min-width:200px;">请验证邮箱以解锁全部功能，否则将无法发帖和评论。</span>
+          <button onclick="openSettingsTab('email');dismissEmailBanner();" style="padding:6px 14px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">立即验证</button>
+          <button onclick="dismissEmailBanner()" style="padding:6px 10px;background:transparent;color:#92400e;border:none;font-size:16px;cursor:pointer;line-height:1;">×</button>
+        </div>
         <section class="home-hero">
           <div class="home-hero-grid">
             <div class="home-hero-main">

@@ -4472,3 +4472,16 @@ select:focus-visible {
     font-size: 14px;
   }
 }
+
+/* Email verification banner */
+#email-verify-banner {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-bottom: 1px solid #f59e0b;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #92400e;
+  flex-wrap: wrap;
+}

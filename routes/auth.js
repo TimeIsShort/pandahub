@@ -358,6 +358,7 @@ router.post('/login', async (req, res) => {
         bio: user.bio,
         points: user.points,
         checkin_streak: user.checkin_streak,
+        email_verified: Number(user.email_verified) === 1,
         level_name: level.name,
         level_icon: level.icon,
         level_color: level.color,

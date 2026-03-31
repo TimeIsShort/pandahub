@@ -203,6 +203,7 @@ function setAuth(token, user) {
   updateNav();
   loadMsgUnreadCount();
   startMsgPolling();
+  checkEmailVerifiedBanner();
 }
 
 function clearAuth() {
@@ -694,6 +695,38 @@ function applyI18n() {
 }
 
 // Navigation
+function dismissEmailBanner() {
+  var banner = document.getElementById('email-verify-banner');
+  if (banner) {
+    banner.style.display = 'none';
+    localStorage.setItem('emailBannerDismissed', '1');
+  }
+}
+
+function checkEmailVerifiedBanner() {
+  var user = getUser();
+  var banner = document.getElementById('email-verify-banner');
+  if (!banner) return;
+  var dismissed = localStorage.getItem('emailBannerDismissed');
+  if (!user || user.email_verified) {
+    banner.style.display = 'none';
+    return;
+  }
+  // Show only if not permanently dismissed
+  if (dismissed !== '1') {
+    banner.style.display = 'flex';
+  }
+}
+
+function openSettingsTab(tab) {
+  showView('settings');
+  // Scroll to email section if specified
+  setTimeout(function() {
+    var emailArea = document.getElementById('email-bind-area');
+    if (emailArea) emailArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
+}
+
 function updateNav() {
   const user = getUser();
   document.getElementById('nav-login').style.display = user ? 'none' : 'inline-block';
@@ -769,6 +802,7 @@ function setBottomNav(name) {
 
 function goHome() {
   setBottomNav('home');
+  checkEmailVerifiedBanner();
   showView('home');
   loadPosts();
   loadTrending();
@@ -2159,6 +2193,12 @@ function insertMention(username, displayName) {
 window.insertMention = insertMention;
 
 async function submitComment() {
+  var user = getUser();
+  if (user && !user.email_verified) {
+    showToast('请先验证邮箱后再评论', 'info', 3500);
+    openSettingsTab('email');
+    return;
+  }
   const content = document.getElementById('comment-input').value.trim();
   if (!content && commentImages.length === 0) {
     showToast('请输入评论内容', 'error');
@@ -2475,6 +2515,12 @@ window.editPost = async function(id) {
 };
 
 window.goNewPost = function() {
+  var user = getUser();
+  if (user && !user.email_verified) {
+    showToast('请先验证邮箱后再发帖', 'info', 3500);
+    openSettingsTab('email');
+    return;
+  }
   editingPostId = null;
   showNewPost();
 };
@@ -2839,6 +2885,12 @@ function initPandaPlayground() {
 }
 
 async function showNewPost() {
+  var user = getUser();
+  if (user && !user.email_verified) {
+    showToast('请先验证邮箱后再发帖', 'info', 3500);
+    openSettingsTab('email');
+    return;
+  }
   showView('new-post');
   initPostComposer();
   // Reset image state

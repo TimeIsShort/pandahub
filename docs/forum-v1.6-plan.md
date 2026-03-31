@@ -6,8 +6,13 @@
 
 ## P0（核心功能）
 
-### 0.1 帖子收藏/书签
+### 0.1 帖子收藏/书签 ✅ 已完成
 **需求**：用户收藏帖子，个人主页展示收藏列表
+
+**实现**：
+- `favorites` 表（user_id, post_id, created_at, UNIQUE约束）
+- `routes/favorites.js` - POST/DELETE/GET API
+- 前端：帖子卡片⭐按钮 + 帖子详情⭐按钮 + 个人主页「收藏」tab：用户收藏帖子，个人主页展示收藏列表
 
 **实现**：
 - `favorites` 表（user_id, post_id, created_at）

@@ -4400,3 +4400,75 @@ select:focus-visible {
     display: none !important;
   }
 }
+
+/* Image upload progress overlay */
+.image-preview-item.uploading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.image-preview-item.uploading .upload-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.image-preview-item.done .done-check {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+}
+.image-preview-item.error::after {
+  content: '上传失败';
+  position: absolute;
+  inset: 0;
+  background: rgba(239,68,68,0.7);
+  color: #fff;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+@keyframes spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Mobile image upload area improvements */
+@media (max-width: 768px) {
+  .image-upload-area {
+    min-height: 80px;
+    padding: 10px;
+  }
+  .upload-placeholder {
+    padding: 12px;
+  }
+  .upload-icon {
+    font-size: 24px;
+  }
+  .image-preview-list {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .image-preview-item {
+    border-radius: 8px;
+  }
+  .image-preview-item .remove-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+}

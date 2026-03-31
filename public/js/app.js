@@ -2874,19 +2874,71 @@ async function submitPost() {
     // First upload any selected images
     if (selectedImages.length > 0) {
       uploadedImageUrls = [];
-      for (const file of selectedImages) {
+      // Update button text with progress
+      var imgCount = selectedImages.length;
+      var submitBtn = document.getElementById('btn-submit-post');
+      if (submitBtn) submitBtn.textContent = `上传图片(${imgCount})中...`;
+      // Mark all as uploading
+      document.querySelectorAll('.image-preview-item').forEach(el => {
+        el.classList.add('uploading');
+        el.classList.remove('done', 'error');
+        if (!el.querySelector('.upload-spinner')) {
+          const spinner = document.createElement('div');
+          spinner.className = 'upload-spinner';
+          el.appendChild(spinner);
+        }
+      });
+      for (let i = 0; i < selectedImages.length; i++) {
+        const file = selectedImages[i];
         const formData = new FormData();
         formData.append('image', file);
-        const uploadRes = await fetch(`${API_BASE}/upload/image`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${getToken()}` },
-          body: formData
-        }).then(r => r.json());
-        if (!uploadRes.url) {
-          throw new Error(uploadRes.error || '图片上传失败，请重试');
+        try {
+          const uploadRes = await fetch(`${API_BASE}/upload/image`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${getToken()}` },
+            body: formData
+          }).then(r => r.json());
+          if (!uploadRes.url) {
+            throw new Error(uploadRes.error || '图片上传失败，请重试');
+          }
+          uploadedImageUrls.push(uploadRes.url);
+          // Update progress text
+          var submitBtn = document.getElementById('btn-submit-post');
+          if (submitBtn) submitBtn.textContent = `上传图片(${uploadedImageUrls.length}/${imgCount})中...`;
+          // Mark this one as done
+          var items = document.querySelectorAll('.image-preview-item');
+          if (items[i]) {
+            items[i].classList.remove('uploading');
+            items[i].classList.add('done');
+            var spinner = items[i].querySelector('.upload-spinner');
+            if (spinner) spinner.remove();
+            var check = document.createElement('span');
+            check.className = 'done-check';
+            check.textContent = '✓';
+            check.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:20px;color:#fff;background:#10b981;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;';
+            items[i].appendChild(check);
+          }
+        } catch (err) {
+          var items = document.querySelectorAll('.image-preview-item');
+          if (items[i]) {
+            items[i].classList.remove('uploading');
+            items[i].classList.add('error');
+            var spinner = items[i].querySelector('.upload-spinner');
+            if (spinner) spinner.remove();
+          }
+          var submitBtn = document.getElementById('btn-submit-post');
+          if (submitBtn) submitBtn.textContent = '发布';
+          throw err;
         }
-        uploadedImageUrls.push(uploadRes.url);
       }
+      // Clear all done/error states after a short delay
+      setTimeout(function() {
+        document.querySelectorAll('.image-preview-item.done, .image-preview-item.error').forEach(function(el) {
+          el.classList.remove('done', 'error');
+          var check = el.querySelector('.done-check');
+          if (check) check.remove();
+        });
+      }, 1500);
     }
 
     // Build content with images

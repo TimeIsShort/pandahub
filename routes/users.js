@@ -12,7 +12,7 @@ router.get('/:id', optionalAuth, (req, res) => {
     const canViewAllPosts = !!(req.user && (req.user.role === 'admin' || req.user.id === profileUserId));
 
     const user = db.prepare(`
-      SELECT id, username, nickname, avatar, bio, role, created_at, last_login,
+      SELECT id, username, nickname, avatar, bio, bio as about, role, created_at, last_login,
              points, checkin_streak
       FROM users WHERE id = ?
     `).get(profileUserId);

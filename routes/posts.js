@@ -18,11 +18,24 @@ function canViewUnapprovedPost(user, post) {
 // Get all posts (with pagination and filtering) - only approved posts
 router.get('/', optionalAuth, (req, res) => {
   try {
-    const { tag_id, page = 1, limit = 20, search, sort = 'newest', time_range } = req.query;
+    const { tag_id, page = 1, limit = 20, search, sort = 'newest', time_range, following } = req.query;
     const offset = (page - 1) * limit;
 
     let where = "p.status = 'approved'";
     const params = [];
+
+    // Following filter: only posts from users I follow
+    if (following) {
+      const followingIds = db.prepare(
+        'SELECT following_id FROM follows WHERE follower_id = ?'
+      ).all(Number(following)).map(r => r.following_id);
+      if (followingIds.length === 0) {
+        return res.json({ posts: [], total: 0, page: 1, limit: Number(limit), pages: 0 });
+      }
+      const placeholders = followingIds.map(() => '?').join(',');
+      where += ` AND p.user_id IN (${placeholders})`;
+      params.push(...followingIds);
+    }
 
     if (tag_id) {
       where += ' AND p.tag_id = ?';

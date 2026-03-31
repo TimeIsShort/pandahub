@@ -774,7 +774,145 @@ function goProfile() {
   loadProfile(user.id);
 }
 
-// ============ Points Transfer ============
+// ============ Profile & Follow ============
+async function loadProfile(userId) {
+  try {
+    var [userRes, followRes, postsRes] = await Promise.all([
+      api('/users/' + userId),
+      followStatus(userId),
+      api('/posts?user_id=' + userId + '&limit=10')
+    ]);
+
+    if (userRes.error) { showToast(userRes.error, 'error'); return; }
+
+    var user = userRes;
+    var level = getUserLevel(user.points || 0);
+    var avatar = user.avatar
+      ? '<img src="' + user.avatar + '" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+      : '<span style="font-size:28px;font-weight:700;">' + (user.nickname || user.username)[0].toUpperCase() + '</span>';
+    var currentUser = getUser();
+    var isMe = currentUser && currentUser.id === userId;
+    var isFollowing = followRes && followRes.is_following;
+
+    var followBtn = '';
+    if (!isMe && currentUser) {
+      followBtn = isFollowing
+        ? '<button onclick="toggleFollow(' + userId + ', this)" class="following-btn following-btn-active" id="follow-btn-' + userId + '">✓ 已关注</button>'
+        : '<button onclick="toggleFollow(' + userId + ', this)" class="following-btn" id="follow-btn-' + userId + '">+ 关注</button>';
+    }
+
+    var html = '<div class="profile-header">';
+    html += '  <div class="profile-avatar" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,' + (level.color || '#667eea') + ',#764ba2);display:flex;align-items:center;justify-content:center;overflow:hidden;color:#fff;font-size:28px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,0.1);">' + avatar + '</div>';
+    html += '  <div class="profile-info">';
+    html += '    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
+    html += '      <h2 style="font-size:20px;font-weight:700;color:var(--text);margin:0;">' + escapeHtml(user.nickname || user.username) + '</h2>';
+    html += '      <span class="level-badge" style="background:' + (level.color || '#667eea') + ';color:#fff;font-size:11px;padding:2px 8px;border-radius:999px;margin:0;">Lv.' + level.level + '</span>';
+    html += followBtn;
+    html += '    </div>';
+    html += '    <div style="font-size:12px;color:#94a3b8;margin-top:4px;">@' + escapeHtml(user.username) + ' · 注册于 ' + formatDate(user.created_at) + '</div>';
+    html += '    <div style="display:flex;gap:16px;margin-top:8px;font-size:13px;color:#64748b;">';
+    html += '      <span><strong style="color:var(--text);">' + (user.points || 0) + '</strong> 积分</span>';
+    html += '      <span style="cursor:pointer;" onclick="showFollowers(' + userId + ')"><strong style="color:var(--text);">' + (followRes.followers_count || 0) + '</strong> 粉丝</span>';
+    html += '      <span style="cursor:pointer;" onclick="showFollowing(' + userId + ')"><strong style="color:var(--text);">' + (followRes.following_count || 0) + '</strong> 关注</span>';
+    html += '    </div>';
+    if (user.bio) {
+      html += '    <div style="margin-top:8px;font-size:13px;color:#64748b;line-height:1.6;">' + escapeHtml(user.bio) + '</div>';
+    }
+    html += '  </div>';
+    html += '</div>';
+    html += '<div style="margin-top:16px;"><h3 style="font-size:15px;color:var(--text);margin-bottom:12px;">Ta 的帖子</h3>';
+    html += '<div id="profile-posts-list"></div></div>';
+
+    var el = document.getElementById('profile-content');
+    if (el) { el.innerHTML = html; }
+
+    // Render posts
+    var postsEl = document.getElementById('profile-posts-list');
+    if (postsEl && postsRes.posts && postsRes.posts.length > 0) {
+      postsEl.innerHTML = postsRes.posts.map(function(p) {
+        return '<div class="post-card" onclick="viewPost(' + p.id + ')" style="cursor:pointer;">' +
+          '<div class="post-title">' + escapeHtml(p.title) + '</div>' +
+          '<div style="font-size:12px;color:#94a3b8;margin-top:4px;">👍 ' + (p.like_count||0) + ' 💬 ' + (p.comment_count||0) + ' · ' + formatDate(p.created_at) + '</div></div>';
+      }).join('');
+    } else if (postsEl) {
+      postsEl.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;font-size:13px;">暂无帖子</div>';
+    }
+
+    window._currentProfileUserId = userId;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function followStatus(userId) {
+  try {
+    return await api('/follow/status/' + userId);
+  } catch (e) { return { is_following: false, followers_count: 0, following_count: 0 }; }
+}
+
+async function toggleFollow(userId, btnEl) {
+  var user = getUser();
+  if (!user) { showLogin(); return; }
+  try {
+    var status = await followStatus(userId);
+    if (status.is_following) {
+      await api('/follow/' + userId, { method: 'DELETE' });
+      if (btnEl) { btnEl.textContent = '+ 关注'; btnEl.classList.remove('following-btn-active'); }
+      showToast('已取消关注', 'success');
+    } else {
+      await api('/follow/' + userId, { method: 'POST' });
+      if (btnEl) { btnEl.textContent = '✓ 已关注'; btnEl.classList.add('following-btn-active'); }
+      showToast('关注成功', 'success');
+    }
+    // Refresh counts
+    loadProfile(userId);
+  } catch (e) { showToast('操作失败', 'error'); }
+}
+
+function showFollowers(userId) {
+  showFollowModal(userId, 'followers');
+}
+
+function showFollowing(userId) {
+  showFollowModal(userId, 'following');
+}
+
+async function showFollowModal(userId, type) {
+  var title = type === 'followers' ? '粉丝' : '关注';
+  var list = type === 'followers'
+    ? await api('/follow/followers/' + userId)
+    : await api('/follow/following/' + userId);
+  var users = list.users || [];
+
+  var html = '<div id="follow-modal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target.id===\'follow-modal\')this.remove();">';
+  html += '<div style="background:#fff;border-radius:16px;width:100%;max-width:400px;max-height:500px;overflow-y:auto;padding:20px;">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">';
+  html += '<h3 style="margin:0;font-size:16px;color:var(--text);">' + title + '</h3>';
+  html += '<button onclick="document.getElementById(\'follow-modal\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8;padding:4px;">×</button>';
+  html += '</div>';
+  if (users.length === 0) {
+    html += '<div style="text-align:center;padding:20px;color:#94a3b8;">暂无' + title + '</div>';
+  } else {
+    html += '<div style="display:flex;flex-direction:column;gap:10px;">';
+    users.forEach(function(u) {
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;background:#f8fafc;" onclick="viewOtherProfile(' + u.id + ')">';
+      html += '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;overflow:hidden;flex-shrink:0;">' + (u.avatar ? '<img src="' + u.avatar + '" style="width:100%;height:100%;object-fit:cover;">' : (u.nickname||u.username)[0].toUpperCase()) + '</div>';
+      html += '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--text);">' + escapeHtml(u.nickname || u.username) + '</div><div style="font-size:11px;color:#94a3b8;">' + (u.points||0) + ' 积分</div></div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function viewOtherProfile(userId) {
+  document.getElementById('follow-modal').remove();
+  showView('profile');
+  loadProfile(userId);
+}
+
+// ============ Points Transfer ============"" 
 async function submitTransfer() {
   var user = getUser();
   if (!user) { showToast('请先登录', 'error'); return; }
@@ -1563,11 +1701,16 @@ function searchPosts() {
 }
 
 function setSearchSort(sort) {
+  if (sort === 'following' && !getUser()) {
+    showLogin();
+    // Reset to newest
+    var sel = document.getElementById('sort-select');
+    if (sel) sel.value = 'newest';
+    return;
+  }
   currentSort = sort;
   var sel = document.getElementById('sort-select');
   if (sel) sel.value = sort;
-  document.getElementById('sort-newest').classList.toggle('active', sort === 'newest');
-  document.getElementById('sort-hot').classList.toggle('active', sort === 'hot');
   searchPosts();
 }
 
@@ -1603,7 +1746,18 @@ function renderPostsLoading() {
 async function loadPosts() {
   renderPostsLoading();
   const user = getUser();
-  const params = new URLSearchParams({ page: currentPage, limit: 20, sort: currentSort });
+  const params = new URLSearchParams({ page: currentPage, limit: 20 });
+  // If "following" sort, call API differently
+  if (currentSort === 'following') {
+    if (!user) {
+      showLogin();
+      renderPostsEmpty();
+      return;
+    }
+    params.set('following', user.id);
+  } else {
+    params.set('sort', currentSort);
+  }
   if (currentTagId) params.set('tag_id', currentTagId);
   if (currentTimeRange) params.set('time_range', currentTimeRange);
   const search = document.getElementById('search-input')?.value.trim();

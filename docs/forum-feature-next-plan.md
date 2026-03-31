@@ -6,7 +6,7 @@
 
 ## P1 功能
 
-### 1.1 COS 图片存储 ⏳ 待开发
+### 1.1 COS 图片存储 ✅ 已完成
 **目标**：用户发帖上传的图片存到腾讯云 COS，CDN 全球加速分发
 **方案**：
 1. 开通腾讯云 COS + CI 图片处理
@@ -80,6 +80,22 @@
 - 按钮显示剩余页数，点击后追加更早的消息
 **commit**：feature-next（6c67b12）
 
+### 1.1 COS 图片存储 ✅ 已完成
+**目标**：将本地存储改为腾讯云 COS，提升图片加载速度，支持 CDN 加速
+
+**实现**：
+- `lib/cos.js` - COS 上传工具封装（uploadToCOS / deleteFromCOS）
+- `routes/upload.js` - multer memoryStorage + COS 上V5 SDK 上传
+- `.env` - TENCENT_COS_SECRET_ID / SECRET_KEY / REGION / BUCKET 四要素
+- `cos-nodejs-sdk-v5` - 官方 Node.js SDK
+
+**COS 配置**：
+- Bucket: `fly-1300576097`
+- Region: `ap-singapore`
+- 上传路径: `uploads/img-{timestamp}-{random}.{ext}`
+
+---
+
 ### 4.2 帖子多条件筛选增强 ⏳ 待开发
 **目标**：AI 对话历史支持翻页，不只是最新 20 条
 
@@ -100,6 +116,6 @@
 | P3.1 SW 缓存优化 | feature-next | ✅ |
 | P3.2 关注/粉丝系统 | feature-next | ✅ |
 | P3.3 精华帖标记 | feature-next | ✅ |
-| COS 图片存储 | 待开发 | ⏳ |
+| P1.1 COS 图片存储 | ✅ 已完成 | feature-next |
 | P4.1 AI 对话分页 | feature-next | ✅ |
 | P4.2 多条件筛选 | ✅ 完成 | ⏳ |

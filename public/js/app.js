@@ -3519,28 +3519,21 @@ function renderContent(str) {
   if (!str) return '';
   let html = str; // NO escapeHtml here first - process markdown FIRST
 
-  // Step 1: Save URLs before escapeHtml - use HTML comment markers (never escaped)
-  var _imgMap = {};
-  var _imgIdx = 0;
-  html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g, function(match, alt, url) {
-    var key = 'IMG' + (_imgIdx++);
-    _imgMap[key] = url;
-    return '<!--' + key + '-->';
-  });
-  html = html.replace(/(^|<br>)(\/uploads\/[\w\-./%]+?\.(?:png|jpe?g|gif|webp))(?=<br>|$)/gi, function(all, prefix, url) {
-    var key = 'IMG' + (_imgIdx++);
-    _imgMap[key] = url;
-    return prefix + '<!--' + key + '-->';
-  });
-
-  // Step 2: Escape HTML
+  // Step 1: Escape HTML first (neutralizes raw < > & to prevent XSS)
   html = escapeHtml(html);
 
-  // Step 3: Restore images from saved map
-  html = html.replace(/<!--(IMG\d+)-->/g, function(match, key) {
-    var url = _imgMap[key];
-    if (!url) return match;
-    return '<img class="post-inline-image" src="' + url + '" alt="帖子图片" loading="lazy">';
+  // Step 2: Match markdown images (unescaped brackets/parens survive escapeHtml)
+  html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, function(match, alt, url) {
+    // Only & in URL needs decoding (other chars don't get escaped)
+    url = url.replace(/&amp;/g, '&');
+    alt = alt.replace(/&amp;/g, '&');
+    return '<img class="post-inline-image" src="' + url + '" alt="' + alt + '" loading="lazy">';
+  });
+
+  // Step 3: Standalone upload URLs: /uploads/...png wrapped in <br>
+  html = html.replace(/(^|<br>)(\/uploads\/[\w\-./%]+?\.(?:png|jpe?g|gif|webp))(?=<br>|$)/gi, function(all, prefix, url) {
+    url = url.replace(/&amp;/g, '&');
+    return prefix + '<img class="post-inline-image" src="' + url + '" alt="帖子图片" loading="lazy">';
   });
 
   // Step 5: Code blocks (```...```) - styled with traffic lights + copy + collapse
@@ -3581,6 +3574,12 @@ function renderContent(str) {
 
   // Blockquote (> quote)
   html = html.replace(/^&gt; (.+)$/gm, '<blockquote class="md-quote">$1</blockquote>');
+
+  // Step 4: Standalone upload image URLs (before newlines become <br>)
+  html = html.replace(/(^|\n)(\/uploads\/[\w\-./%]+?\.(?:png|jpe?g|gif|webp))(?=\n|$)/gi, function(all, prefix, url) {
+    url = url.replace(/&amp;/g, '&');
+    return '<img class="post-inline-image" src="' + url + '" alt="帖子图片" loading="lazy">';
+  });
 
   // Convert newlines to <br> (but preserve existing tags)
   html = html.replace(/\n/g, '<br>');

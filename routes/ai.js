@@ -595,27 +595,35 @@ router.get('/sessions', authMiddleware, (req, res) => {
 router.get('/history', authMiddleware, (req, res) => {
   try {
     const requestSessionId = normalizeSessionId(req.query.session_id);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(5, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
     if (!requestSessionId) {
-      return res.json({ chats: [] });
+      return res.json({ chats: [], total: 0, page: 1, pages: 0, limit: limit });
     }
 
-    const chats = isLegacySession(requestSessionId)
-      ? db.prepare(`
-          SELECT role, content, created_at, provider, model
-          FROM ai_chats
-          WHERE user_id = ? AND (session_id IS NULL OR session_id = '')
-          ORDER BY created_at ASC, id ASC
-          LIMIT 300
-        `).all(req.user.id)
-      : db.prepare(`
-          SELECT role, content, created_at, provider, model
-          FROM ai_chats
-          WHERE user_id = ? AND session_id = ?
-          ORDER BY created_at ASC, id ASC
-          LIMIT 300
-        `).all(req.user.id, requestSessionId);
+    const isLegacy = isLegacySession(requestSessionId);
+    const whereClause = isLegacy
+      ? "WHERE user_id = ? AND (session_id IS NULL OR session_id = '')"
+      : "WHERE user_id = ? AND session_id = ?";
 
-    res.json({ chats, session_id: requestSessionId });
+    const countRow = db.prepare(
+      `SELECT COUNT(*) as total FROM ai_chats ${whereClause}`
+    ).get(...(isLegacy ? [req.user.id] : [req.user.id, requestSessionId]));
+
+    const total = countRow ? countRow.total : 0;
+    const pages = Math.ceil(total / limit);
+
+    const chats = db.prepare(`
+      SELECT role, content, created_at, provider, model
+      FROM ai_chats
+      ${whereClause}
+      ORDER BY created_at ASC, id ASC
+      LIMIT ? OFFSET ?
+    `).all(...(isLegacy ? [req.user.id] : [req.user.id, requestSessionId]), limit, offset);
+
+    res.json({ chats, total, page, pages, limit, session_id: requestSessionId });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '获取聊天记录失败' });

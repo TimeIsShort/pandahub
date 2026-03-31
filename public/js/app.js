@@ -4946,26 +4946,73 @@ async function loadAISessions(preferredSessionId = '') {
   }
 }
 
-async function loadAIHistory(sessionId = currentAISessionId) {
+var _aiHistoryPage = 1;
+var _aiHistoryPages = 1;
+
+async function loadAIHistory(sessionId, append) {
   if (!sessionId) {
     aiChatHistory = [];
     renderAIChatMessages(aiChatHistory);
     return;
   }
 
+  if (!append) {
+    _aiHistoryPage = 1;
+    _aiHistoryPages = 1;
+  }
+
   try {
-    const res = await api(`/ai/history?session_id=${encodeURIComponent(sessionId)}`);
-    aiChatHistory = Array.isArray(res.chats) ? res.chats : [];
+    var res = await api(`/ai/history?session_id=${encodeURIComponent(sessionId)}&page=${_aiHistoryPage}&limit=20`);
+    var newChats = Array.isArray(res.chats) ? res.chats : [];
+    _aiHistoryPages = res.pages || 1;
+
+    if (append) {
+      // Prepend older messages (they come sorted ASC from backend)
+      aiChatHistory = newChats.concat(aiChatHistory);
+    } else {
+      aiChatHistory = newChats;
+    }
+
     currentAISessionId = sessionId;
     renderAIChatMessages(aiChatHistory);
+    renderAIHistoryLoadMore();
     renderAISessionList();
   } catch (e) {
     console.error(e);
-    aiChatHistory = [];
-    const container = document.getElementById('ai-chat-messages');
-    if (container) container.innerHTML = renderAIBubble('assistant', '聊天记录加载失败，请稍后重试。');
+    if (!append) {
+      aiChatHistory = [];
+      const container = document.getElementById('ai-chat-messages');
+      if (container) container.innerHTML = renderAIBubble('assistant', '聊天记录加载失败，请稍后重试。');
+    }
     renderAISessionList();
   }
+}
+
+function renderAIHistoryLoadMore() {
+  var container = document.getElementById('ai-chat-messages');
+  if (!container) return;
+  var existingBtn = document.getElementById('ai-load-more-btn');
+  if (existingBtn) existingBtn.remove();
+
+  if (_aiHistoryPage >= _aiHistoryPages) return;
+
+  var btn = document.createElement('button');
+  btn.id = 'ai-load-more-btn';
+  btn.className = 'ai-load-more-btn';
+  btn.textContent = `加载更多 ${_aiHistoryPages > 0 ? (_aiHistoryPages - _aiHistoryPage) * 20 : ''} 条更早的消息`;
+  btn.onclick = function() {
+    _aiHistoryPage++;
+    loadAIHistory(currentAISessionId, true);
+    btn.textContent = '加载中...';
+    btn.disabled = true;
+  };
+  container.insertBefore(btn, container.firstChild);
+}
+
+async function loadMoreAIHistory() {
+  if (_aiHistoryPage >= _aiHistoryPages) return;
+  _aiHistoryPage++;
+  await loadAIHistory(currentAISessionId, true);
 }
 
 async function sendAIMessage() {

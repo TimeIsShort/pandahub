@@ -596,6 +596,84 @@ router.get('/moderation-log', authMiddleware, (req, res) => {
   });
 });
 
+// ===== User Actions Log (All Users) =====
+router.get('/user-actions-log', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: '需要管理员权限' });
+  }
+
+  const { page = 1, limit = 50, action, user_id } = req.query;
+  const offset = (page - 1) * limit;
+
+  let where = '1=1';
+  const params = [];
+
+  if (action) {
+    where += ' AND a.action = ?';
+    params.push(action);
+  }
+  if (user_id) {
+    where += ' AND a.user_id = ?';
+    params.push(Number(user_id));
+  }
+
+  const countRow = db.prepare(`SELECT COUNT(*) as total FROM user_actions_log a WHERE ${where}`).get(...params);
+  const logs = db.prepare(`
+    SELECT a.*, u.username as user_username, u.nickname as user_nickname
+    FROM user_actions_log a
+    LEFT JOIN users u ON a.user_id = u.id
+    WHERE ${where}
+    ORDER BY a.created_at DESC
+    LIMIT ? OFFSET ?
+  `).all(...params, Number(limit), Number(offset));
+
+  res.json({
+    logs,
+    total: countRow.total,
+    page: Number(page),
+    limit: Number(limit),
+    pages: Math.ceil(countRow.total / limit)
+  });
+});
+
+// ===== Post Views Log =====
+router.get('/post-views-log', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: '需要管理员权限' });
+  }
+
+  const { page = 1, limit = 50, post_id } = req.query;
+  const offset = (page - 1) * limit;
+
+  let where = '1=1';
+  const params = [];
+
+  if (post_id) {
+    where += ' AND v.post_id = ?';
+    params.push(Number(post_id));
+  }
+
+  const countRow = db.prepare(`SELECT COUNT(*) as total FROM post_views v WHERE ${where}`).get(...params);
+  const views = db.prepare(`
+    SELECT v.*, u.username as user_username, u.nickname as user_nickname,
+           p.title as post_title
+    FROM post_views v
+    LEFT JOIN users u ON v.user_id = u.id
+    LEFT JOIN posts p ON v.post_id = p.id
+    WHERE ${where}
+    ORDER BY v.viewed_at DESC
+    LIMIT ? OFFSET ?
+  `).all(...params, Number(limit), Number(offset));
+
+  res.json({
+    views,
+    total: countRow.total,
+    page: Number(page),
+    limit: Number(limit),
+    pages: Math.ceil(countRow.total / limit)
+  });
+});
+
 // ===== Word Filter Management =====
 
 // Get word list

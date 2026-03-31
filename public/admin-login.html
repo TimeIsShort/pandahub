@@ -611,6 +611,7 @@
         <button class="tab-btn" id="tabChartsBtn">📈 统计看板</button>
         <button class="tab-btn" id="tabTagsBtn">🏷️ 标签管理</button>
         <button class="tab-btn" id="tabReportsBtn">🚩 举报管理<span id="pendingReportsBadge"></span></button>
+        <button class="tab-btn" id="tabAccessLogsBtn">📂 访问日志</button>
       </div>
       <div id="tabApps">
         <div class="card">
@@ -722,6 +723,33 @@
           </div>
           <div id="reportsList"></div>
           <div id="reportsPagination" style="display:flex;gap:8px;justify-content:center;margin-top:16px;"></div>
+        </div>
+      </div>
+      <!-- Access Logs Tab -->
+      <div id="tabAccesslogs" class="hidden">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <h2>📂 访问日志</h2>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <select id="accessLogType" onchange="switchAccessLogType()" style="padding:8px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:13px;">
+                <option value="user">👥 用户行为</option>
+                <option value="post">👁️ 帖子访问</option>
+              </select>
+              <select id="accessActionFilter" style="padding:8px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:13px;">
+                <option value="">全部动作</option>
+                <option value="view_post">浏览帖子</option>
+                <option value="create_post">发布帖子</option>
+                <option value="delete_post">删除帖子</option>
+                <option value="create_comment">发布评论</option>
+                <option value="delete_comment">删除评论</option>
+                <option value="user_login">用户登录</option>
+                <option value="user_register">用户注册</option>
+                <option value="transfer_points">积分转账</option>
+              </select>
+            </div>
+          </div>
+          <div id="accessLogsList"></div>
+          <div id="accessLogsPagination" style="display:flex;gap:8px;justify-content:center;margin-top:16px;"></div>
         </div>
       </div>
       <div id="tabUsers" class="hidden">
@@ -880,7 +908,7 @@
 
     function setActiveTab(tab) {
       currentTab = tab;
-      var tabs = ['apps', 'posts', 'users', 'words', 'logs', 'charts', 'tags', 'reports'];
+      var tabs = ['apps', 'posts', 'users', 'words', 'logs', 'charts', 'tags', 'reports', 'accesslogs'];
       for (var i = 0; i < tabs.length; i++) {
         var key = tabs[i];
         var panel = document.getElementById('tab' + key.charAt(0).toUpperCase() + key.slice(1));
@@ -912,6 +940,7 @@
     document.getElementById('tabChartsBtn').onclick = function() { setActiveTab('charts'); };
     document.getElementById('tabTagsBtn').onclick = function() { setActiveTab('tags'); };
     document.getElementById('tabReportsBtn').onclick = function() { setActiveTab('reports'); loadReports(); };
+    document.getElementById('tabAccessLogsBtn').onclick = function() { setActiveTab('accesslogs'); loadAccessLogs(); };
 
     document.getElementById('appsSearchInput').addEventListener('input', function() { renderApplications(); });
     document.getElementById('appsStatusFilter').addEventListener('change', function() { renderApplications(); });
@@ -1165,6 +1194,98 @@
         loadReports(reportsPage);
       })
       .catch(function() { showToast('操作失败', 'error'); });
+    }
+
+    var accessLogsPage = 1;
+    var accessLogsCache = [];
+    var currentAccessLogType = 'user';
+
+    function switchAccessLogType() {
+      currentAccessLogType = document.getElementById('accessLogType').value;
+      loadAccessLogs(1);
+    }
+
+    function loadAccessLogs(page) {
+      accessLogsPage = page || 1;
+      var action = document.getElementById('accessActionFilter').value;
+      var apiPath = currentAccessLogType === 'user'
+        ? '/api/admin/user-actions-log?page=' + accessLogsPage + '&limit=30' + (action ? '&action=' + action : '')
+        : '/api/admin/post-views-log?page=' + accessLogsPage + '&limit=30' + (action ? '&post_id=' + action : '');
+      adminApi(apiPath)
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        accessLogsCache = data.logs || data.views || [];
+        renderAccessLogs(data);
+      })
+      .catch(function() { showToast('加载日志失败', 'error'); });
+    }
+
+    function renderAccessLogs(data) {
+      var el = document.getElementById('accessLogsList');
+      var logs = accessLogsCache;
+      if (!logs || logs.length === 0) {
+        el.innerHTML = '<div style="padding:30px;text-align:center;color:#888;font-size:14px;">暂无日志记录</div>';
+        document.getElementById('accessLogsPagination').innerHTML = '';
+        return;
+      }
+
+      var actionNames = {
+        'view_post': '👁️ 浏览帖子',
+        'create_post': '📝 发布帖子',
+        'delete_post': '🗑️ 删除帖子',
+        'admin_delete_post': '🗑️ 管理员删帖',
+        'create_comment': '💬 发布评论',
+        'delete_comment': '🗑️ 删除评论',
+        'admin_delete_comment': '🗑️ 管理员删评',
+        'user_login': '🔑 用户登录',
+        'user_register': '📋 用户注册',
+        'transfer_points': '💸 积分转账',
+      };
+
+      if (currentAccessLogType === 'user') {
+        var html = '<div class="table-wrap"><div class="row-head" style="grid-template-columns:140px 80px 80px 1fr 100px;">';
+        html += '<div>时间</div><div>动作</div><div>用户</div><div>详情</div><div>IP</div></div>';
+        for (var i = 0; i < logs.length; i++) {
+          var log = logs[i];
+          html += '<div class="row-item" style="grid-template-columns:140px 80px 80px 1fr 100px;">';
+          html += '<div style="font-size:11px;color:#666;">' + fd(log.created_at) + '</div>';
+          html += '<div style="font-size:11px;"><span class="status-pill" style="background:#667eea22;color:#667eea;">' + (actionNames[log.action] || log.action) + '</span></div>';
+          html += '<div style="font-size:11px;">' + e(log.user_username || log.username || '游客') + '</div>';
+          html += '<div style="font-size:11px;color:#555;">' + e(log.details || '-') + '</div>';
+          html += '<div style="font-size:11px;color:#94a3b8;">' + e(log.ip_address || '-') + '</div>';
+          html += '</div>';
+        }
+        html += '</div>';
+      } else {
+        var html = '<div class="table-wrap"><div class="row-head" style="grid-template-columns:140px 80px 1fr 80px 100px;">';
+        html += '<div>时间</div><div>帖子ID</div><div>帖子标题</div><div>用户</div><div>IP</div></div>';
+        for (var i = 0; i < logs.length; i++) {
+          var v = logs[i];
+          html += '<div class="row-item" style="grid-template-columns:140px 80px 1fr 80px 100px;">';
+          html += '<div style="font-size:11px;color:#666;">' + fd(v.viewed_at || v.created_at) + '</div>';
+          html += '<div style="font-size:11px;">#' + v.post_id + '</div>';
+          html += '<div style="font-size:11px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + e(v.post_title || '') + '">' + e(v.post_title || '(已删除)') + '</div>';
+          html += '<div style="font-size:11px;">' + e(v.user_username || '游客') + '</div>';
+          html += '<div style="font-size:11px;color:#94a3b8;">' + e(v.ip_address || '-') + '</div>';
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+
+      el.innerHTML = html;
+
+      // Pagination
+      var totalPages = data.pages || 1;
+      var pagEl = document.getElementById('accessLogsPagination');
+      if (totalPages > 1) {
+        var pHtml = '';
+        pHtml += '<button ' + (accessLogsPage <= 1 ? 'disabled' : '') + ' onclick="loadAccessLogs(' + (accessLogsPage - 1) + ')" style="padding:6px 12px;border-radius:8px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;font-size:12px;">上一页</button>';
+        pHtml += '<span style="font-size:12px;color:#666;padding:0 8px;">第 ' + accessLogsPage + ' / ' + totalPages + ' 页 · 共' + data.total + '条</span>';
+        pHtml += '<button ' + (accessLogsPage >= totalPages ? 'disabled' : '') + ' onclick="loadAccessLogs(' + (accessLogsPage + 1) + ')" style="padding:6px 12px;border-radius:8px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;font-size:12px;">下一页</button>';
+        pagEl.innerHTML = pHtml;
+      } else {
+        pagEl.innerHTML = '<span style="font-size:12px;color:#94a3b8;">共 ' + data.total + ' 条记录</span>';
+      }
     }
 
     function loadLogs(page) {

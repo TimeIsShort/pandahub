@@ -5,6 +5,7 @@ const db = require('../models/database');
 const { JWT_SECRET, authMiddleware } = require('../middleware/auth');
 const { getUserLevel } = require('../models/database');
 const { logAction } = require('../middleware/moderationLog');
+const { logUserAction } = require('../middleware/actionLogger');
 
 const router = express.Router();
 
@@ -31,6 +32,15 @@ router.post('/register', async (req, res) => {
     db.prepare(
       'INSERT INTO users (username, password, nickname, email, approved, email_verified) VALUES (?, ?, ?, ?, 0, 0)'
     ).run(username, hashedPassword, nickname || username, email || null);
+
+    logUserAction({
+      userId: null,
+      username: username,
+      action: 'user_register',
+      targetType: 'user',
+      details: '新用户注册: ' + username + (email ? ' (' + email + ')' : ''),
+      req
+    });
 
     res.status(201).json({
       pending: true,
@@ -204,6 +214,17 @@ router.post('/login', async (req, res) => {
     if (user.role === 'admin') {
       logAction({ adminId: user.id, action: 'admin_login', targetType: 'user', targetId: user.id, details: '管理员登录: ' + user.username });
     }
+
+    // General user login log
+    logUserAction({
+      userId: user.id,
+      username: user.username,
+      action: 'user_login',
+      targetType: 'user',
+      targetId: user.id,
+      details: '用户登录: ' + user.username + (user.role === 'admin' ? ' (管理员)' : ''),
+      req
+    });
 
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     

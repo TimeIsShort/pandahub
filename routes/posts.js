@@ -3,6 +3,7 @@ const db = require('../models/database');
 const { authMiddleware, optionalAuth } = require('../middleware/auth');
 const { containsSensitiveWords, refreshWords } = require('../middleware/wordFilter');
 const { logAction } = require('../middleware/moderationLog');
+const { logUserAction } = require('../middleware/actionLogger');
 const { updatePostFTS, getUserLevel, POINT_COST } = require('../models/database');
 const { sendPushToUser, notifyUserNewComment, notifyUserNewReply, processMentions } = require('../utils/pushHelper');
 
@@ -108,6 +109,24 @@ router.get('/:id', optionalAuth, (req, res) => {
           throw e;
         }
       }
+      // Log post view
+      try {
+        db.prepare(
+          'INSERT INTO post_views (post_id, user_id, ip_address) VALUES (?, ?, ?)'
+        ).run(req.params.id, req.user?.id || null, req.ip || '');
+      } catch (e) {
+        console.error('[PostViewLog]', e.message);
+      }
+      // User action log
+      logUserAction({
+        userId: req.user?.id || null,
+        username: req.user?.username || null,
+        action: 'view_post',
+        targetType: 'post',
+        targetId: Number(req.params.id),
+        details: '浏览帖子: ' + post.title,
+        req
+      });
     }
 
     // Get comments
@@ -178,6 +197,16 @@ router.post('/', authMiddleware, (req, res) => {
     // Deduct points
     db.prepare('UPDATE users SET points = points - ? WHERE id = ?').run(cost, req.user.id);
 
+    logUserAction({
+      userId: req.user.id,
+      username: req.user.username,
+      action: 'create_post',
+      targetType: 'post',
+      targetId: result.lastInsertRowid,
+      details: '发布帖子: ' + title,
+      req
+    });
+
     res.json({ post, message: `帖子已提交，消耗 ${cost} 积分，等待管理员审核` });
   } catch (err) {
     console.error(err);
@@ -244,6 +273,15 @@ router.delete('/:id', authMiddleware, (req, res) => {
     // Log deletion
     const logReason = req.user.role === 'admin' ? '管理员删除' : '用户自己删除';
     logAction({ adminId: req.user.id, action: 'delete_post', targetType: 'post', targetId: Number(req.params.id), reason: logReason, details: `删除帖子: ${post.title}` });
+    logUserAction({
+      userId: req.user.id,
+      username: req.user.username,
+      action: req.user.role === 'admin' ? 'admin_delete_post' : 'delete_post',
+      targetType: 'post',
+      targetId: Number(req.params.id),
+      details: '删除帖子: ' + post.title,
+      req
+    });
 
     res.json({ success: true });
   } catch (err) {
@@ -348,6 +386,16 @@ router.post('/:id/comments', authMiddleware, async (req, res) => {
     }
 
     res.json({ comment, points_deducted: cost });
+
+    logUserAction({
+      userId: req.user.id,
+      username: req.user.username,
+      action: 'create_comment',
+      targetType: 'comment',
+      targetId: result.lastInsertRowid,
+      details: '评论帖子: ' + post.title,
+      req
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '评论失败' });
@@ -367,6 +415,16 @@ router.delete('/comments/:id', authMiddleware, (req, res) => {
 
     db.prepare('DELETE FROM comments WHERE id = ?').run(req.params.id);
     res.json({ success: true });
+
+    logUserAction({
+      userId: req.user.id,
+      username: req.user.username,
+      action: req.user.role === 'admin' ? 'admin_delete_comment' : 'delete_comment',
+      targetType: 'comment',
+      targetId: Number(req.params.id),
+      details: '删除评论: ' + (comment.content || '').substring(0, 50),
+      req
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '删除评论失败' });

@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
+const { logUserAction } = require('../middleware/actionLogger');
 
 const router = express.Router();
 
@@ -41,6 +42,16 @@ router.post('/transfer', authMiddleware, (req, res) => {
     const result = db.prepare(
       'INSERT INTO point_transfers (from_user_id, to_user_id, amount, note) VALUES (?, ?, ?, ?)'
     ).run(fromUserId, toUser.id, amountNum, note || null);
+
+    logUserAction({
+      userId: fromUserId,
+      username: req.user.username,
+      action: 'transfer_points',
+      targetType: 'user',
+      targetId: toUser.id,
+      details: '向 ' + toUser.username + ' 转账 ' + amountNum + ' 积分' + (note ? '，备注: ' + note : ''),
+      req
+    });
 
     res.json({ success: true, id: result.lastInsertRowid, amount: amountNum });
   } catch (err) {

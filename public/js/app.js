@@ -703,7 +703,8 @@ function updateNav() {
   document.getElementById('nav-notif').style.display = user ? 'inline-block' : 'none';
   document.getElementById('nav-toolbox').style.display = 'inline-block';
   document.getElementById('nav-rss').style.display = 'inline-block';
-  document.getElementById('btn-new-post').style.display = user ? 'inline-block' : 'none';
+  var btnNewPost = document.getElementById('btn-new-post');
+  if (btnNewPost) btnNewPost.style.display = user ? 'inline-block' : 'none';
 
   if (user) {
     // Update avatar button

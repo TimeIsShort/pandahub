@@ -83,55 +83,38 @@
               <div class="hero-badge">FORUM · BUILD TOGETHER</div>
               <h2>把问题抛出来，把经验沉淀下去</h2>
               <p>分享实战总结、排障思路和项目进展，在更轻松的氛围里找到同频开发者。</p>
-              <div class="hero-quick-actions">
-                <button class="hero-mini-btn hero-mini-btn-primary" onclick="getUser() ? showNewPost() : showLogin()">发布你的第一条实战帖</button>
-                <button class="hero-mini-btn" onclick="document.getElementById('search-input').focus()">快速搜索话题</button>
-              </div>
-            </div>
-            <div class="hero-data-card" aria-hidden="true">
-              <div class="hero-data-title">社区节奏</div>
-              <div class="hero-stat-list">
-                <div class="hero-stat-item">
-                  <span>讨论氛围</span>
-                  <strong>高质量交流</strong>
-                </div>
-                <div class="hero-stat-item">
-                  <span>内容方向</span>
-                  <strong>AI · 开发 · 实战</strong>
-                </div>
-                <div class="hero-stat-item">
-                  <span>协作方式</span>
-                  <strong>提问 + 复盘 + 共享</strong>
-                </div>
+              <div class="hero-tags-line">
+                <span>💡 高质量交流</span>
+                <span class="hero-dot">·</span>
+                <span>🛠️ AI · 开发 · 实战</span>
+                <span class="hero-dot">·</span>
+                <span>🤝 提问 + 复盘 + 共享</span>
               </div>
             </div>
           </div>
         </section>
-        <div class="toolbar" style="display:flex;flex-direction:column;gap:10px;align-items:stretch;">
-          <!-- Layer 1: Tags (horizontally scrollable) -->
-          <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;flex-shrink:0;scrollbar-width:none;-ms-overflow-style:none;" id="tags-scroll-wrap">
+        <div class="toolbar" style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;overflow:hidden;">
+          <!-- Left: Tag tabs (horizontally scrollable) -->
+          <div style="display:flex;gap:6px;overflow-x:auto;flex-shrink:0;scrollbar-width:none;-ms-overflow-style:none;flex:1;min-width:0;" id="tags-scroll-wrap">
             <div class="tags-filter" id="tags-filter" style="flex-wrap:nowrap;min-width:0;"></div>
           </div>
-          <!-- Layer 2: Search + Filters + Publish + Trending -->
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <div class="search-box" style="flex:1;min-width:180px;">
-              <input type="text" id="search-input" placeholder="搜索帖子..." onkeyup="handleSearch(event)" style="width:100%;">
+          <!-- Right: Search + Trending (no +发布, goes to FAB) -->
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+            <div class="search-box" style="flex:0 0 auto;">
+              <input type="text" id="search-input" placeholder="搜索..." onkeyup="handleSearch(event)" style="width:140px;">
             </div>
-            <select id="sort-select" onchange="setSearchSort(this.value)" style="padding:8px 10px;border:1.5px solid #d5ddff;border-radius:10px;font-size:13px;color:#1e3a5f;background:#fff;cursor:pointer;">
-              <option value="newest">🕐 最新</option>
-              <option value="hot">🔥 最热</option>
+            <select id="sort-select" onchange="setSearchSort(this.value)" style="padding:7px 9px;border:1.5px solid #d5ddff;border-radius:10px;font-size:12px;color:#1e3a5f;background:#fff;cursor:pointer;">
+              <option value="newest">🕐</option>
+              <option value="hot">🔥</option>
             </select>
-            <select id="time-select" onchange="setSearchTime(this.value)" style="padding:8px 10px;border:1.5px solid #d5ddff;border-radius:10px;font-size:13px;color:#1e3a5f;background:#fff;cursor:pointer;">
-              <option value="">全部时间</option>
+            <select id="time-select" onchange="setSearchTime(this.value)" style="padding:7px 9px;border:1.5px solid #d5ddff;border-radius:10px;font-size:12px;color:#1e3a5f;background:#fff;cursor:pointer;">
+              <option value="">全部</option>
               <option value="day">今天</option>
               <option value="week">本周</option>
               <option value="month">本月</option>
             </select>
-            <button class="btn-primary" id="btn-new-post" onclick="showNewPost()" style="display:none;border-radius:10px;font-weight:700;">
-              + 发布
-            </button>
-            <button id="btn-trending" onclick="toggleTrendingDropdown()" style="background:linear-gradient(135deg,#ff6b6b,#ff8e53);color:#fff;border:none;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;flex-shrink:0;">
-              🔥 热议 <span id="trending-count" style="background:rgba(255,255,255,0.25);padding:1px 6px;border-radius:999px;font-size:11px;"></span>
+            <button id="btn-trending" onclick="toggleTrendingDropdown()" style="background:linear-gradient(135deg,#ff6b6b,#ff8e53);color:#fff;border:none;padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;flex-shrink:0;">
+              🔥 热议
             </button>
           </div>
         </div>

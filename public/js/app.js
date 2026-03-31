@@ -1618,22 +1618,25 @@ async function loadPosts() {
         const e = (name) => name ? name[0].toUpperCase() + name.slice(1) : "A";
         return `
       <div class="post-card" data-post-id="${post.id}" onclick="viewPost(${post.id})">
-        <div class="post-title">${escapeHtml(post.title)}</div>
-        <div class="post-meta">
-          ${post.is_pinned ? '<span style="background:#f59e0b;color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:3px;">🏆 置顶</span>' : ''}
-          ${post.is_featured ? '<span style="background:#ec4899;color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:3px;">⭐ 精选</span>' : ''}
+        <div class="post-top-meta">
+          ${post.is_pinned ? '<span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;margin-right:4px;">🏆 置顶</span>' : ''}
+          ${post.is_featured ? '<span style="background:#ec4899;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;margin-right:4px;">⭐ 精选</span>' : ''}
           ${post.tag_name ? `<span class="post-tag" style="background:${post.tag_color}">${escapeHtml(post.tag_name)}</span>` : ''}
-          <span class="avatar-small">${post.avatar ? `<img src="${post.avatar}" alt="avatar">` : (post.nickname || post.username)[0].toUpperCase()}</span>
-          <span>${escapeHtml(post.nickname || post.username)}</span>
-          ${user && user.id !== post.user_id ? `<button class="msg-author-btn" onclick="event.stopPropagation();openMsgDetailFromUser(${post.user_id}, '${e(post.nickname || post.username)}')" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px 6px;color:#5d6dff;">💬</button>` : ''}
-          <button onclick="event.stopPropagation();toggleFavorite(${post.id})" id="fav-btn-${post.id}" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px 4px;color:#94a3b8;" title="收藏">☆</button>
-          <button onclick="event.stopPropagation();votePost(${post.id}, 'like')" class="vote-inline-btn ${post.userVote === 'like' ? 'liked' : ''}" title="赞一个" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px 4px;color:${post.userVote === 'like' ? '#ef4444' : '#94a3b8'};">👍 <span class="vote-like-count">${post.like_count || 0}</span></button>
-          <button onclick="event.stopPropagation();votePost(${post.id}, 'dislike')" class="vote-inline-btn ${post.userVote === 'dislike' ? 'disliked' : ''}" title="踩一下" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px 4px;color:${post.userVote === 'dislike' ? '#8b5cf6' : '#94a3b8'};">👎 <span class="vote-dislike-count">${post.dislike_count || 0}</span></button>
-          <span>💬 ${post.comment_count}</span>
-          <span>👁 ${post.views}</span>
-          <span>🕐 ${formatDate(post.created_at)}</span>
         </div>
-        <div class="post-excerpt">${escapeHtml(stripMarkdown(post.content).substring(0, 120))}${stripMarkdown(post.content).length > 120 ? '…' : ''}</div>
+        <div class="post-title">${escapeHtml(post.title)}</div>
+        <div class="post-excerpt">${escapeHtml(stripMarkdown(post.content).substring(0, 80))}${stripMarkdown(post.content).length > 80 ? '…' : ''}</div>
+        <div class="post-bottom-meta">
+          <div class="post-author-info">
+            <span class="avatar-small">${post.avatar ? `<img src="${post.avatar}" alt="avatar">` : (post.nickname || post.username)[0].toUpperCase()}</span>
+            <span style="font-size:11px;color:#7a9ab0;">${escapeHtml(post.nickname || post.username)}</span>
+            <span style="font-size:11px;color:#a8bfc9;">🕐 ${formatDate(post.created_at)}</span>
+          </div>
+          <div class="post-stats-row">
+            <span style="font-size:11px;color:#94a3b8;">👍 ${post.like_count || 0}</span>
+            <span style="font-size:11px;color:#94a3b8;">💬 ${post.comment_count || 0}</span>
+            <span style="font-size:11px;color:#94a3b8;">👁 ${post.views || 0}</span>
+          </div>
+        </div>
       </div>
         `;
     }).join('');

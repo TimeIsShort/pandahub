@@ -59,6 +59,7 @@ forum/
 │   ├── leaderboard.js    # 积分排行榜
 │   └── reports.js        # 帖子/评论举报
 │   └── points.js        # 积分转账
+│   └── rss.js          # RSS 订阅 Feed
 │   └── admin.js          # 管理后台 + AI审核
 ├── middleware/
 │   └── auth.js           # JWT 认证中间件
@@ -140,6 +141,7 @@ forum/
 - [x] SEO 优化（robots.txt/sitemap/og:tags）
 - [x] 分享功能（一键复制链接）
 - [x] 移动端适配
+- [x] RSS 订阅（/feed.xml，RSS 2.0 标准格式）
 - [x] 黑暗模式（5套主题：薄荷/夕阳/天空/赛博/极光）
 
 ---
@@ -488,6 +490,7 @@ npm run dev
 - ✅ P2 帖子举报功能（reports表/举报弹窗/管理后台举报管理Tab）
 - ✅ P2 评论嵌套展示优化（树形结构/层级缩进/竖线/深层展开）
 - ✅ P3 积分转账（point_transfers表/设置页转账卡片/转账记录）
+- ✅ P3 RSS订阅（/feed.xml RSS2.0最新20帖/导航栏📡RSS按钮）
 
 ### v1.3（2026-03-30）
 - ✅ P0 收藏/书签（收藏表/API/个人主页tab）

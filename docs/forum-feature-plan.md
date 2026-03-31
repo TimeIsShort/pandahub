@@ -884,3 +884,15 @@
 - `routes/points.js` - 新建后端路由
 - `public/index.html` - 转账卡片 HTML
 - `public/js/app.js` - submitTransfer / loadTransferRecords / switchTransferTab 函数
+
+
+### P3 RSS订阅 ✅
+- ✅ `routes/rss.js` - RSS 2.0 Feed，最新 20 篇 approved 帖子
+- ✅ 访问路径：`/feed.xml`
+- ✅ 字段：title / link / guid / description / author / pubDate / category
+- ✅ 网站导航栏加 📡 RSS 按钮
+
+### 涉及文件
+- `routes/rss.js` - 新建 RSS 路由
+- `public/index.html` - 导航栏 RSS 按钮
+- `public/js/app.js` - 登录后显示 RSS 按钮

@@ -145,13 +145,13 @@
 - [x] 转账表单：对方用户名 / 积分数量 / 备注
 - [x] 转账记录：tab 切换「我转出的」/「我收到的」，含头像/昵称/金额/时间/备注
 
-### 5.2 RSS 订阅
+### 5.2 RSS 订阅 ✅
 **目标**：提供论坛 RSS Feed，便于 RSS 阅读器订阅
 
 **功能**：
-- [ ] `GET /feed.xml` 返回 RSS 2.0 XML
-- [ ] 最新20篇帖子标题/链接/摘要/发布时间
-- [   网站底部加 RSS 图标链接
+- [x] `GET /feed.xml` 返回 RSS 2.0 XML（最新 20 篇approved帖子）
+- [x] 网站导航栏加 📡 RSS 按钮，点击跳转 feed.xml
+- [x] RSS 字段：title / link / guid / description / author / pubDate / category
 
 ### 5.3 管理员操作日志完善
 **目标**：记录所有管理员敏感操作

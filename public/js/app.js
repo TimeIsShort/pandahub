@@ -3519,25 +3519,28 @@ function renderContent(str) {
   if (!str) return '';
   let html = str; // NO escapeHtml here first - process markdown FIRST
 
-  // Step 1: Convert markdown images to placeholders (so escapeHtml doesn't kill them)
+  // Step 1: Save URLs before escapeHtml - use HTML comment markers (never escaped)
+  var _imgMap = {};
+  var _imgIdx = 0;
   html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g, function(match, alt, url) {
-    return '<MDIMG_PLACEHOLDER>' + btoa(unescape(encodeURIComponent(url))) + '</MDIMG>';
+    var key = 'IMG' + (_imgIdx++);
+    _imgMap[key] = url;
+    return '<!--' + key + '-->';
   });
-
-  // Step 2: Convert standalone upload links to placeholders
   html = html.replace(/(^|<br>)(\/uploads\/[\w\-./%]+?\.(?:png|jpe?g|gif|webp))(?=<br>|$)/gi, function(all, prefix, url) {
-    return prefix + '<MDIMG_PLACEHOLDER>' + btoa(unescape(encodeURIComponent(url))) + '</MDIMG>';
+    var key = 'IMG' + (_imgIdx++);
+    _imgMap[key] = url;
+    return prefix + '<!--' + key + '-->';
   });
 
-  // Step 3: Now safe to escape HTML
+  // Step 2: Escape HTML
   html = escapeHtml(html);
 
-  // Step 4: Restore images from placeholders
-  html = html.replace(/<MDIMG_PLACEHOLDER>([^<]+)<\/MDIMG>/g, function(match, encoded) {
-    try {
-      var url = decodeURIComponent(escape(atob(encoded)));
-      return '<img class="post-inline-image" src="' + url + '" alt="帖子图片" loading="lazy">';
-    } catch(e) { return match; }
+  // Step 3: Restore images from saved map
+  html = html.replace(/<!--(IMG\d+)-->/g, function(match, key) {
+    var url = _imgMap[key];
+    if (!url) return match;
+    return '<img class="post-inline-image" src="' + url + '" alt="帖子图片" loading="lazy">';
   });
 
   // Step 5: Code blocks (```...```) - styled with traffic lights + copy + collapse

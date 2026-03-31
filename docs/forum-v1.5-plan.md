@@ -79,3 +79,26 @@
 
 ### 3.1 资源缓存优化
 **目标**：Service Worker / 静态资源长期缓存
+
+---
+
+### 布局重构详情（2026-03-31 中午）
+
+**外层骨架**：统一安全区容器 `max-width:1400px; padding:16px 20px`
+
+**两栏布局**：
+- 左侧主栏（`1fr`，最大4/12）：标签行（独立横向滚动）+ 工具栏（搜索框+下拉选择器+发布按钮）+ 帖子列表（2列grid）
+- 右侧栏（`320px fixed`，`position:sticky top:80px`）：热议榜塞入白色玻璃卡片
+
+**CSS类**：
+- `.home-layout` — 两栏grid `1fr 320px`
+- `.home-main` — 左侧主栏 flex-column
+- `.home-sidebar` — 右侧栏 sticky
+- `.tags-scroll-wrap` — 横向滚动标签行
+- `.toolbar-row` — 搜索+筛选+发布工具栏
+- `.sidebar-card` — 白色玻璃卡片（`bg:rgba(255,255,255,0.88); backdrop-filter:blur(10px); shadow`）
+
+**响应式**：
+- `≤1100px` — 侧栏收窄至280px
+- `≤900px` — 侧栏隐藏
+- `≤600px` — 帖子列表强制1列

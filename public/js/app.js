@@ -3484,13 +3484,54 @@ function sanitizeImageUrl(url) {
   return '';
 }
 
+function copyCode(btn) {
+  var pre = btn.closest('.md-code-block');
+  if (!pre) return;
+  var code = pre.querySelector('code');
+  if (!code) return;
+  var text = code.textContent;
+  // Include collapsed lines if any
+  var collapsed = pre.querySelector('.code-collapsed-lines');
+  if (collapsed) text += '\n' + collapsed.textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = '✅';
+    setTimeout(function() { btn.textContent = '📋'; }, 1500);
+  }).catch(function() {
+    btn.textContent = '❌';
+    setTimeout(function() { btn.textContent = '📋'; }, 1500);
+  });
+}
+
+function expandCode(id, btn) {
+  var collapsed = document.getElementById(id);
+  if (!collapsed) return;
+  var isHidden = collapsed.style.display === 'none' || !collapsed.style.display;
+  if (isHidden) {
+    collapsed.style.display = 'block';
+    btn.textContent = '收起 ▲';
+  } else {
+    collapsed.style.display = 'none';
+    btn.textContent = '展开 ' + collapsed.textContent.split('\n').length + ' 行 ▼';
+  }
+}
+
 function renderContent(str) {
   if (!str) return '';
   let html = escapeHtml(str);
 
-  // Code blocks (```...```) - render as styled pre blocks
+  // Code blocks (```...```) - styled with traffic lights + copy + collapse
   html = html.replace(/```([\s\S]*?)```/g, function(match, code) {
-    return '<pre class="md-code-block"><code>' + code.trim() + '</code></pre>';
+    code = code.trim();
+    var lines = code.split('\n');
+    var isLong = lines.length > 10;
+    var displayCode = isLong ? lines.slice(0, 10).join('\n') : code;
+    var lineCount = lines.length;
+    var collapsedId = 'code-' + Math.random().toString(36).substr(2, 9);
+    var headerBtns = '<div class="code-header-btns"><span class="code-dot" style="background:#ff5f56;"></span><span class="code-dot" style="background:#ffbd2e;"></span><span class="code-dot" style="background:#27c93f;"></span></div>';
+    var copyBtn = '<button class="code-copy-btn" onclick="copyCode(this)" title="复制代码">📋</button>';
+    var expandBtn = isLong ? '<button class="code-expand-btn" onclick="expandCode(\'' + collapsedId + '\', this)">展开 ' + lineCount + ' 行 ▼</button>' : '';
+    var collapseSection = isLong ? '<div id="' + collapsedId + '" class="code-collapsed-lines" style="display:none;">' + escapeHtml(lines.slice(10).join('\n')) + '</div>' : '';
+    return '<pre class="md-code-block">' + headerBtns + copyBtn + '<code>' + escapeHtml(displayCode) + '</code>' + collapseSection + (isLong ? '<div class="code-fade-overlay"></div>' : '') + expandBtn + '</pre>';
   });
 
   // Inline code (`...`)

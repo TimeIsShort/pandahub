@@ -3831,25 +3831,115 @@ select:focus-visible {
 }
 .md-li { margin: 4px 0 4px 20px; }
 .md-code-block {
-  background: #1e2d5a;
+  background: #1e1e1e;
   color: #a5d6ff;
-  border-radius: 8px;
-  padding: 12px 16px;
-  overflow-x: auto;
+  border-radius: 10px;
+  overflow: hidden;
   font-size: 13px;
   margin: 10px 0;
   line-height: 1.6;
+  position: relative;
+  border: 1px solid #333;
 }
+
+/* Mac-style traffic lights header */
+.code-header-btns {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px 8px;
+  background: #2d2d2d;
+  border-bottom: 1px solid #404040;
+}
+
+.code-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Copy button - top right */
+.code-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 36px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 5px;
+  color: #a5d6ff;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 8px;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.code-copy-btn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+/* Expand/collapse button - bottom right */
+.code-expand-btn {
+  display: block;
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  color: #7ab8ff;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 8px;
+  text-align: center;
+  transition: background 0.2s;
+}
+
+.code-expand-btn:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+/* Fade overlay for collapsed long code */
+.code-fade-overlay {
+  position: absolute;
+  bottom: 36px;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(transparent, #1e1e1e);
+  pointer-events: none;
+}
+
+/* Collapsed lines */
+.code-collapsed-lines {
+  padding: 0 16px 4px;
+  color: #7ab8ff;
+  font-size: 12px;
+  border-top: 1px dashed rgba(255,255,255,0.1);
+  margin-top: 4px;
+}
+
+/* Actual code area */
+.md-code-block code {
+  display: block;
+  padding: 10px 16px 12px;
+  overflow-x: auto;
+  white-space: pre;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Inline code */
 .md-inline-code {
-  background: #f0f2ff;
-  color: #5d6dff;
+  background: var(--primary-soft);
+  color: var(--primary);
   padding: 1px 5px;
   border-radius: 4px;
   font-size: 13px;
-  font-family: 'Courier New', monospace;
+  font-family: 'SF Mono', 'Fira Code', monospace;
 }
-.md-link { color: #5d6dff; text-decoration: underline; }
-.md-link:hover { color: #3d4ddf; }
+.md-link { color: var(--primary); text-decoration: underline; }
+.md-link:hover { color: var(--primary-hover); }
 
 /* ========== Message Bubbles ========== */
 .msg-bubble-me { font-family: inherit; }

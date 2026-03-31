@@ -40,37 +40,36 @@
           <button id="nav-messages" class="nav-btn" onclick="openMessages()" style="display:none;">💬 <span
               id="msg-badge"
               style="background:#ef4444;border-radius:10px;padding:2px 6px;font-size:11px;margin-left:2px;display:none;"></span></button>
-          <button id="nav-profile" class="nav-btn" onclick="goProfile()" style="display:none;">我的</button>
-          <button id="nav-settings" class="nav-btn" onclick="goSettings()" style="display:none;">⚙️ 设置</button>
-          <button id="nav-admin" class="nav-btn" onclick="goAdmin()" style="display:none;">🛠 管理</button>
+          <!-- Avatar / User Dropdown -->
+          <div id="nav-user-menu" style="display:none;position:relative;">
+            <button id="nav-avatar-btn" class="nav-avatar-btn" onclick="toggleUserMenu()" style="background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:20px;display:flex;align-items:center;gap:6px;font-size:13px;color:#667eea;font-weight:600;" onmouseover="this.style.background='#667eea22'" onmouseout="this.style.background='none'">
+              <span id="nav-avatar-icon" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;">?</span>
+              <span id="nav-username">我的</span>
+              <span style="font-size:10px;color:#94a3b8;">▼</span>
+            </button>
+            <div id="user-dropdown" class="user-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:6px;min-width:160px;box-shadow:0 8px 24px rgba(17,33,47,0.14);z-index:9999;">
+              <div class="dropdown-item" onclick="goProfile();closeUserMenu();">👤 个人主页</div>
+              <div class="dropdown-item" onclick="goSettings();closeUserMenu();">⚙️ 设置</div>
+              <div class="dropdown-item" id="dd-admin" style="display:none;" onclick="goAdmin();closeUserMenu();">🛠 管理后台</div>
+              <div style="border-top:1px solid #f0f4f8;margin:4px 0;"></div>
+              <div class="dropdown-item dropdown-item-logout" onclick="logout();closeUserMenu();">🚪 退出登录</div>
+            </div>
+          </div>
           <button id="nav-login" class="nav-btn"
             onclick="document.getElementById('auth-modal').style.display='flex';document.getElementById('auth-form-login').style.display='block';document.getElementById('auth-form-register').style.display='none';">登录</button>
           <button id="nav-register" class="nav-btn" onclick="goApply()" style="display:none;">内测申请</button>
-          <button id="nav-logout" class="nav-btn" onclick="logout()" style="display:none;">退出</button>
         </nav>
       </div>
     </header>
 
-    <!-- Announcement Bar -->
-    <div class="announcement-bar">
-      <!-- Scrolling Announcements -->
-      <div class="announcement-track">
-        <div class="announcement-marquee">
-          <div class="announcement-content">
-            <div class="announcement-item glow">🎉 热烈欢迎 <span class="highlight">成总</span> 大驾光临！🎉</div>
-            <div class="announcement-item">⚡ <span class="highlight">成总</span>乃盖世天神，威震四方！⚡</div>
-            <div class="announcement-item">🚀 欢迎来到熊猫社区，一起探索AI的无限可能！</div>
-            <div class="announcement-item">💬 发帖交流、评论互动，认识志同道合的小伙伴！</div>
-            <div class="announcement-item">📢 社区规则：友好交流，互相尊重，共同成长！</div>
-          </div>
-          <div class="announcement-content" aria-hidden="true">
-            <div class="announcement-item glow">🎉 热烈欢迎 <span class="highlight">成总</span> 大驾光临！🎉</div>
-            <div class="announcement-item">⚡ <span class="highlight">成总</span>乃盖世天神，威震四方！⚡</div>
-            <div class="announcement-item">🚀 欢迎来到熊猫社区，一起探索AI的无限可能！</div>
-            <div class="announcement-item">💬 发帖交流、评论互动，认识志同道合的小伙伴！</div>
-            <div class="announcement-item">📢 社区规则：友好交流，互相尊重，共同成长！</div>
-          </div>
+    <!-- Announcement Bar - Collapsible Static Notice -->
+    <div id="announcement-bar" class="announcement-bar" style="height:36px;overflow:hidden;transition:height 0.3s ease;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px;width:100%;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;">
+          <span style="font-size:14px;">📢</span>
+          <span>欢迎来到熊猫社区，一起探索AI的无限可能！</span>
         </div>
+        <button onclick="dismissAnnouncement()" style="background:none;border:none;color:#94b8c8;font-size:16px;cursor:pointer;padding:2px 6px;line-height:1;border-radius:4px;" title="关闭">×</button>
       </div>
     </div>
 
@@ -108,30 +107,30 @@
             </div>
           </div>
         </section>
-        <div class="toolbar">
-          <div class="tags-filter" id="tags-filter"></div>
-          <div class="search-box">
-            <input type="text" id="search-input" placeholder="搜索帖子..." onkeyup="handleSearch(event)">
-            <button onclick="searchPosts()">🔍</button>
+        <div class="toolbar" style="flex-direction:column;gap:10px;align-items:stretch;">
+          <!-- Layer 1: Tags (horizontally scrollable) -->
+          <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;flex-shrink:0;scrollbar-width:none;-ms-overflow-style:none;" id="tags-scroll-wrap">
+            <div class="tags-filter" id="tags-filter" style="flex-wrap:nowrap;min-width:0;"></div>
           </div>
-          <div class="search-filters" id="search-filters">
-            <div class="filter-group">
-              <button class="filter-btn active" id="sort-newest" onclick="setSearchSort('newest')">🕐 最新</button>
-              <button class="filter-btn" id="sort-hot" onclick="setSearchSort('hot')">🔥 最热</button>
+          <!-- Layer 2: Search + Filters + Publish -->
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div class="search-box" style="flex:1;min-width:180px;">
+              <input type="text" id="search-input" placeholder="搜索帖子..." onkeyup="handleSearch(event)" style="width:100%;">
             </div>
-            <div class="filter-group">
-              <button class="filter-btn active" id="time-all" onclick="setSearchTime('')">全部</button>
-              <button class="filter-btn" id="time-day" onclick="setSearchTime('day')">今天</button>
-              <button class="filter-btn" id="time-week" onclick="setSearchTime('week')">本周</button>
-              <button class="filter-btn" id="time-month" onclick="setSearchTime('month')">本月</button>
-            </div>
+            <select id="sort-select" onchange="setSearchSort(this.value)" style="padding:8px 10px;border:1.5px solid #d5ddff;border-radius:10px;font-size:13px;color:#1e3a5f;background:#fff;cursor:pointer;">
+              <option value="newest">🕐 最新</option>
+              <option value="hot">🔥 最热</option>
+            </select>
+            <select id="time-select" onchange="setSearchTime(this.value)" style="padding:8px 10px;border:1.5px solid #d5ddff;border-radius:10px;font-size:13px;color:#1e3a5f;background:#fff;cursor:pointer;">
+              <option value="">全部时间</option>
+              <option value="day">今天</option>
+              <option value="week">本周</option>
+              <option value="month">本月</option>
+            </select>
+            <button class="btn-primary" id="btn-new-post" onclick="showNewPost()" style="display:none;border-radius:10px;font-weight:700;">
+              + 发布
+            </button>
           </div>
-          <button class="btn-primary" id="btn-new-post" onclick="showNewPost()" style="display:none;">
-            + 发布帖子
-          </button>
-          <button id="btn-leaderboard" onclick="toggleLeaderboard()" style="padding:8px 14px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">
-            🏆 排行榜
-          </button>
         </div>
         <div class="post-list" id="post-list"></div>
         <aside id="leaderboard-panel" style="display:none;padding:0 16px 16px;">

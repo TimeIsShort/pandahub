@@ -112,6 +112,15 @@ function getToken() {
   return localStorage.getItem('token');
 }
 
+function dismissAnnouncement() {
+  var bar = document.getElementById('announcement-bar');
+  if (bar) {
+    bar.style.height = '0';
+    setTimeout(function() { bar.style.display = 'none'; }, 300);
+    localStorage.setItem('announcement_dismissed', '1');
+  }
+}
+
 function getUser() {
   const u = localStorage.getItem('user');
   return u ? JSON.parse(u) : null;
@@ -619,19 +628,24 @@ function updateNav() {
   const user = getUser();
   document.getElementById('nav-login').style.display = user ? 'none' : 'inline-block';
   document.getElementById('nav-register').style.display = user ? 'none' : 'inline-block';
-  document.getElementById('nav-profile').style.display = user ? 'inline-block' : 'none';
-  document.getElementById('nav-settings').style.display = user ? 'inline-block' : 'none';
-  document.getElementById('nav-admin').style.display = (user && user.role === 'admin') ? 'inline-block' : 'none';
+  document.getElementById('nav-user-menu').style.display = user ? 'block' : 'none';
   document.getElementById('nav-ai').style.display = user ? 'inline-block' : 'none';
   document.getElementById('nav-notif').style.display = user ? 'inline-block' : 'none';
   document.getElementById('nav-toolbox').style.display = 'inline-block';
   document.getElementById('nav-rss').style.display = 'inline-block';
-  document.getElementById('nav-logout').style.display = user ? 'inline-block' : 'none';
   document.getElementById('btn-new-post').style.display = user ? 'inline-block' : 'none';
 
   if (user) {
+    // Update avatar button
+    var icon = document.getElementById('nav-avatar-icon');
+    var name = document.getElementById('nav-username');
+    if (icon) icon.textContent = ((user.nickname || user.username)[0] || '?').toUpperCase();
+    if (name) name.textContent = user.nickname || user.username;
+    // Show/hide admin in dropdown
+    var adminItem = document.getElementById('dd-admin');
+    if (adminItem) adminItem.style.display = (user.role === 'admin') ? 'block' : 'none';
+
     loadNotifCount();
-    // Poll notifications every 30 seconds
     if (!window._notifPollInterval) {
       window._notifPollInterval = setInterval(loadNotifCount, 30000);
     }
@@ -640,8 +654,31 @@ function updateNav() {
       clearInterval(window._notifPollInterval);
       window._notifPollInterval = null;
     }
+    closeUserMenu();
   }
 }
+
+function toggleUserMenu() {
+  var dd = document.getElementById('user-dropdown');
+  if (!dd) return;
+  dd.style.display = dd.style.display === 'none' ? '' : 'none';
+}
+
+function closeUserMenu() {
+  var dd = document.getElementById('user-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  var menu = document.getElementById('nav-user-menu');
+  if (menu && !menu.contains(e.target)) {
+    closeUserMenu();
+  }
+});
+
+window.toggleUserMenu = toggleUserMenu;
+window.closeUserMenu = closeUserMenu;
 
 function goToolbox() {
   window.open('/toolbox', '_blank');
@@ -1442,6 +1479,8 @@ function searchPosts() {
 
 function setSearchSort(sort) {
   currentSort = sort;
+  var sel = document.getElementById('sort-select');
+  if (sel) sel.value = sort;
   document.getElementById('sort-newest').classList.toggle('active', sort === 'newest');
   document.getElementById('sort-hot').classList.toggle('active', sort === 'hot');
   searchPosts();
@@ -1449,6 +1488,8 @@ function setSearchSort(sort) {
 
 function setSearchTime(range) {
   currentTimeRange = range;
+  var sel = document.getElementById('time-select');
+  if (sel) sel.value = range;
   ['time-all', 'time-day', 'time-week', 'time-month'].forEach(function(id) {
     var btn = document.getElementById(id);
     if (btn) btn.classList.toggle('active', id === 'time-' + (range || 'all'));
@@ -4568,6 +4609,12 @@ async function init() {
   initPetalRain();
   initPandaPlayground();
   initWeather();
+
+  // Restore announcement dismissal
+  if (localStorage.getItem('announcement_dismissed') === '1') {
+    var bar = document.getElementById('announcement-bar');
+    if (bar) { bar.style.display = 'none'; }
+  }
 
   document.getElementById('search-input').addEventListener('keyup', handleSearch);
 }

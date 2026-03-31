@@ -344,6 +344,42 @@ body.home-view-active #petal-rain {
   text-overflow: ellipsis;
 }
 
+/* Avatar / User Dropdown */
+.nav-avatar-btn {
+  transition: background 0.2s;
+}
+
+.user-dropdown {
+  animation: dropdownFadeIn 0.15s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-item {
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1e3a5f;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.dropdown-item:hover {
+  background: #f0f4f8;
+}
+
+.dropdown-item-logout {
+  color: #ef4444;
+}
+
+.dropdown-item-logout:hover {
+  background: #fef2f2;
+}
+
 .weather-icon {
   font-size: 16px;
   margin-right: 4px;
@@ -1143,9 +1179,10 @@ main.container {
 .tags-filter {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   flex: 1;
-  min-width: 250px;
+  min-width: 0;
+  overflow-x: auto;
 }
 
 .tag-chip {
@@ -3901,3 +3938,13 @@ select:focus-visible {
   color: #ef4444 !important;
 }
 
+
+/* ===== Scrollable Tags ===== */
+#tags-scroll-wrap::-webkit-scrollbar { display: none; }
+#tags-scroll-wrap { scrollbar-width: none; -ms-overflow-style: none; }
+
+/* ===== Announcement Bar (simplified) ===== */
+#announcement-bar {
+  height: 36px;
+  transition: height 0.3s ease;
+}

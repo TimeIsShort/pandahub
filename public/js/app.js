@@ -5031,6 +5031,15 @@ async function init() {
   var fab = document.getElementById('panda-fab-container');
   if (fab) fab.style.display = '';
 
+  // Register Service Worker for caching + push
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+      console.log('[SW] Registered, scope:', reg.scope);
+    }).catch(function(err) {
+      console.warn('[SW] Registration failed:', err);
+    });
+  }
+
   // Restore announcement dismissal
   if (localStorage.getItem('announcement_dismissed') === '1') {
     var bar = document.getElementById('announcement-bar');

@@ -657,6 +657,30 @@
     </div>
   </div>
 
+  <!-- Mobile Bottom Navigation -->
+  <nav id="bottom-nav" role="navigation" aria-label="底部导航">
+    <div id="bottom-nav-inner">
+      <button class="bottom-nav-item active" id="bn-home" onclick="goHome()">
+        <span class="bn-icon">🏠</span>
+        <span class="bn-label">首页</span>
+      </button>
+      <button class="bottom-nav-item" id="bn-ai" onclick="openAIChat()">
+        <span class="bn-icon">🤖</span>
+        <span class="bn-label">AI助手</span>
+      </button>
+      <button class="bottom-nav-item" id="bn-notif" onclick="openNotifications()">
+        <span class="bn-icon" style="position:relative;">🔔
+          <span id="bn-notif-badge" class="bottom-nav-badge" style="display:none;">0</span>
+        </span>
+        <span class="bn-label">通知</span>
+      </button>
+      <button class="bottom-nav-item" id="bn-profile" onclick="goProfile()">
+        <span class="bn-icon">👤</span>
+        <span class="bn-label">我的</span>
+      </button>
+    </div>
+  </nav>
+
   <script src="/js/i18n.js"></script>
   <script src="/js/app.js?v=20260401m"></script>
   <!-- Service Worker for Push Notifications -->

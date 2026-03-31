@@ -759,7 +759,16 @@ function goToolbox() {
   window.open('/toolbox', '_blank');
 }
 
+function setBottomNav(name) {
+  var items = ['bn-home', 'bn-ai', 'bn-notif', 'bn-profile'];
+  items.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('active', id === 'bn-' + name);
+  });
+}
+
 function goHome() {
+  setBottomNav('home');
   showView('home');
   loadPosts();
   loadTrending();
@@ -769,6 +778,7 @@ function goHome() {
 }
 
 function goProfile() {
+  setBottomNav('profile');
   const user = getUser();
   if (!user) return showLogin();
   showView('profile');
@@ -1088,6 +1098,8 @@ function showView(name) {
   target.style.display = name === 'home' ? '' : 'block';
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
   document.getElementById(`nav-${name === 'home' ? 'home' : name}`)?.classList.add('active');
+  // Update bottom nav active state
+  setBottomNav(name);
   const isHome = name === 'home';
   document.body.classList.toggle('home-view-active', isHome);
 
@@ -3971,6 +3983,16 @@ async function loadNotifCount() {
     } else {
       badge.style.display = 'none';
     }
+    // Also update bottom nav badge
+    var bnBadge = document.getElementById('bn-notif-badge');
+    if (bnBadge) {
+      if (res.count > 0) {
+        bnBadge.textContent = res.count > 99 ? '99+' : res.count;
+        bnBadge.style.display = 'flex';
+      } else {
+        bnBadge.style.display = 'none';
+      }
+    }
   } catch (e) {
     console.error(e);
   }
@@ -3982,6 +4004,7 @@ let notifTotal = 0;
 let notifLimit = 15;
 
 async function openNotifications() {
+  setBottomNav('notif');
   const user = getUser();
   if (!user) return showLogin();
   document.getElementById('notif-modal').style.display = 'flex';
@@ -4937,6 +4960,7 @@ let aiSending = false;
 function openAIChat() {
   const user = getUser();
   if (!user) return showLogin();
+  setBottomNav('ai');
   window.location.href = '/ai';
 }
 

@@ -4296,3 +4296,107 @@ select:focus-visible {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ============ Mobile Bottom Navigation ============ */
+#bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid #e5e8f0;
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.06);
+  z-index: 9998;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+#bottom-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: color 0.2s ease;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.bottom-nav-item:active {
+  transform: scale(0.92);
+}
+
+.bottom-nav-item.active {
+  color: #667eea;
+}
+
+.bottom-nav-item .bn-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.bottom-nav-item .bn-label {
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Badge for notification count */
+.bottom-nav-badge {
+  position: absolute;
+  top: 2px;
+  right: calc(50% - 14px);
+  min-width: 16px;
+  height: 16px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  pointer-events: none;
+}
+
+/* Show bottom nav only on mobile */
+@media (max-width: 768px) {
+  #bottom-nav {
+    display: block;
+  }
+  /* Add bottom padding to main content so it's not hidden behind bottom nav */
+  #view-home {
+    padding-bottom: 72px;
+  }
+}
+
+/* Desktop: hide when logged in, don't need it */
+@media (min-width: 769px) {
+  #bottom-nav {
+    display: none !important;
+  }
+}

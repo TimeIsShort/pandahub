@@ -19,7 +19,6 @@
 
 ### 1.2 管理后台 - 安全管控 ✅ 已完成
 **文件**：`routes/admin.js`（新增 `/api/admin/security-logs` + `/api/admin/unlock-ip`）
-**commit**：feature-next
 
 ---
 
@@ -29,7 +28,6 @@
 - 展开动画：max-height Q弹展开 + opacity 淡入（cubic-bezier 回弹曲线）
 - 内嵌回复输入框：点「回复」直接在楼层下方出现输入框，Enter 发送，取消消失
 - 深层评论分页：每次最多显示 10 条，「加载更多」按钮逐步展开
-**commit**：feature-next
 
 ---
 
@@ -37,51 +35,54 @@
 
 ### 2.1 每日签到提醒（Web Push）✅ 已完成
 **文件**：`services/reminderScheduler.js` / `routes/reminder.js` / `public/sw.js`
-**commit**：feature-next（173af58）
+**commit**：feature-next
 
 ---
 
 ### 2.2 前端 i18n（国际化）✅ 已完成
 **文件**：`public/i18n/zh.json` / `en.json` / `public/js/i18n.js`
-**commit**：feature-next（76a6223）
+**commit**：feature-next
 
 ---
 
 ### 2.3 回复通知推送 ✅ 已完成
 **说明**：v1.4 已完整实现（通知表 + API + 导航栏通知按钮 + 轮询）
-**commit**：v1.4
 
 ---
 
 ## P3 功能
 
 ### 3.1 Service Worker + 资源缓存优化 ✅ 已完成
-**文件**：`public/sw.js`（完整缓存策略升级）
-**commit**：feature-next（0ce4776）
+**文件**：`public/sw.js`（Cache-First / Network-First 分层策略）
+**commit**：feature-next
 
 ---
 
 ### 3.2 用户关注/粉丝系统 ✅ 已完成
-**文件**：`routes/follow.js` / `models/database.js`（新增 follows 表）/ `public/js/app.js`
-**commit**：feature-next（f6317bc）
+**文件**：`routes/follow.js` / `models/database.js`（follows 表）/ `public/js/app.js`
+**commit**：feature-next
 
 ---
 
-### 3.3 精华帖标记 ⏳ 待开发
-**目标**：管理员可将优质帖子标记为精华，首页增加「精华帖」筛选 Tab
+### 3.3 精华帖标记 ✅ 已完成
+**实现**：首页工具栏排序下拉新增「⭐ 精选」选项，后端 `featured=1` 参数过滤，管理后台已有完整加精/取消功能
+**commit**：feature-next（225ca15）
 
 ---
 
 ## P4 功能
 
 ### 4.1 AI 对话历史分页 ⏳ 待开发
+**目标**：AI 对话历史支持翻页，不只是最新 20 条
+
 ### 4.2 帖子多条件筛选增强 ⏳ 待开发
+**目标**：支持按标签+时间+积分范围组合筛选，URL 参数化分享
 
 ---
 
 ## 已完成汇总
 
-| 功能 | 版本 | 状态 |
+| 功能 | 分支 | 状态 |
 |------|------|------|
 | P1.2 管理后台安全管控 | feature-next | ✅ |
 | P1.3 评论嵌套四大优化 | feature-next | ✅ |
@@ -90,7 +91,7 @@
 | P2.3 回复通知推送 | v1.4 | ✅ |
 | P3.1 SW 缓存优化 | feature-next | ✅ |
 | P3.2 关注/粉丝系统 | feature-next | ✅ |
+| P3.3 精华帖标记 | feature-next | ✅ |
 | COS 图片存储 | 待开发 | ⏳ |
-| P3.3 精华帖标记 | 待开发 | ⏳ |
 | P4.1 AI 对话分页 | 待开发 | ⏳ |
 | P4.2 多条件筛选 | 待开发 | ⏳ |

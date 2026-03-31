@@ -2013,43 +2013,84 @@ async function submitComment() {
 }
 
 function startReply(commentId, userId, userName) {
-  currentReplyTo = { commentId, userId, name: userName };
-  document.getElementById('reply-indicator').style.display = 'block';
-  document.getElementById('reply-to-name').textContent = `回复 @${userName}`;
-  document.getElementById('comment-input').focus();
-  // Scroll to comment form
-  document.getElementById('comment-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function cancelReply() {
-  currentReplyTo = null;
-  document.getElementById('reply-indicator').style.display = 'none';
-  document.getElementById('reply-to-name').textContent = '';
-}
-
-function handleCommentImage(event) {
-  const files = Array.from(event.target.files);
-  if (commentImages.length + files.length > 3) {
-    showToast('评论最多上传3张图片', 'error');
-    return;
+  closeAllInlineReplyForms();
+  cancelReply();
+  currentReplyTo = { commentId: commentId, userId: userId, name: userName };
+  var commentEl = document.querySelector('.comment-item[data-comment-id="' + commentId + '"]');
+  if (!commentEl) return;
+  var formId = 'inline-reply-form-' + commentId;
+  if (document.getElementById(formId)) { return; }
+  var formDiv = document.createElement('div');
+  formDiv.id = formId;
+  formDiv.className = 'inline-reply-form';
+  var taId = 'inline-reply-text-' + commentId;
+  formDiv.innerHTML = '<textarea id="' + taId + '" placeholder="回复 @' + escAttr(userName) + '..." rows="2"></textarea>' +
+    '<button class="btn-send" onclick="submitInlineReply(' + commentId + ')">发送</button>' +
+    '<button class="btn-cancel" onclick="closeInlineReplyForm(' + commentId + ')">取消</button>';
+  var actionsDiv = commentEl.querySelector('.comment-actions');
+  if (actionsDiv && actionsDiv.nextSibling) {
+    commentEl.insertBefore(formDiv, actionsDiv.nextSibling);
+  } else {
+    commentEl.appendChild(formDiv);
   }
-
-  files.forEach(file => {
-    if (!file.type.startsWith('image/')) return;
-    commentImages.push(file);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const preview = document.getElementById('comment-image-preview');
-      preview.style.display = 'flex';
-      const div = document.createElement('div');
-      div.className = 'comment-img-thumb';
-      div.innerHTML = `<img src="${e.target.result}"><button onclick="removeCommentImage(${commentImages.length - 1})">×</button>`;
-      preview.appendChild(div);
-    };
-    reader.readAsDataURL(file);
-  });
-  event.target.value = '';
+  var textarea = document.getElementById(taId);
+  if (textarea) {
+    textarea.focus();
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitInlineReply(commentId);
+      }
+    });
+    textarea.addEventListener('input', function() {
+      autoResizeTextarea(textarea);
+    });
+  }
 }
+
+function closeAllInlineReplyForms() {
+  document.querySelectorAll('.inline-reply-form').forEach(function(el){ el.remove(); });
+}
+
+function closeInlineReplyForm(commentId) {
+  var el = document.getElementById('inline-reply-form-' + commentId);
+  if (el) el.remove();
+  if (currentReplyTo && currentReplyTo.commentId === commentId) currentReplyTo = null;
+}
+
+function submitInlineReply(commentId) {
+  var textarea = document.getElementById('inline-reply-text-' + commentId);
+  if (!textarea) return;
+  var content = textarea.value.trim();
+  if (!content) { showToast('回复内容不能为空', 'error'); return; }
+  var replyTo = currentReplyTo;
+  if (!replyTo || replyTo.commentId !== commentId) return;
+  var user = getUser();
+  if (!user) { showLogin(); return; }
+  fetch('/api/comments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') },
+    body: JSON.stringify({ post_id: replyTo.commentId, content: content, parent_id: commentId })
+  }).then(function(res){ return res.json(); })
+    .then(function(data) {
+      if (data.error) { showToast(data.error, 'error'); return; }
+      showToast('回复成功', 'success');
+      closeInlineReplyForm(commentId);
+      var postId = window._currentPostId;
+      if (postId) loadPostDetail(postId);
+    })
+    .catch(function(){ showToast('发送失败', 'error'); });
+}
+
+function autoResizeTextarea(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function escAttr(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 
 function removeCommentImage(index) {
   commentImages.splice(index, 1);
@@ -4096,21 +4137,37 @@ async function voteComment(commentId) {
   }
 }
 
-// Expand hidden deep replies
+
+var _expandedReplies = {}; // commentId -> { page, total, items }
+
 function expandReplies(commentId) {
   var btn = document.getElementById('reply-collapsed-' + commentId);
   var container = document.getElementById('reply-expanded-' + commentId);
   if (!container) return;
 
-  var flat = window._commentsFlatData || [];
-  var commentMap = {};
-  flat.forEach(function(c) { commentMap[c.id] = c; });
+  // Collapse if already expanded
+  if (_expandedReplies[commentId]) {
+    container.style.maxHeight = '0';
+    container.style.opacity = '0';
+    container.style.overflow = 'hidden';
+    container.style.transition = 'max-height 0.3s ease, opacity 0.2s ease';
+    setTimeout(function(){ container.style.display = 'none'; }, 300);
+    _expandedReplies[commentId] = null;
+    if (btn) {
+      btn.textContent = btn.textContent.replace('收起', '查看更多回复');
+      btn.style.display = '';
+    }
+    return;
+  }
 
-  // Collect all descendants of commentId (depth 2+)
+  var flat = window._commentsFlatData || [];
+  var directIds = {};
+  flat.forEach(function(c){ if(Number(c.parent_id)===Number(commentId)) directIds[c.id]=true; });
+
   var allDescendants = [];
   function collectDescendants(parentId) {
-    flat.forEach(function(c) {
-      if (Number(c.parent_id) === Number(parentId)) {
+    flat.forEach(function(c){
+      if(Number(c.parent_id)===Number(parentId)){
         allDescendants.push(c);
         collectDescendants(c.id);
       }
@@ -4118,22 +4175,24 @@ function expandReplies(commentId) {
   }
   collectDescendants(commentId);
 
-  // Remove direct depth-1 replies already shown in .reply-list
-  var directIds = {};
-  flat.forEach(function(c) {
-    if (Number(c.parent_id) === Number(commentId)) directIds[c.id] = true;
-  });
-  var hiddenOnes = allDescendants.filter(function(c) { return !directIds[c.id]; });
-
-  // Render all hidden ones with depth-2 styling (already at depth 2 or deeper in the chain)
+  var hiddenOnes = allDescendants.filter(function(c){ return !directIds[c.id]; });
   if (hiddenOnes.length === 0) {
     if (btn) btn.style.display = 'none';
     return;
   }
 
-  var html = '<div class="reply-list depth-expanded">' +
-    hiddenOnes.map(function(r) {
-      var lvl = r.points !== undefined ? getUserLevel(r.points || 0) : { color: '#667eea' };
+  var PAGE = 10;
+  _expandedReplies[commentId] = { page: 1, total: hiddenOnes.length, items: hiddenOnes };
+
+  function renderPage(cid, pageNum) {
+    var state = _expandedReplies[cid];
+    if (!state) return '';
+    var start = 0;
+    var end = pageNum * PAGE;
+    var pageItems = state.items.slice(start, end);
+    var hasMore = end < state.items.length;
+    var html = '<div class="reply-list depth-expanded">';
+    pageItems.forEach(function(r) {
       var avatar = r.avatar
         ? '<img src="' + r.avatar + '" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
         : (r.nickname || r.username)[0].toUpperCase();
@@ -4141,7 +4200,7 @@ function expandReplies(commentId) {
         ? '<span class="comment-reply-to">回复 <b>' + escapeHtml(r.reply_to_nickname || r.reply_to_username) + '</b></span>'
         : '';
       var levelColor = r.level_color || '#667eea';
-      return '<div class="comment-item comment-depth-2" data-comment-id="' + r.id + '">' +
+      html += '<div class="comment-item comment-depth-2" data-comment-id="' + r.id + '">' +
         '<div class="comment-header">' +
         '<span class="avatar-small" style="background:linear-gradient(135deg,' + levelColor + ',#764ba2);color:#fff;font-weight:700;">' + avatar + '</span>' +
         '<span class="comment-author">' + escapeHtml(r.nickname || r.username) + '</span>' +
@@ -4152,15 +4211,73 @@ function expandReplies(commentId) {
         '<div class="comment-actions">' +
         '<button class="comment-action-btn comment-like-btn" id="clike-btn-' + r.id + '" onclick="voteComment(' + r.id + ')" style="color:#94a3b8;">👍 <span id="clike-count-' + r.id + '">' + (r.like_count || 0) + '</span></button>' +
         '</div></div>';
-    }).join('') +
-    '</div>';
+    });
+    html += '</div>';
+    if (hasMore) {
+      html += '<button onclick="loadMoreReplies(' + cid + ')" class="reply-expand-btn" style="width:100%;margin-top:6px;">加载更多 ' + (state.items.length - end) + ' 条回复 ↓</button>';
+    }
+    return html;
+  }
 
-  container.innerHTML = html;
+  container.innerHTML = renderPage(commentId, 1);
   container.style.display = '';
+  container.style.maxHeight = '2000px';
+  container.style.opacity = '1';
+  container.style.overflow = 'hidden';
+  container.style.transition = 'max-height 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease';
   if (btn) btn.style.display = 'none';
 }
 
+function loadMoreReplies(commentId) {
+  var container = document.getElementById('reply-expanded-' + commentId);
+  if (!container) return;
+  var state = _expandedReplies[commentId];
+  if (!state) return;
+  state.page++;
+  var PAGE = 10;
+  var start = (state.page - 1) * PAGE;
+  var end = state.page * PAGE;
+  var pageItems = state.items.slice(start, end);
+  var hasMore = end < state.items.length;
+
+  var html = '';
+  pageItems.forEach(function(r) {
+    var avatar = r.avatar
+      ? '<img src="' + r.avatar + '" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+      : (r.nickname || r.username)[0].toUpperCase();
+    var replyTo = r.reply_to_nickname || r.reply_to_username
+      ? '<span class="comment-reply-to">回复 <b>' + escapeHtml(r.reply_to_nickname || r.reply_to_username) + '</b></span>'
+      : '';
+    var levelColor = r.level_color || '#667eea';
+    html += '<div class="comment-item comment-depth-2" data-comment-id="' + r.id + '" style="animation:inline-reply-in 0.2s ease both;">' +
+      '<div class="comment-header">' +
+      '<span class="avatar-small" style="background:linear-gradient(135deg,' + levelColor + ',#764ba2);color:#fff;font-weight:700;">' + avatar + '</span>' +
+      '<span class="comment-author">' + escapeHtml(r.nickname || r.username) + '</span>' +
+      replyTo +
+      '<span class="comment-time">' + formatDate(r.created_at) + '</span>' +
+      '</div>' +
+      '<div class="comment-content">' + escapeHtml(r.content) + '</div>' +
+      '<div class="comment-actions">' +
+      '<button class="comment-action-btn comment-like-btn" id="clike-btn-' + r.id + '" onclick="voteComment(' + r.id + ')" style="color:#94a3b8;">👍 <span id="clike-count-' + r.id + '">' + (r.like_count || 0) + '</span></button>' +
+      '</div></div>';
+  });
+
+  var existingList = container.querySelector('.reply-list');
+  if (existingList) {
+    existingList.insertAdjacentHTML('beforeend', html);
+  }
+  var loadMoreBtn = container.querySelector('button[onclick^="loadMoreReplies"]');
+  if (loadMoreBtn) {
+    if (hasMore) {
+      loadMoreBtn.textContent = '加载更多 ' + (state.items.length - end) + ' 条回复 ↓';
+    } else {
+      loadMoreBtn.remove();
+    }
+  }
+}
+
 window.expandReplies = expandReplies;
+
 
 // Load comment vote status after comments are rendered
 async function loadCommentVoteStatus() {

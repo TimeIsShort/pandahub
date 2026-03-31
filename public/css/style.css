@@ -1803,21 +1803,58 @@ main.container {
 }
 
 .comment-depth-1 {
-  /* Direct reply to root: indent + left border */
-  margin-left: 20px;
-  border-left: 3px solid #c5d5e8;
+  /* Direct reply: bold gradient left border */
+  margin-left: 22px;
+  border-left: 3px solid transparent;
   padding-left: 14px;
-  background: rgba(245, 248, 252, 0.6);
+  background: rgba(245, 248, 252, 0.7);
   border-radius: 0 8px 8px 0;
+  position: relative;
+  transition: background 0.2s ease;
+  /* Gradient border effect */
+  background-image: linear-gradient(to right, rgba(102, 126, 234, 0.5), rgba(102, 126, 234, 0.08) 3px),
+                    linear-gradient(to right, #667eea, #667eea);
+  background-size: 3px 100%, calc(100% - 3px) 100%;
+  background-position: left center, 3px center;
+  background-repeat: no-repeat;
+}
+
+.comment-depth-1::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 18px;
+  width: 8px;
+  height: 2px;
+  background: #667eea;
+  border-radius: 2px;
 }
 
 .comment-depth-2 {
-  /* Deeper reply: more indent, lighter border */
-  margin-left: 16px;
-  border-left: 2px solid #dde5ed;
+  /* Deeper reply: medium border */
+  margin-left: 18px;
+  border-left: 2px solid transparent;
   padding-left: 12px;
-  background: rgba(250, 252, 255, 0.5);
+  background: rgba(250, 252, 255, 0.6);
   border-radius: 0 6px 6px 0;
+  position: relative;
+  transition: background 0.2s ease;
+  background-image: linear-gradient(to right, rgba(139, 92, 246, 0.45), rgba(139, 92, 246, 0.08) 2px),
+                    linear-gradient(to right, #8b5cf6, #8b5cf6);
+  background-size: 2px 100%, calc(100% - 2px) 100%;
+  background-position: left center, 2px center;
+  background-repeat: no-repeat;
+}
+
+.comment-depth-2::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 16px;
+  width: 7px;
+  height: 2px;
+  background: #8b5cf6;
+  border-radius: 2px;
 }
 
 .comment-depth-1 > .comment-content,
@@ -1849,22 +1886,28 @@ main.container {
 }
 
 .reply-expand-btn {
-  background: none;
+  background: rgba(102, 126, 234, 0.06);
   border: 1.5px dashed #c5d5e8;
   border-radius: 8px;
   padding: 6px 14px;
   font-size: 12px;
-  color: #5a8fa8;
+  color: #667eea;
   cursor: pointer;
   width: 100%;
   text-align: left;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  font-weight: 600;
 }
 
 .reply-expand-btn:hover {
-  background: #f0f7fb;
+  background: rgba(102, 126, 234, 0.12);
   border-color: #667eea;
   color: #667eea;
+  transform: translateX(4px);
+}
+
+.reply-expand-btn:active {
+  transform: translateX(2px) scale(0.98);
 }
 
 .reply-list.depth-expanded {
@@ -4141,4 +4184,81 @@ select:focus-visible {
 @keyframes fab-in {
   from { opacity: 0; transform: scale(0.7); }
   to { opacity: 1; transform: scale(1); }
+}
+
+
+/* Inline reply form (appears below comment when replying) */
+.inline-reply-form {
+  margin-top: 8px;
+  margin-left: 22px;
+  background: rgba(245, 248, 252, 0.9);
+  border: 1.5px solid rgba(102, 126, 234, 0.3);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  animation: inline-reply-in 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.inline-reply-form textarea {
+  flex: 1;
+  border: 1.5px solid #d5ddff;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  resize: none;
+  min-height: 38px;
+  max-height: 120px;
+  font-family: inherit;
+  background: #fff;
+  color: #1e3a5f;
+  transition: border-color 0.2s;
+  line-height: 1.5;
+}
+
+.inline-reply-form textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.inline-reply-form .btn-send {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.2s, opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.inline-reply-form .btn-send:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+.inline-reply-form .btn-cancel {
+  background: #f5f5f5;
+  color: #94a3b8;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.inline-reply-form .btn-cancel:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+@keyframes inline-reply-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }

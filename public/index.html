@@ -622,6 +622,10 @@
   </script>
   <!-- Panda Floating Action Button -->
   <div id="panda-fab-container" style="position:fixed;right:20px;bottom:20px;z-index:9999;display:none;" title="点击与熊猫玩耍">
+    <!-- Floating Publish FAB -->
+    <button id="fab-publish" onclick="getUser() ? showNewPost() : showLogin()" style="position:fixed;right:90px;bottom:24px;z-index:9998;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;box-shadow:0 4px 16px rgba(16,185,129,.4);cursor:pointer;display:none;font-size:22px;align-items:center;justify-content:center;transition:transform .2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="发布帖子">
+      <span style="font-size:26px;line-height:1;font-weight:700;">+</span>
+    </button>
     <div id="panda-fab-btn" onclick="togglePandaMini()" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);box-shadow:0 4px 20px rgba(102,126,234,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:28px;transition:transform .2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
       🐼
     </div>

@@ -705,6 +705,10 @@ function updateNav() {
   document.getElementById('nav-rss').style.display = 'inline-block';
   var btnNewPost = document.getElementById('btn-new-post');
   if (btnNewPost) btnNewPost.style.display = user ? 'inline-block' : 'none';
+  var fabPublish = document.getElementById('fab-publish');
+  if (fabPublish) fabPublish.style.display = user ? 'flex' : 'none';
+  var fabContainer = document.getElementById('panda-fab-container');
+  if (fabContainer) fabContainer.style.display = user ? 'block' : 'none';
 
   if (user) {
     // Update avatar button

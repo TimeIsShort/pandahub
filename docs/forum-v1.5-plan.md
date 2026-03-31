@@ -156,3 +156,22 @@
 **问题**：`escapeHtml()` 先转义导致 `![alt](url)` 语法被破坏，图片不显示
 **修复**：图片 markdown 在 `escapeHtml()` 之前用 base64 placeholder 保护，等 HTML 转义完再还原
 **版本**：v=20260401m（escapeHtml后直接匹配markdown图片语法，防XSS），已推送 GitHub（commit d691538）
+
+
+---
+
+## 后续规划
+
+### 帖子图片COS云存储
+**目标**：用户发帖上传的图片存储到腾讯云COS，CDN全球加速分发
+**背景**：当前图片存VM本地，访问依赖nginx代理，CDN缓存管理复杂
+**优势**：
+- CDN全球加速，彻底绕过Cloudflare缓存问题
+- 省VM磁盘，避免COS存储撑爆
+- 图片访问更快更稳定
+**方案**：
+1. 开通腾讯云COS，开通图片处理（CI）能力
+2. 新增 `/api/upload` 路由改写为COS上传，返回CDN URL
+3. 存量图片从 `/uploads/` 迁移到COS
+4. COS bucket 绑定自定义域名，Cloudflare回源COS
+**状态**：规划中，待实施

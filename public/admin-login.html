@@ -612,7 +612,45 @@
         <button class="tab-btn" id="tabTagsBtn">🏷️ 标签管理</button>
         <button class="tab-btn" id="tabReportsBtn">🚩 举报管理<span id="pendingReportsBadge"></span></button>
         <button class="tab-btn" id="tabAccessLogsBtn">📂 访问日志</button>
+        <button class="tab-btn" id="tabSecurityBtn">🛡️ 安全日志</button>
       </div>
+      <!-- Security Tab -->
+      <div id="tabSecurity" class="hidden">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <h2>🛡️ 安全日志</h2>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input id="securityIpSearch" type="text" placeholder="搜索 IP 地址" style="padding:7px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:13px;width:160px;">
+              <input id="securityUserSearch" type="text" placeholder="搜索用户名" style="padding:7px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:13px;width:140px;">
+              <select id="securityStatusFilter" style="padding:7px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:13px;">
+                <option value="">全部状态</option>
+                <option value="success">✅ 登录成功</option>
+                <option value="failed">❌ 登录失败</option>
+              </select>
+              <button class="btn" onclick="loadSecurityLogs(1)" style="background:#667eea;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;">🔍 搜索</button>
+              <button class="btn" onclick="clearSecurityFilters()" style="background:#f5f5f5;color:#666;border:1px solid #ddd;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;">重置</button>
+            </div>
+          </div>
+          <!-- Stats summary -->
+          <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 16px;flex:1;min-width:140px;">
+              <div style="font-size:11px;color:#991b1b;margin-bottom:2px;">🔒 当前被锁IP</div>
+              <div id="secLockedIps" style="font-size:22px;font-weight:800;color:#dc2626;">-</div>
+            </div>
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 16px;flex:1;min-width:140px;">
+              <div style="font-size:11px;color:#92400e;margin-bottom:2px;">⚠️ 今日失败尝试</div>
+              <div id="secTodayFailed" style="font-size:22px;font-weight:800;color:#d97706;">-</div>
+            </div>
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 16px;flex:1;min-width:140px;">
+              <div style="font-size:11px;color:#166534;margin-bottom:2px;">✅ 今日成功登录</div>
+              <div id="secTodaySuccess" style="font-size:22px;font-weight:800;color:#16a34a;">-</div>
+            </div>
+          </div>
+          <div id="securityList"></div>
+          <div id="securityPagination" style="margin-top:14px;display:flex;gap:8px;align-items:center;justify-content:center;"></div>
+        </div>
+      </div>
+
       <div id="tabApps">
         <div class="card">
           <h2>📋 内测申请<span id="appsCount"></span></h2>
@@ -941,6 +979,7 @@
     document.getElementById('tabTagsBtn').onclick = function() { setActiveTab('tags'); };
     document.getElementById('tabReportsBtn').onclick = function() { setActiveTab('reports'); loadReports(); };
     document.getElementById('tabAccessLogsBtn').onclick = function() { setActiveTab('accesslogs'); loadAccessLogs(); };
+    document.getElementById('tabSecurityBtn').onclick = function() { setActiveTab('security'); loadSecurityLogs(); };
 
     document.getElementById('appsSearchInput').addEventListener('input', function() { renderApplications(); });
     document.getElementById('appsStatusFilter').addEventListener('change', function() { renderApplications(); });
@@ -1286,6 +1325,96 @@
       } else {
         pagEl.innerHTML = '<span style="font-size:12px;color:#94a3b8;">共 ' + data.total + ' 条记录</span>';
       }
+    }
+
+    var securityPage = 1;
+    function loadSecurityLogs(page) {
+      securityPage = page || 1;
+      var ip = document.getElementById('securityIpSearch').value.trim();
+      var username = document.getElementById('securityUserSearch').value.trim();
+      var status = document.getElementById('securityStatusFilter').value;
+      var params = [];
+      if (ip) params.push('ip=' + encodeURIComponent(ip));
+      if (username) params.push('username=' + encodeURIComponent(username));
+      if (status) params.push('status=' + status);
+      params.push('page=' + securityPage);
+      params.push('limit=30');
+      adminApi('/api/admin/security-logs?' + params.join('&'))
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        renderSecurityLogs(data);
+        // Update summary stats
+        if (data.stats) {
+          document.getElementById('secLockedIps').textContent = data.stats.lockedIps || 0;
+          document.getElementById('secTodayFailed').textContent = data.stats.todayFailed || 0;
+          document.getElementById('secTodaySuccess').textContent = data.stats.todaySuccess || 0;
+        }
+      })
+      .catch(function() { showToast('加载安全日志失败', 'error'); });
+    }
+
+    function renderSecurityLogs(data) {
+      var el = document.getElementById('securityList');
+      var logs = data.logs || [];
+      if (logs.length === 0) {
+        el.innerHTML = '<div style="padding:30px;text-align:center;color:#888;font-size:14px;">暂无日志记录</div>';
+        document.getElementById('securityPagination').innerHTML = '';
+        return;
+      }
+      var html = '<div class="table-wrap"><div class="row-head" style="grid-template-columns:150px 130px 100px 80px 1fr 80px;">';
+      html += '<div>时间</div><div>IP 地址</div><div>用户名</div><div>状态</div><div>用户信息</div><div>操作</div></div>';
+      for (var i = 0; i < logs.length; i++) {
+        var log = logs[i];
+        var statusHtml = log.success == 1
+          ? '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;">✅ 成功</span>'
+          : '<span style="background:#fef2f2;color:#991b1b;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;">❌ 失败</span>';
+        var userInfo = log.nickname
+          ? e(log.nickname) + ' <span style="color:#94a3b8;">@' + e(log.username) + '</span>'
+          : (log.username ? e(log.username) : '-');
+        html += '<div class="row-item" style="grid-template-columns:150px 130px 100px 80px 1fr 80px;">';
+        html += '<div style="font-size:11px;color:#666;">' + fd(log.attempted_at) + '</div>';
+        html += '<div style="font-size:11px;color:#475569;font-family:monospace;">' + e(log.ip_address || '-') + '</div>';
+        html += '<div style="font-size:11px;color:#475569;">' + e(log.username || '-') + '</div>';
+        html += '<div>' + statusHtml + '</div>';
+        html += '<div style="font-size:11px;color:#555;">' + userInfo + '</div>';
+        html += '<div style="font-size:11px;">';
+        if (log.success == 0 && log.ip_address) {
+          html += '<button onclick="unlockIp(\'' + e(log.ip_address) + '\')" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;">解锁IP</button>';
+        }
+        html += '</div></div>';
+      }
+      html += '</div>';
+      el.innerHTML = html;
+      // Pagination
+      var totalPages = data.pages || 1;
+      var pagEl = document.getElementById('securityPagination');
+      if (totalPages > 1) {
+        var pHtml = '';
+        pHtml += '<button ' + (securityPage <= 1 ? 'disabled' : '') + ' onclick="loadSecurityLogs(' + (securityPage - 1) + ')" style="padding:6px 12px;border-radius:8px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;font-size:12px;">上一页</button>';
+        pHtml += '<span style="font-size:12px;color:#666;padding:0 8px;">第 ' + securityPage + ' / ' + totalPages + ' 页 · 共' + data.total + '条</span>';
+        pHtml += '<button ' + (securityPage >= totalPages ? 'disabled' : '') + ' onclick="loadSecurityLogs(' + (securityPage + 1) + ')" style="padding:6px 12px;border-radius:8px;border:1.5px solid #e2e8f0;background:#fff;cursor:pointer;font-size:12px;">下一页</button>';
+        pagEl.innerHTML = pHtml;
+      } else {
+        pagEl.innerHTML = '<span style="font-size:12px;color:#94a3b8;">共 ' + data.total + ' 条记录</span>';
+      }
+    }
+
+    function clearSecurityFilters() {
+      document.getElementById('securityIpSearch').value = '';
+      document.getElementById('securityUserSearch').value = '';
+      document.getElementById('securityStatusFilter').value = '';
+      loadSecurityLogs(1);
+    }
+
+    function unlockIp(ip) {
+      if (!confirm('确认解锁 IP：' + ip + '？该IP将可以重新尝试登录。')) return;
+      adminApi('/api/admin/unlock-ip?ip=' + encodeURIComponent(ip), { method: 'DELETE' })
+      .then(function(data) {
+        if (data.error) { showToast(data.error, 'error'); return; }
+        showToast('IP 已解锁', 'success');
+        loadSecurityLogs(securityPage);
+      })
+      .catch(function() { showToast('解锁失败', 'error'); });
     }
 
     function loadLogs(page) {

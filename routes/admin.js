@@ -636,6 +636,83 @@ router.get('/user-actions-log', authMiddleware, (req, res) => {
   });
 });
 
+// ===== Security / Login Attempts Log =====
+router.get('/security-logs', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: '需要管理员权限' });
+  }
+
+  const { page = 1, limit = 30, ip, username, status } = req.query;
+  const offset = (page - 1) * Number(limit);
+
+  let where = '1=1';
+  const params = [];
+
+  if (ip) {
+    where += ' AND la.ip_address LIKE ?';
+    params.push('%' + ip + '%');
+  }
+  if (username) {
+    where += ' AND (la.username LIKE ? OR u.nickname LIKE ?)';
+    params.push('%' + username + '%', '%' + username + '%');
+  }
+  if (status === 'success') {
+    where += ' AND la.success = 1';
+  } else if (status === 'failed') {
+    where += ' AND la.success = 0';
+  }
+
+  const countRow = db.prepare(`SELECT COUNT(*) as total FROM login_attempts la LEFT JOIN users u ON la.user_id = u.id WHERE ${where}`).get(...params);
+  const logs = db.prepare(`
+    SELECT la.*, u.username, u.nickname, u.email
+    FROM login_attempts la
+    LEFT JOIN users u ON la.user_id = u.id
+    WHERE ${where}
+    ORDER BY la.attempted_at DESC
+    LIMIT ? OFFSET ?
+  `).all(...params, Number(limit), Number(offset));
+
+  // Stats
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const today = new Date().toISOString().split('T')[0];
+
+  const lockedIps = db.prepare(`
+    SELECT COUNT(DISTINCT ip_address) as c FROM login_attempts
+    WHERE success = 0 AND attempted_at > ?
+  `).get(oneHourAgo).c;
+
+  const todayFailed = db.prepare(`
+    SELECT COUNT(*) as c FROM login_attempts
+    WHERE success = 0 AND date(attempted_at) = ?
+  `).get(today).c;
+
+  const todaySuccess = db.prepare(`
+    SELECT COUNT(*) as c FROM login_attempts
+    WHERE success = 1 AND date(attempted_at) = ?
+  `).get(today).c;
+
+  res.json({
+    logs,
+    total: countRow.total,
+    page: Number(page),
+    limit: Number(limit),
+    pages: Math.ceil(countRow.total / Number(limit)),
+    stats: { lockedIps, todayFailed, todaySuccess }
+  });
+});
+
+// DELETE: unlock (clear failed attempts for an IP)
+router.delete('/unlock-ip', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: '需要管理员权限' });
+  }
+  const { ip } = req.query;
+  if (!ip) return res.status(400).json({ error: '缺少 IP 参数' });
+
+  const result = db.prepare('DELETE FROM login_attempts WHERE ip_address = ? AND success = 0').run(ip);
+  res.json({ success: true, deleted: result.changes });
+});
+
 // ===== Post Views Log =====
 router.get('/post-views-log', authMiddleware, (req, res) => {
   if (req.user.role !== 'admin') {

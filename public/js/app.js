@@ -127,10 +127,10 @@ var _trendingCache = null;
 async function loadTrending() {
   var el = document.getElementById('trending-list');
   if (!el) return;
+  el.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">加载中...</div>';
   try {
-    // Use today's hot posts — sort by comment count today
-    var res = await api('/posts?sort=hot&time_range=day&limit=5&page=1');
-    var posts = res.posts || [];
+    var res = await api('/posts?sort=hot&limit=5');
+    var posts = (res && res.posts) ? res.posts : [];
     if (posts.length === 0) {
       el.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">暂无热议内容</div>';
       return;

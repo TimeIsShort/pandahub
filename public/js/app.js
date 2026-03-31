@@ -63,6 +63,51 @@ const AI_PROVIDER_MODELS = {
 };
 
 // Utils
+
+// Strip Markdown syntax from text, returns plain text
+function stripMarkdown(content) {
+  if (!content) return '';
+  return content
+    // Remove image syntax: ![alt](url)
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+    // Remove link syntax: [text](url) — keep text only
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    // Remove bold/italic markers: **text**, __text__, *text*, _text_, ~~text~~
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    .replace(/~~([^~]+)~~/g, '$1')
+    // Remove inline code: `code`
+    .replace(/`([^`]+)`/g, '$1')
+    // Remove code blocks: ```...``` and indented code
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/^    .+$/gm, '')
+    // Remove blockquote markers: >
+    .replace(/^>\s+/gm, '')
+    // Remove heading markers: # ## ###
+    .replace(/^#{1,6}\s+/gm, '')
+    // Remove horizontal rules: --- or ***
+    .replace(/^[-*_]{3,}$/gm, '')
+    // Remove HTML tags
+    .replace(/<[^>]+>/g, '')
+    // Collapse multiple whitespace
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Extract first image URL from Markdown/HTML content
+function extractThumbnail(content) {
+  if (!content) return null;
+  // Markdown image: ![alt](url)
+  const mdMatch = content.match(/!\[([^\]]*)\]\(([^)]+)\)/);
+  if (mdMatch) return mdMatch[2];
+  // HTML img tag
+  const htmlMatch = content.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (htmlMatch) return htmlMatch[1];
+  return null;
+}
+
 function getToken() {
   return localStorage.getItem('token');
 }
@@ -1464,7 +1509,7 @@ async function loadPosts() {
           <span>👁 ${post.views}</span>
           <span>🕐 ${formatDate(post.created_at)}</span>
         </div>
-        <div class="post-excerpt">${escapeHtml(post.content.substring(0, 150))}</div>
+        <div class="post-excerpt">${escapeHtml(stripMarkdown(post.content).substring(0, 120))}${stripMarkdown(post.content).length > 120 ? '…' : ''}</div>
       </div>
     `).join('');
 

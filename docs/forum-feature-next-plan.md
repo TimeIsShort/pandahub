@@ -47,8 +47,16 @@
 
 ### 2.1 每日签到提醒（Web Push）
 **优先级**：🟡 高
-**目标**：管理后台设置提醒时间，到点 Web Push 推送
-**方案**：
+**状态**：✅ 已完成（feature-next，commit 173af58）
+**实现**：
+- 管理后台设置提醒时间（未来扩展）
+- 用户自定义提醒时间（08:00~21:00）和推送日期（周一~周日）
+- Web Push：Service Worker（sw.js）接收并展示系统通知
+- 定时调度：node-cron 每分钟检查，到点推送「🐼 签到提醒」
+- 用户首次启用时自动请求浏览器通知权限
+- 签到面板内直接管理提醒设置
+- VAPID 密钥已配置（.env）
+**文件**：services/reminderScheduler.js / routes/reminder.js / public/sw.js
 - 用户可设置「每日提醒时间」（如每天 9:00）
 - 启用 Service Worker 接收 Push
 - 到点推送「今日签到提醒」

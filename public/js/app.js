@@ -2877,6 +2877,9 @@ async function loadCheckinStatus() {
         </div>
       `;
     }
+
+    // Load reminder settings
+    loadReminderSettings();
   } catch (e) {
     console.error(e);
     const container = document.getElementById('checkin-sign-panel');
@@ -2884,6 +2887,142 @@ async function loadCheckinStatus() {
   }
 }
 
+
+async function loadReminderSettings() {
+  var panel = document.getElementById('checkin-sign-panel');
+  if (!panel) return;
+  try {
+    var res = await api('/reminder/settings');
+    var subRes = await api('/reminder/subscribed');
+    var isSubscribed = subRes.subscribed;
+
+    var dayLabels = { '0': '日', '1': '一', '2': '二', '3': '三', '4': '四', '5': '五', '6': '六' };
+    var currentDays = (res.reminder_days || '1,2,3,4,5,6,0').split(',');
+    var daysHtml = Object.keys(dayLabels).map(function(d) {
+      var checked = currentDays.indexOf(d) !== -1;
+      return '<label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:' + (checked ? '#667eea' : '#94a3b8') + ';white-space:nowrap;"><input type="checkbox" value="' + d + '" ' + (checked ? 'checked' : '') + ' onchange="updateReminderDays(this)" style="accent-color:#667eea;">' + dayLabels[d] + '</label>';
+    }).join('&nbsp;');
+
+    var reminderSection = '<div style="margin-top:16px;padding-top:14px;border-top:1.5px dashed #d5ddff;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">' +
+      '<div style="font-size:13px;font-weight:700;color:#1e3a5f;">🔔 每日签到提醒</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+      '<select id="reminder-time-select" onchange="updateReminderTime()" style="padding:5px 8px;border:1.5px solid #d5ddff;border-radius:8px;font-size:12px;color:#1e3a5f;background:#fff;cursor:pointer;">' +
+      '<option value="08:00"' + (res.reminder_time === '08:00' ? ' selected' : '') + '>08:00</option>' +
+      '<option value="09:00"' + (res.reminder_time === '09:00' ? ' selected' : '') + '>09:00</option>' +
+      '<option value="10:00"' + (res.reminder_time === '10:00' ? ' selected' : '') + '>10:00</option>' +
+      '<option value="12:00"' + (res.reminder_time === '12:00' ? ' selected' : '') + '>12:00</option>' +
+      '<option value="18:00"' + (res.reminder_time === '18:00' ? ' selected' : '') + '>18:00</option>' +
+      '<option value="20:00"' + (res.reminder_time === '20:00' ? ' selected' : '') + '>20:00</option>' +
+      '<option value="21:00"' + (res.reminder_time === '21:00' ? ' selected' : '') + '>21:00</option>' +
+      '</select>' +
+      '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;">' +
+      '<input type="checkbox" id="reminder-enabled" ' + (res.reminder_enabled ? 'checked' : '') + ' onchange="toggleReminder(this.checked)" style="width:15px;height:15px;accent-color:#667eea;cursor:pointer;">' +
+      '<span style="color:#667eea;font-weight:600;">启用</span>' +
+      '</label>' +
+      '</div></div>' +
+      '<div id="reminder-days-row" style="margin-bottom:8px;font-size:12px;color:#64748b;' + (res.reminder_enabled ? '' : 'opacity:0.4;pointer-events:none;') + '">' +
+      '<div style="margin-bottom:5px;font-size:11px;color:#94a3b8;">推送日期：</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + daysHtml + '</div>' +
+      '</div>' +
+      '<div id="push-status" style="font-size:11px;color:#94a3b8;margin-top:6px;">' +
+      (isSubscribed ? '✅ 浏览器通知已开启' : '⚠️ 请先允许浏览器通知推送权限') +
+      '</div>' +
+      '</div>';
+
+    panel.insertAdjacentHTML('beforeend', reminderSection);
+
+    // Auto-subscribe to push if enabled but not subscribed
+    if (res.reminder_enabled && !isSubscribed) {
+      subscribePush();
+    }
+  } catch (e) {
+    console.warn('Reminder settings load failed:', e);
+  }
+}
+
+async function toggleReminder(enabled) {
+  try {
+    var time = document.getElementById('reminder-time-select').value;
+    var days = getReminderDays();
+    await api('/reminder/settings', {
+      method: 'PUT',
+      body: JSON.stringify({ reminder_enabled: enabled, reminder_time: time, reminder_days: days.join(',') })
+    });
+    document.getElementById('reminder-days-row').style.opacity = enabled ? '1' : '0.4';
+    document.getElementById('reminder-days-row').style.pointerEvents = enabled ? '' : 'none';
+    if (enabled) subscribePush();
+    showToast(enabled ? '提醒已开启' : '提醒已关闭', 'success');
+  } catch (e) { showToast('设置失败', 'error'); }
+}
+
+async function updateReminderTime() {
+  var enabled = document.getElementById('reminder-enabled').checked;
+  var time = document.getElementById('reminder-time-select').value;
+  var days = getReminderDays();
+  await api('/reminder/settings', {
+    method: 'PUT',
+    body: JSON.stringify({ reminder_enabled: enabled, reminder_time: time, reminder_days: days.join(',') })
+  });
+}
+
+function updateReminderDays(checkbox) {
+  var enabled = document.getElementById('reminder-enabled').checked;
+  var time = document.getElementById('reminder-time-select').value;
+  var days = getReminderDays();
+  api('/reminder/settings', {
+    method: 'PUT',
+    body: JSON.stringify({ reminder_enabled: enabled, reminder_time: time, reminder_days: days.join(',') })
+  });
+}
+
+function getReminderDays() {
+  var checkboxes = document.querySelectorAll('#reminder-days-row input[type="checkbox"]');
+  return Array.from(checkboxes).filter(function(cb){ return cb.checked; }).map(function(cb){ return cb.value; });
+}
+
+async function subscribePush() {
+  if (!('Notification' in window)) {
+    document.getElementById('push-status').textContent = '⚠️ 您的浏览器不支持通知推送';
+    return;
+  }
+  var permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    document.getElementById('push-status').textContent = '⚠️ 拒绝了通知权限，请到浏览器设置开启';
+    return;
+  }
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    document.getElementById('push-status').textContent = '⚠️ 浏览器不支持 Push API';
+    return;
+  }
+  try {
+    var reg = await navigator.serviceWorker.register('/sw.js');
+    var sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array('BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U')
+    });
+    await api('/reminder/subscribe', {
+      method: 'POST',
+      body: JSON.stringify(sub.toJSON())
+    });
+    document.getElementById('push-status').textContent = '✅ 浏览器通知已开启！';
+    showToast('推送订阅成功', 'success');
+  } catch (e) {
+    console.warn('Push subscribe failed:', e);
+    document.getElementById('push-status').textContent = '⚠️ 订阅失败，请刷新重试';
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  var padding = '='.repeat((4 - base64String.length % 4) % 4);
+  var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  var rawData = window.atob(base64);
+  var outputArray = new Uint8Array(rawData.length);
+  for (var i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 async function doCheckin() {
   const btn = document.querySelector('.checkin-action button');

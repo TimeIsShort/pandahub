@@ -48,6 +48,7 @@ const checkinRoutes = require('./routes/checkin');
 const emailRoutes = require('./routes/email');
 const searchRoutes = require('./routes/search');
 const pushRoutes = require('./routes/push');
+const reminderRoutes = require('./routes/reminder');
 const i18nRoutes = require('./routes/i18n');
 const sitemapRoutes = require('./routes/sitemap');
 const messageRoutes = require('./routes/messages');
@@ -124,6 +125,7 @@ app.use('/api/checkin', checkinRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/reminder', reminderRoutes);
 app.use('/api/i18n', i18nRoutes);
 app.use('/sitemap.xml', sitemapRoutes);
 app.use('/feed.xml', rssRoutes);
@@ -148,6 +150,8 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: '服务器错误' });
 });
+
+try { require('./services/reminderScheduler').startReminderScheduler(); } catch(e) { console.warn('[Reminder] Scheduler start failed:', e.message); }
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`论坛已启动: http://0.0.0.0:${PORT}`);

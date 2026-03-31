@@ -51,6 +51,20 @@
 
 ---
 
+
+### 1.4 视觉引导与熊猫安置（P2）
+**目标**：释放首屏黄金位给内容，熊猫作为特色但不挡路
+
+- [x] 熊猫改为右下角 60px 悬浮小球（fixed定位），hover放大，点击全屏
+- [x] 右侧边栏熊猫位替换为「🔥 社区热议榜」（今日最热5帖，按评论数排序）
+- [x] 熊猫FAB仅在首页显示（showView控制），离开首页自动隐藏
+- [x] `loadTrending()` 函数调用 `/api/posts?sort=hot&time_range=day&limit=5`
+
+**涉及文件**：
+- `public/index.html` - 移除侧边栏熊猫HTML，新增热议榜HTML + 熊猫FAB全屏浮层HTML
+- `public/js/app.js` - `loadTrending()` / `togglePandaMini()` / `togglePandaFullscreen()` / `showView()` 更新
+- `public/css/style.css` - 移除旧熊猫卡片样式，新增 `.panda-fab` / `#panda-fab-container` 样式
+
 ## P2 功能
 
 ### 2.1 每日签到提醒

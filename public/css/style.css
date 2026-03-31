@@ -3200,7 +3200,7 @@ select:focus-visible {
   }
 
 /* Panda: show on large screens as sticky right sidebar */
-@media (min-width: 1200px) {
+@media (min-width: 960px) {
   .container {
     max-width: min(94vw, 1780px);
   }

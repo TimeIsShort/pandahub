@@ -188,7 +188,7 @@ router.post('/posts/:id/reject', authMiddleware, (req, res) => {
       return res.status(404).json({ error: '帖子不存在' });
     }
     
-    db.prepare("UPDATE posts SET status = 'rejected' WHERE id = ?").run(req.params.id);
+    db.prepare("UPDATE posts SET status = 'rejected', rejected_reason = ? WHERE id = ?").run(reason || null, req.params.id);
 
     logAction({ adminId: req.user.id, action: 'reject_post', targetType: 'post', targetId: Number(req.params.id), reason: reason || null, details: `拒绝帖子: ${post.title}` });
 

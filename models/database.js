@@ -480,6 +480,7 @@ const POINT_COST = {
 
 ensureColumn('posts', 'is_pinned', 'INTEGER DEFAULT 0');
 ensureColumn('posts', 'is_featured', 'INTEGER DEFAULT 0');
+ensureColumn('posts', 'rejected_reason', 'TEXT');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS comment_votes (

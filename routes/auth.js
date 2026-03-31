@@ -9,10 +9,81 @@ const { logUserAction } = require('../middleware/actionLogger');
 
 const router = express.Router();
 
+// ===== Anti-Bot Helpers =====
+function getClientIp(req) {
+  return req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+    || req.headers['x-real-ip']
+    || req.connection?.remoteAddress
+    || req.socket?.remoteAddress
+    || '';
+}
+
+function checkLoginAttempts(userId, username, ip) {
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const recentFailures = db.prepare(
+    "SELECT COUNT(*) as c FROM login_attempts WHERE " +
+    "((user_id = ? AND username = ?) OR ip_address = ?) AND success = 0 AND attempted_at > ?"
+  ).get(userId || -1, username, ip, oneHourAgo);
+
+  if (recentFailures.c >= 5) {
+    return { blocked: true, reason: '登录尝试次数过多，请1小时后再试或联系管理员' };
+  }
+  return { blocked: false };
+}
+
+function recordLoginAttempt(userId, username, ip, success) {
+  try {
+    db.prepare(
+      'INSERT INTO login_attempts (ip_address, user_id, username, success) VALUES (?, ?, ?, ?)'
+    ).run(ip, userId || null, username, success ? 1 : 0);
+  } catch (e) {
+    console.error('[LoginAttempt]', e.message);
+  }
+}
+
+function checkRegistrationRate(ip) {
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const recentRegs = db.prepare(
+    "SELECT COUNT(*) as c FROM login_attempts WHERE ip_address = ? AND username = 'REGISTER_RATE_CHECK' AND attempted_at > ?"
+  ).get(ip, oneHourAgo);
+  if (recentRegs.c >= 5) {
+    return { blocked: true, reason: '该IP注册过于频繁，请1小时后再试' };
+  }
+  return { blocked: false };
+}
+
+function recordRegistrationAttempt(ip) {
+  try {
+    db.prepare(
+      "INSERT INTO login_attempts (ip_address, username, success) VALUES (?, 'REGISTER_RATE_CHECK', 0)"
+    ).run(ip);
+  } catch (e) {
+    console.error('[RegRate]', e.message);
+  }
+}
+
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { username, password, nickname, email } = req.body;
+    const { username, password, nickname, email, __hp, __ts } = req.body;
+    const ip = getClientIp(req);
+
+    // Honeypot check — bots fill hidden fields
+    if (__hp) {
+      return res.status(201).json({ pending: true, message: '注册成功，请验证邮箱完成账号激活' });
+    }
+
+    // Time check — humans take > 2 seconds to fill the form
+    if (__ts && Date.now() - Number(__ts) < 2000) {
+      return res.status(400).json({ error: '注册太快了，请正常填写表单' });
+    }
+
+    // IP rate limit
+    const regCheck = checkRegistrationRate(ip);
+    if (regCheck.blocked) {
+      return res.status(429).json({ error: regCheck.reason });
+    }
+
     if (!username || !password) {
       return res.status(400).json({ error: '用户名和密码不能为空' });
     }
@@ -22,6 +93,9 @@ router.post('/register', async (req, res) => {
     if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
       return res.status(400).json({ error: '密码必须包含大小写字母和数字' });
     }
+
+    // Track registration
+    recordRegistrationAttempt(ip);
 
     const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
     if (existing) {
@@ -55,7 +129,25 @@ router.post('/register', async (req, res) => {
 // Send registration verification code
 router.post('/send-register-code', async (req, res) => {
   try {
-    const { email, username, password } = req.body;
+    const { email, username, password, __hp, __ts } = req.body;
+    const ip = getClientIp(req);
+
+    // Honeypot check — bots fill hidden fields
+    if (__hp) {
+      return res.json({ success: true, message: '验证码已发送（开发模式）', dev_code: '123456' });
+    }
+
+    // Time check — humans take > 2 seconds to fill the form
+    if (__ts && Date.now() - Number(__ts) < 2000) {
+      return res.status(400).json({ error: '操作太快，请稍后重试' });
+    }
+
+    // IP rate limit: 5 registrations per IP per hour
+    const regCheck = checkRegistrationRate(ip);
+    if (regCheck.blocked) {
+      return res.status(429).json({ error: regCheck.reason });
+    }
+
     if (!email) {
       return res.status(400).json({ error: '邮箱不能为空' });
     }
@@ -81,6 +173,9 @@ router.post('/send-register-code', async (req, res) => {
     if (emailUsed) {
       return res.status(400).json({ error: '该邮箱已被其他账号使用' });
     }
+
+    // Track registration
+    recordRegistrationAttempt(ip);
 
     // Create user (pending approval, unverified)
     const bcrypt = require('bcryptjs');
@@ -188,12 +283,21 @@ router.post('/verify-register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
+    const ip = getClientIp(req);
+
+    // Check rate limit before anything else
+    const loginCheck = checkLoginAttempts(null, username, ip);
+    if (loginCheck.blocked) {
+      return res.status(429).json({ error: loginCheck.reason });
+    }
+
     const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
-    
+
     if (!user) {
+      recordLoginAttempt(null, username, ip, false);
       return res.status(401).json({ error: '用户名或密码错误' });
     }
-    
+
     if (!user.approved) {
       return res.status(403).json({ error: '账号尚未通过审核，请等待管理员批准' });
     }
@@ -202,10 +306,23 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ error: '账号已被封禁，请联系管理员' });
     }
 
+    // Check failed attempts for this specific account
+    const accountCheck = checkLoginAttempts(user.id, username, ip);
+    if (accountCheck.blocked) {
+      recordLoginAttempt(user.id, username, ip, false);
+      return res.status(429).json({ error: accountCheck.reason });
+    }
+
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
+      recordLoginAttempt(user.id, username, ip, false);
       return res.status(401).json({ error: '用户名或密码错误' });
     }
+
+    // Success — clear failed attempts
+    try {
+      db.prepare("DELETE FROM login_attempts WHERE user_id = ? AND success = 0").run(user.id);
+    } catch(e) {}
 
     // Update last login
     db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
@@ -227,13 +344,13 @@ router.post('/login', async (req, res) => {
     });
 
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    
+
     const level = getUserLevel(user.points);
-    res.json({ 
-      token, 
-      user: { 
-        id: user.id, 
-        username: user.username, 
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
         nickname: user.nickname,
         role: user.role,
         is_banned: Number(user.is_banned) === 1,
@@ -244,7 +361,7 @@ router.post('/login', async (req, res) => {
         level_name: level.name,
         level_icon: level.icon,
         level_color: level.color,
-      } 
+      }
     });
   } catch (err) {
     console.error(err);

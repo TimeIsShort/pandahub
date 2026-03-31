@@ -784,6 +784,9 @@ function showLogin() {
 
 function showRegister() {
   closeModal();
+  // Set anti-bot timestamp when form is first shown
+  var tsInput = document.getElementById('reg-form-ts');
+  if (tsInput) tsInput.value = Date.now().toString();
   goApply();
 }
 
@@ -1234,11 +1237,13 @@ async function sendRegCode() {
 
   const username = document.getElementById('register-username') ? document.getElementById('register-username').value.trim() : '';
   const password = document.getElementById('register-password') ? document.getElementById('register-password').value : '';
+  const hp = document.getElementById('reg-website') ? document.getElementById('reg-website').value : '';
+  const ts = document.getElementById('reg-form-ts') ? document.getElementById('reg-form-ts').value : '';
   try {
     const res = await fetch('/auth/send-register-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, username, password })
+      body: JSON.stringify({ email, username, password, __hp: hp, __ts: ts })
     });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || '发送失败', 'error'); btn.disabled = false; btn.textContent = '重新发送'; return; }
@@ -1281,6 +1286,8 @@ async function register() {
   const password = document.getElementById('register-password').value;
   const email = document.getElementById('register-email').value.trim();
   const code = document.getElementById('register-code').value.trim();
+  const hp = document.getElementById('reg-website') ? document.getElementById('reg-website').value : '';
+  const ts = document.getElementById('reg-form-ts') ? document.getElementById('reg-form-ts').value : '';
 
   if (!email || !code || !username || !password) {
     showToast('请填写完整信息（邮箱、验证码、用户名、密码）', 'error');

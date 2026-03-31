@@ -605,6 +605,10 @@
           <label>密码 <span style="color:#ef4444">*</span></label>
           <input type="password" id="register-password" placeholder="包含大小写字母和数字，至少6位">
         </div>
+        <!-- Honeypot + timestamp anti-bot fields (hidden from humans) -->
+        <input type="text" name="website" id="reg-website" value="" placeholder="网站" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;">
+        <input type="hidden" id="reg-form-ts" value="">
+
         <div class="form-actions">
           <button id="btn-register-submit" class="btn-primary" onclick="register()">立即注册</button>
           <button class="btn-link" onclick="switchToLogin()">已有账号？去登录</button>

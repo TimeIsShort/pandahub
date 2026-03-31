@@ -540,6 +540,19 @@ db.exec(`
   )
 `);
 
+// ============ Login Attempts Tracking ============
+db.exec(`
+  CREATE TABLE IF NOT EXISTS login_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip_address TEXT,
+    user_id INTEGER,
+    username TEXT,
+    success INTEGER DEFAULT 0,
+    attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`);
+
 // ============ User Actions Log ============
 db.exec(`
   CREATE TABLE IF NOT EXISTS user_actions_log (

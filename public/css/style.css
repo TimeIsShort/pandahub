@@ -1283,8 +1283,8 @@ main.container {
 
 .btn-back {
   border: none;
-  background: rgba(15, 118, 110, 0.08);
-  color: #0c615b;
+  background: var(--primary-soft);
+  color: var(--primary);
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
@@ -1609,7 +1609,7 @@ main.container {
   line-height: 1.35;
   font-family: var(--font-display);
   margin-bottom: 12px;
-  color: #163648;
+  color: var(--text);
 }
 
 .post-detail-content {
@@ -1617,7 +1617,7 @@ main.container {
   font-size: 15px;
   line-height: 1.9;
   white-space: pre-wrap;
-  color: #243f4f;
+  color: var(--text);
 }
 
 .post-inline-image {
@@ -1640,17 +1640,17 @@ main.container {
 }
 
 .post-actions button {
-  border: 1px solid #d8e3e9;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface-solid);
   padding: 8px 12px;
   font-size: 13px;
   cursor: pointer;
-  color: #3d5564;
+  color: var(--text);
 }
 
 .post-actions button:hover {
-  border-color: #a8c2cb;
+  border-color: var(--primary);
 }
 
 /* Vote buttons */
@@ -1665,19 +1665,19 @@ main.container {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border: 1px solid #d8e3e9;
+  border: 1px solid var(--border);
   border-radius: 20px;
-  background: #fff;
+  background: var(--surface-solid);
   padding: 6px 14px;
   font-size: 13px;
   cursor: pointer;
-  color: #3d5564;
+  color: var(--text);
   transition: all 0.2s;
 }
 
 .vote-btn:hover {
-  border-color: #a8c2cb;
-  background: #f0f7fa;
+  border-color: var(--primary);
+  background: var(--primary-soft);
 }
 
 .vote-btn.active {
@@ -1698,12 +1698,12 @@ main.container {
 .comments-section h3 {
   margin-bottom: 12px;
   font-size: 20px;
-  color: #203949;
+  color: var(--text);
 }
 
 .comment-item {
   padding: 14px 0;
-  border-bottom: 1px dashed #d5e3e8;
+  border-bottom: 1px dashed var(--border);
 }
 
 .comment-item:last-child {

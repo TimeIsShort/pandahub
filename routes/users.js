@@ -114,4 +114,43 @@ router.get('/search', (req, res) => {
   }
 });
 
+
+
+// Points trend for last 30 days
+router.get('/:id/points-trend', (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const days = Math.min(90, Math.max(7, parseInt(req.query.days) || 30));
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - days);
+    const startStr = startDate.toISOString().split('T')[0];
+
+    const checkins = db.prepare(
+      "SELECT DATE(created_at) as day, SUM(points_earned) as points FROM checkins WHERE user_id = ? AND DATE(created_at) >= ? GROUP BY DATE(created_at)"
+    ).all(userId, startStr);
+
+    const transfers = db.prepare(
+      "SELECT DATE(created_at) as day, SUM(amount) as points FROM point_transfers WHERE to_user_id = ? AND status = 'completed' AND DATE(created_at) >= ? GROUP BY DATE(created_at)"
+    ).all(userId, startStr);
+
+    const trendMap = {};
+    for (let i = 0; i < days; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      const ymd = d.toISOString().split('T')[0];
+      trendMap[ymd] = 0;
+    }
+    checkins.forEach(function(c) { if (trendMap[c.day] !== undefined) trendMap[c.day] += c.points; });
+    transfers.forEach(function(t) { if (trendMap[t.day] !== undefined) trendMap[t.day] += t.points; });
+
+    const labels = Object.keys(trendMap).slice(-30);
+    const data = labels.map(function(d) { return trendMap[d]; });
+    res.json({ labels, data, days });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '获取积分趋势失败' });
+  }
+});
+
 module.exports = router;

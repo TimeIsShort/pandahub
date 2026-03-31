@@ -4887,9 +4887,44 @@ async function loadActivityCalendar(userId) {
     levelColors.forEach(function(c) { html += '<div style="width:12px;height:12px;border-radius:2px;background:' + c + ';"></div>'; });
     html += '<span>多</span></div>';
     el.innerHTML = html;
+    // Also append points trend
+    loadPointsTrend(userId, el);
   } catch (e) {
     el.innerHTML = '<div style="text-align:center;padding:32px;color:#ef4444;">加载失败</div>';
   }
+}
+
+function loadPointsTrend(userId, container) {
+  var trendEl = document.createElement('div');
+  trendEl.id = 'points-trend-chart';
+  trendEl.style.marginTop = '16px';
+  trendEl.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;font-size:13px;">加载积分趋势...</div>';
+  container.appendChild(trendEl);
+
+  api('/users/' + userId + '/points-trend?days=30').then(function(res) {
+    if (!res.labels || !res.data || res.labels.length === 0) {
+      trendEl.innerHTML = '';
+      return;
+    }
+    var max = Math.max.apply(null, res.data.concat([1]));
+    var html = '<div style="font-size:12px;color:#f59e0b;font-weight:700;margin-bottom:8px;">💰 近30天积分获取</div>';
+    html += '<div style="display:flex;align-items:flex-end;gap:2px;height:48px;">';
+    var step = Math.max(1, Math.floor(res.labels.length / 15));
+    res.data.forEach(function(val, i) {
+      var h = max > 0 ? Math.max(3, Math.round((val / max) * 40)) : 3;
+      var label = res.labels[i];
+      var shortLabel = label.substring(5);
+      html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;" title="' + label + ' +' + val + '积分">';
+      html += '<div style="width:100%;height:' + h + 'px;background:linear-gradient(to top,#f59e0b,#fbbf24);border-radius:2px 2px 0 0;min-height:3px;"></div>';
+      html += '<div style="font-size:8px;color:#c0cfdb;height:12px;overflow:hidden;">' + (i % step === 0 ? shortLabel : '') + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:4px;"><span>30天前</span><span>今天</span></div>';
+    trendEl.innerHTML = html;
+  }).catch(function() {
+    trendEl.innerHTML = '';
+  });
 }
 
 window.loadActivityCalendar = loadActivityCalendar;

@@ -4445,6 +4445,20 @@ window.loadCommentVoteStatus = loadCommentVoteStatus;
 
 
 // ============ Theme Toggle ============
+function toggleLang() {
+  var newLang = i18n.getLang() === 'zh' ? 'en' : 'zh';
+  i18n.switchLang(newLang).then(function() {
+    showToast(newLang === 'en' ? 'Switched to English' : '已切换到中文', 'success');
+    var h2 = document.querySelector('.home-hero h2');
+    if (h2) h2.textContent = i18n.t('hero_title');
+    var p = document.querySelector('.home-hero p');
+    if (p) p.textContent = i18n.t('hero_subtitle');
+    var searchInput = document.getElementById('search-input');
+    if (searchInput) searchInput.setAttribute('placeholder', i18n.t('search_placeholder'));
+    if (typeof loadPosts === 'function') loadPosts(1);
+  });
+}
+
 var themes = ['mint', 'sunset', 'sky', 'cyber', 'aurora'];
 var themeEmoji = { mint: '🌙', sunset: '🌅', sky: '🌤️', cyber: '🤖', aurora: '✨' };
 

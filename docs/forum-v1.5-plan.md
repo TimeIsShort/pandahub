@@ -150,3 +150,9 @@
 - 代码区使用 `#1e1e1e` 深色背景，适配暗黑主题
 - `md-inline-code` / `md-link` 改用 CSS 变量，暗黑模式自动适配
 **版本**：v=20260401j，已推送 GitHub（commit 6b3876f）
+
+
+### renderContent图片解析修复（2026-03-31 17:12）
+**问题**：`escapeHtml()` 先转义导致 `![alt](url)` 语法被破坏，图片不显示
+**修复**：图片 markdown 在 `escapeHtml()` 之前用 base64 placeholder 保护，等 HTML 转义完再还原
+**版本**：v=20260401k，已推送 GitHub（commit fda06ae）

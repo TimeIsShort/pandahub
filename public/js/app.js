@@ -19,7 +19,7 @@ let aiSessions = [];
 let currentAISessionId = '';
 let pandaPlayCount = 0;
 const PANDA_3D_MIN_WIDTH = 960;
-const PANDA_3D_MODEL_URL = '/assets/models/panda-mascot.glb?' + Date.now();
+const PANDA_3D_MODEL_URL = '/assets/models/meshy-panda.glb?' + Date.now();
 const PANDA_3D_MODULE_URL = '/js/panda-3d-v6.js?v=20260328-14';
 let panda3DModulePromise = null;
 let panda3DInstance = null;

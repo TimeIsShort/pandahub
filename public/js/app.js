@@ -150,6 +150,30 @@ async function loadTrending() {
 
 window.loadTrending = loadTrending;
 
+function toggleTrendingDropdown() {
+  var dropdown = document.getElementById('trending-dropdown');
+  if (!dropdown) return;
+  var isHidden = dropdown.style.display === 'none' || !dropdown.style.display;
+  if (isHidden) {
+    dropdown.style.display = 'block';
+    var list = document.getElementById('trending-list');
+    if (list && !list.innerHTML.trim()) {
+      loadTrending();
+    }
+  } else {
+    dropdown.style.display = 'none';
+  }
+}
+
+document.addEventListener('click', function(e) {
+  var dropdown = document.getElementById('trending-dropdown');
+  var btn = document.getElementById('btn-trending');
+  if (!dropdown || !btn) return;
+  if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+    dropdown.style.display = 'none';
+  }
+});
+
 // ============ Panda FAB ============
 function togglePandaMini() {
   var mini = document.getElementById('panda-mini-view');

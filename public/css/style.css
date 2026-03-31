@@ -741,36 +741,13 @@ main.container {
   box-shadow: 0 12px 26px rgba(14, 56, 76, 0.1);
 }
 
-.panda-playground {
+/* Panda FAB (floating action button) */
+#panda-fab-container {
   display: block;
-  margin-top: 14px;
 }
 
 .panda-hidden {
   display: none !important;
-}
-
-.panda-card {
-  border: 1px solid #bed7e0;
-  border-radius: 24px;
-  overflow: hidden;
-  background:
-    radial-gradient(220px 140px at 80% 18%, rgba(33, 197, 166, 0.2), transparent 72%),
-    linear-gradient(180deg, rgba(244, 252, 255, 0.96), rgba(214, 234, 243, 0.95) 58%, rgba(185, 216, 230, 0.95));
-  box-shadow: 0 20px 34px rgba(19, 62, 86, 0.18);
-}
-.panda-card-title {
-  padding: 14px 16px 4px;
-  font-size: 20px;
-  color: #12384a;
-  font-family: var(--font-display);
-  letter-spacing: 0.3px;
-}
-
-.panda-card-subtitle {
-  padding: 0 16px 12px;
-  color: #5e7381;
-  font-size: 13px;
 }
 
 .panda-scene {
@@ -3229,11 +3206,7 @@ select:focus-visible {
 
 /* Panda: show on medium+ screens as block below content */
 @media (min-width: 960px) {
-  #view-home .panda-playground {
-    display: block;
-    margin-bottom: 18px;
   }
-}
 
 /* Panda: show on large screens as sticky right sidebar */
 @media (min-width: 1200px) {
@@ -3281,13 +3254,6 @@ select:focus-visible {
     grid-column: 1;
   }
 
-  #view-home .panda-playground {
-    display: block;
-    grid-column: 2;
-    grid-row: 1 / span 4;
-    position: sticky;
-    top: 104px;
-    margin-top: 0;
   }
 
   #view-home .post-list {
@@ -3362,9 +3328,6 @@ select:focus-visible {
     width: 100%;
   }
 
-  #view-home .panda-playground {
-    display: none;
-  }
 }
 
 @media (max-width: 640px) {
@@ -3592,10 +3555,7 @@ select:focus-visible {
     grid-template-columns: 1fr !important;
   }
 
-  #view-home .panda-playground {
-    display: none !important;
-  }
-
+  
   /* Sidebar on home */
   #view-home aside {
     display: none;

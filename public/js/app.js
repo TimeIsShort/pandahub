@@ -121,6 +121,51 @@ function dismissAnnouncement() {
   }
 }
 
+// ============ Trending Panel ============
+var _trendingCache = null;
+
+async function loadTrending() {
+  var el = document.getElementById('trending-list');
+  if (!el) return;
+  try {
+    // Use today's hot posts — sort by comment count today
+    var res = await api('/posts?sort=hot&time_range=day&limit=5&page=1');
+    var posts = res.posts || [];
+    if (posts.length === 0) {
+      el.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">暂无热议内容</div>';
+      return;
+    }
+    el.innerHTML = posts.map(function(p) {
+      var title = stripMarkdown(p.title || '无标题').substring(0, 22);
+      var name = p.nickname || p.username || '匿名';
+      var commentCount = p.comment_count || 0;
+      return '<div onclick="goPost(' + p.id + ')" style="display:flex;gap:8px;align-items:flex-start;padding:8px 4px;border-radius:10px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background=\'#fff8f0\'" onmouseout="this.style.background=\'\'">' +
+        '<span style="font-size:16px;flex-shrink:0;">🔥</span>' +
+        '<div style="flex:1;min-width:0;"><div style="font-size:12px;color:#1e3a5f;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(title) + '</div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">' + escapeHtml(name) + ' · 💬' + commentCount + '</div></div></div>';
+    }).join('');
+  } catch(e) {
+    if (el) el.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">加载失败</div>';
+  }
+}
+
+window.loadTrending = loadTrending;
+
+// ============ Panda FAB ============
+function togglePandaMini() {
+  var mini = document.getElementById('panda-mini-view');
+  if (!mini) return;
+  mini.style.display = mini.style.display === 'none' ? '' : 'none';
+}
+
+function togglePandaFullscreen() {
+  var overlay = document.getElementById('panda-fullscreen-overlay');
+  if (!overlay) return;
+  overlay.style.display = overlay.style.display === 'none' ? '' : 'none';
+}
+
+window.togglePandaMini = togglePandaMini;
+window.togglePandaFullscreen = togglePandaFullscreen;
+
 function getUser() {
   const u = localStorage.getItem('user');
   return u ? JSON.parse(u) : null;
@@ -687,6 +732,10 @@ function goToolbox() {
 function goHome() {
   showView('home');
   loadPosts();
+  loadTrending();
+  // Show panda FAB on home
+  var fab = document.getElementById('panda-fab-container');
+  if (fab) fab.style.display = '';
 }
 
 function goProfile() {
@@ -851,9 +900,9 @@ function showView(name) {
   const isHome = name === 'home';
   document.body.classList.toggle('home-view-active', isHome);
 
-  // Toggle panda playground visibility - hide when not on home
-  const panda = document.getElementById('panda-playground');
-  if (panda) panda.classList.toggle('panda-hidden', !isHome);
+  // Toggle panda FAB visibility - show only on home
+  const fab = document.getElementById('panda-fab-container');
+  if (fab) fab.style.display = isHome ? '' : 'none';
 
   if (isHome) {
     initPetalRain();
@@ -4616,11 +4665,16 @@ async function init() {
   updateNav();
   loadTags();
   loadPosts();
+  loadTrending();
   initPostComposer();
   document.body.classList.add('home-view-active');
   initPetalRain();
   initPandaPlayground();
   initWeather();
+
+  // Show panda FAB on home
+  var fab = document.getElementById('panda-fab-container');
+  if (fab) fab.style.display = '';
 
   // Restore announcement dismissal
   if (localStorage.getItem('announcement_dismissed') === '1') {

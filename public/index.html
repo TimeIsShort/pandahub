@@ -147,38 +147,12 @@
           </div>
         </aside>
         <div class="pagination" id="pagination"></div>
-        <aside id="panda-playground" class="panda-playground" aria-label="熊猫互动区">
-          <div class="panda-card">
-            <div class="panda-card-title">熊猫乐园</div>
-            <div class="panda-card-subtitle">悬停逗逗它，点击或喂竹子一起玩</div>
-            <div id="panda-scene" class="panda-scene" role="button" tabindex="0" aria-label="点击与熊猫玩耍">
-              <div id="panda-webgl" class="panda-webgl" aria-hidden="true"></div>
-              <div id="panda-hearts" class="panda-hearts" aria-hidden="true"></div>
-              <div class="panda-ground" aria-hidden="true"></div>
-              <div id="panda-character" class="panda-character" aria-hidden="true">
-                <div class="panda-ear panda-ear-left"></div>
-                <div class="panda-ear panda-ear-right"></div>
-                <div class="panda-body"></div>
-                <div class="panda-arm panda-arm-left"></div>
-                <div class="panda-arm panda-arm-right" id="panda-paw-right"></div>
-                <div class="panda-leg panda-leg-left"></div>
-                <div class="panda-leg panda-leg-right"></div>
-                <div class="panda-head">
-                  <div class="panda-eye panda-eye-left"><span class="panda-pupil" id="panda-pupil-left"></span></div>
-                  <div class="panda-eye panda-eye-right"><span class="panda-pupil" id="panda-pupil-right"></span></div>
-                  <div class="panda-nose"></div>
-                  <div class="panda-mouth"></div>
-                  <div class="panda-blush panda-blush-left"></div>
-                  <div class="panda-blush panda-blush-right"></div>
-                </div>
-              </div>
-              <div class="panda-actions">
-                <button type="button" id="panda-feed-btn" class="panda-feed-btn">🎋 喂竹子</button>
-                <span id="panda-play-count" class="panda-play-count">玩耍次数: 0</span>
-              </div>
-              <div id="panda-status" class="panda-status">把鼠标悬停在熊猫上看它跳舞</div>
-            </div>
+        <aside id="trending-panel" style="background:linear-gradient(135deg,#ff6b6b22,#ffa50022);border:1.5px solid #ffd6a5;border-radius:16px;padding:16px;margin-top:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <h3 style="font-size:14px;color:#f59e0b;font-weight:700;margin:0;">🔥 社区热议榜</h3>
+            <button onclick="loadTrending()" style="background:none;border:none;font-size:11px;color:#94a3b8;cursor:pointer;">🔄</button>
           </div>
+          <div id="trending-list" style="display:flex;flex-direction:column;gap:8px;"></div>
         </aside>
       </div>
 
@@ -669,7 +643,30 @@
       }
     }
   </script>
-  <script src="/js/app.js?v=20260331c"></script>
+  <!-- Panda Floating Action Button -->
+  <div id="panda-fab-container" style="position:fixed;right:20px;bottom:20px;z-index:9999;display:none;" title="点击与熊猫玩耍">
+    <div id="panda-fab-btn" onclick="togglePandaMini()" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);box-shadow:0 4px 20px rgba(102,126,234,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:28px;transition:transform .2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+      🐼
+    </div>
+    <!-- Mini panda preview (small hover hint) -->
+    <div id="panda-mini-view" style="display:none;position:absolute;bottom:70px;right:0;width:220px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);padding:16px;border:1.5px solid #e2e8f0;">
+      <div style="font-size:12px;color:#667eea;font-weight:700;margin-bottom:10px;">🎋 熊猫乐园</div>
+      <div id="panda-mini-scene" style="height:100px;display:flex;align-items:center;justify-content:center;font-size:40px;cursor:pointer;" onclick="togglePandaFullscreen()">
+        🐼
+      </div>
+      <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:8px;">点击全屏查看</div>
+    </div>
+  </div>
+
+  <!-- Panda Fullscreen Overlay -->
+  <div id="panda-fullscreen-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;backdrop-filter:blur(4px);" onclick="togglePandaFullscreen()">
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;" onclick="event.stopPropagation()">
+      <div id="panda-fullscreen-scene" style="width:400px;height:400px;display:flex;align-items:center;justify-content:center;font-size:120px;cursor:pointer;" onclick="togglePandaFullscreen()">🐼</div>
+      <div style="color:#fff;font-size:14px;margin-top:12px;opacity:.7;">点击任意处关闭</div>
+    </div>
+  </div>
+
+  <script src="/js/app.js?v=20260331d"></script>
   <!-- Service Worker for Push Notifications -->
   <script>
     if ('serviceWorker' in navigator) {

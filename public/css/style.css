@@ -3205,13 +3205,25 @@ select:focus-visible {
     max-width: min(94vw, 1780px);
   }
 
-  #view-home {
+  /* New two-column grid layout: 7fr main + 3fr sidebar */
+  .home-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 296px;
-    gap: 16px;
+    grid-template-columns: 7fr 3fr;
+    gap: 20px;
     align-items: start;
   }
 
+  .home-main {
+    min-width: 0;
+  }
+
+  .home-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Toolbar stays horizontal on larger screens */
   #view-home .toolbar {
     display: flex;
     flex-wrap: nowrap;
@@ -3238,23 +3250,33 @@ select:focus-visible {
     white-space: nowrap;
   }
 
-  #view-home .home-hero,
-  #view-home .toolbar,
-  #view-home .post-list,
-  #view-home .pagination {
-    grid-column: 1;
-  }
-
-  }
-
+  /* Post list: 2 columns default on main area */
   #view-home .post-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1680px) {
+/* 1680px+: still 2 columns, no change needed */
+
+@media (max-width: 900px) {
+  /* Stack to single column on tablets */
+  .home-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .home-sidebar {
+    display: none; /* hide sidebar on tablet */
+  }
+}
+
+@media (max-width: 640px) {
+  /* Hide sidebar completely on mobile */
+  .home-sidebar {
+    display: none;
+  }
+
   #view-home .post-list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 }
 

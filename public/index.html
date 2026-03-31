@@ -77,86 +77,95 @@
     <main class="container">
       <!-- Home View -->
       <div id="view-home">
-        <section class="home-hero">
-          <div class="home-hero-grid">
-            <div class="home-hero-main">
-              <div class="hero-badge">FORUM · BUILD TOGETHER</div>
-              <h2>把问题抛出来，把经验沉淀下去</h2>
-              <p>分享实战总结、排障思路和项目进展，在更轻松的氛围里找到同频开发者。</p>
-              <div class="hero-quick-actions">
-                <button class="hero-mini-btn hero-mini-btn-primary" onclick="getUser() ? showNewPost() : showLogin()">发布你的第一条实战帖</button>
-                <button class="hero-mini-btn" onclick="document.getElementById('search-input').focus()">快速搜索话题</button>
+        <div class="home-layout">
+          <!-- Left: Main content (7/10) -->
+          <div class="home-main">
+            <section class="home-hero">
+              <div class="home-hero-grid">
+                <div class="home-hero-main">
+                  <div class="hero-badge">FORUM · BUILD TOGETHER</div>
+                  <h2>把问题抛出来，把经验沉淀下去</h2>
+                  <p>分享实战总结、排障思路和项目进展，在更轻松的氛围里找到同频开发者。</p>
+                  <div class="hero-quick-actions">
+                    <button class="hero-mini-btn hero-mini-btn-primary" onclick="getUser() ? showNewPost() : showLogin()">发布你的第一条实战帖</button>
+                    <button class="hero-mini-btn" onclick="document.getElementById('search-input').focus()">快速搜索话题</button>
+                  </div>
+                </div>
+                <div class="hero-data-card" aria-hidden="true">
+                  <div class="hero-data-title">社区节奏</div>
+                  <div class="hero-stat-list">
+                    <div class="hero-stat-item">
+                      <span>讨论氛围</span>
+                      <strong>高质量交流</strong>
+                    </div>
+                    <div class="hero-stat-item">
+                      <span>内容方向</span>
+                      <strong>AI · 开发 · 实战</strong>
+                    </div>
+                    <div class="hero-stat-item">
+                      <span>协作方式</span>
+                      <strong>提问 + 复盘 + 共享</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <div class="toolbar" style="flex-direction:column;gap:10px;align-items:stretch;">
+              <!-- Layer 1: Tags (horizontally scrollable) -->
+              <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;flex-shrink:0;scrollbar-width:none;-ms-overflow-style:none;" id="tags-scroll-wrap">
+                <div class="tags-filter" id="tags-filter" style="flex-wrap:nowrap;min-width:0;"></div>
+              </div>
+              <!-- Layer 2: Search + Filters + Publish -->
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <div class="search-box" style="flex:1;min-width:180px;">
+                  <input type="text" id="search-input" placeholder="搜索帖子..." onkeyup="handleSearch(event)" style="width:100%;">
+                </div>
+                <select id="sort-select" onchange="setSearchSort(this.value)" style="padding:8px 10px;border:1.5px solid #d5ddff;border-radius:10px;font-size:13px;color:#1e3a5f;background:#fff;cursor:pointer;">
+                  <option value="newest">🕐 最新</option>
+                  <option value="hot">🔥 最热</option>
+                </select>
+                <select id="time-select" onchange="setSearchTime(this.value)" style="padding:8px 10px;border:1.5px solid #d5ddff;border-radius:10px;font-size:13px;color:#1e3a5f;background:#fff;cursor:pointer;">
+                  <option value="">全部时间</option>
+                  <option value="day">今天</option>
+                  <option value="week">本周</option>
+                  <option value="month">本月</option>
+                </select>
+                <button class="btn-primary" id="btn-new-post" onclick="showNewPost()" style="display:none;border-radius:10px;font-weight:700;">
+                  + 发布
+                </button>
               </div>
             </div>
-            <div class="hero-data-card" aria-hidden="true">
-              <div class="hero-data-title">社区节奏</div>
-              <div class="hero-stat-list">
-                <div class="hero-stat-item">
-                  <span>讨论氛围</span>
-                  <strong>高质量交流</strong>
+            <div class="post-list" id="post-list"></div>
+            <div class="pagination" id="pagination"></div>
+          </div>
+          <!-- Right: Sidebar (3/10) -->
+          <div class="home-sidebar">
+            <aside id="leaderboard-panel" style="display:none;">
+              <div style="background:rgba(255,255,255,0.88);border:1px solid rgba(166,197,208,0.55);border-radius:16px;padding:16px;backdrop-filter:blur(12px);">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                  <h3 style="font-size:15px;color:#667eea;font-weight:700;margin:0;">🏆 积分排行榜</h3>
+                  <div style="display:flex;gap:6px;align-items:center;">
+                    <a href="/leaderboard.html" style="font-size:11px;color:#667eea;text-decoration:none;background:#667eea22;padding:3px 8px;border-radius:6px;font-weight:600;">完整榜单 →</a>
+                    <button onclick="toggleLeaderboard()" style="background:none;border:none;font-size:12px;color:#94a3b8;cursor:pointer;">收起 ×</button>
+                  </div>
                 </div>
-                <div class="hero-stat-item">
-                  <span>内容方向</span>
-                  <strong>AI · 开发 · 实战</strong>
-                </div>
-                <div class="hero-stat-item">
-                  <span>协作方式</span>
-                  <strong>提问 + 复盘 + 共享</strong>
-                </div>
+                <div id="lb-my-rank-mini" style="margin-bottom:10px;"></div>
+                <div id="leaderboard-list" style="display:flex;flex-direction:column;gap:8px;"></div>
               </div>
-            </div>
-          </div>
-        </section>
-        <div class="toolbar" style="flex-direction:column;gap:10px;align-items:stretch;">
-          <!-- Layer 1: Tags (horizontally scrollable) -->
-          <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;flex-shrink:0;scrollbar-width:none;-ms-overflow-style:none;" id="tags-scroll-wrap">
-            <div class="tags-filter" id="tags-filter" style="flex-wrap:nowrap;min-width:0;"></div>
-          </div>
-          <!-- Layer 2: Search + Filters + Publish -->
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <div class="search-box" style="flex:1;min-width:180px;">
-              <input type="text" id="search-input" placeholder="搜索帖子..." onkeyup="handleSearch(event)" style="width:100%;">
-            </div>
-            <select id="sort-select" onchange="setSearchSort(this.value)" style="padding:8px 10px;border:1.5px solid #d5ddff;border-radius:10px;font-size:13px;color:#1e3a5f;background:#fff;cursor:pointer;">
-              <option value="newest">🕐 最新</option>
-              <option value="hot">🔥 最热</option>
-            </select>
-            <select id="time-select" onchange="setSearchTime(this.value)" style="padding:8px 10px;border:1.5px solid #d5ddff;border-radius:10px;font-size:13px;color:#1e3a5f;background:#fff;cursor:pointer;">
-              <option value="">全部时间</option>
-              <option value="day">今天</option>
-              <option value="week">本周</option>
-              <option value="month">本月</option>
-            </select>
-            <button class="btn-primary" id="btn-new-post" onclick="showNewPost()" style="display:none;border-radius:10px;font-weight:700;">
-              + 发布
-            </button>
+            </aside>
+            <aside id="trending-panel" style="background:rgba(255,255,255,0.88);border:1px solid rgba(166,197,208,0.55);border-radius:16px;padding:16px;backdrop-filter:blur(12px);">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <h3 style="font-size:14px;color:#0f766e;font-weight:700;margin:0;">🔥 社区热议榜</h3>
+                <button onclick="loadTrending()" style="background:none;border:none;font-size:11px;color:#94a3b8;cursor:pointer;">🔄</button>
+              </div>
+              <div id="trending-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+            </aside>
           </div>
         </div>
-        <div class="post-list" id="post-list"></div>
-        <aside id="leaderboard-panel" style="display:none;padding:0 16px 16px;">
-          <div style="background:linear-gradient(135deg,#667eea22,#764ba222);border:1px solid #d5ddff;border-radius:16px;padding:16px;margin-top:16px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-              <h3 style="font-size:15px;color:#667eea;font-weight:700;margin:0;">🏆 积分排行榜</h3>
-              <div style="display:flex;gap:6px;align-items:center;">
-                <a href="/leaderboard.html" style="font-size:11px;color:#667eea;text-decoration:none;background:#667eea22;padding:3px 8px;border-radius:6px;font-weight:600;">完整榜单 →</a>
-                <button onclick="toggleLeaderboard()" style="background:none;border:none;font-size:12px;color:#94a3b8;cursor:pointer;">收起 ×</button>
-              </div>
-            </div>
-            <div id="lb-my-rank-mini" style="margin-bottom:10px;"></div>
-            <div id="leaderboard-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-          </div>
-        </aside>
-        <div class="pagination" id="pagination"></div>
-        <aside id="trending-panel" style="background:linear-gradient(135deg,#ff6b6b22,#ffa50022);border:1.5px solid #ffd6a5;border-radius:16px;padding:16px;margin-top:16px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-            <h3 style="font-size:14px;color:#f59e0b;font-weight:700;margin:0;">🔥 社区热议榜</h3>
-            <button onclick="loadTrending()" style="background:none;border:none;font-size:11px;color:#94a3b8;cursor:pointer;">🔄</button>
-          </div>
-          <div id="trending-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-        </aside>
       </div>
 
       <!-- Post Detail View -->
+Post Detail View -->
       <div id="view-post" style="display:none;">
         <div class="view-post-sticky-header">
           <button class="btn-back" onclick="goHome()">← 返回</button>
@@ -666,7 +675,7 @@
     </div>
   </div>
 
-  <script src="/js/app.js?v=20260401b"></script>
+  <script src="/js/app.js?v=20260401c"></script>
   <!-- Service Worker for Push Notifications -->
   <script>
     if ('serviceWorker' in navigator) {

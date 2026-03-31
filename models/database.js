@@ -189,6 +189,7 @@ ensureColumn('ai_chats', 'session_id', 'TEXT');
 ensureColumn('ai_chats', 'provider', 'TEXT');
 ensureColumn('ai_chats', 'model', 'TEXT');
 ensureColumn('posts', 'tag_id', 'INTEGER');
+ensureColumn('tags', 'icon', "TEXT DEFAULT '🏷️'");
 ensureColumn('posts', 'views', 'INTEGER DEFAULT 0');
 ensureColumn('posts', 'status', "TEXT DEFAULT 'pending'");
 ensureColumn('posts', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');

@@ -18,11 +18,16 @@ function canViewUnapprovedPost(user, post) {
 // Get all posts (with pagination and filtering) - only approved posts
 router.get('/', optionalAuth, (req, res) => {
   try {
-    const { tag_id, page = 1, limit = 20, search, sort = 'newest', time_range, following } = req.query;
+    const { tag_id, page = 1, limit = 20, search, sort = 'newest', time_range, following, featured } = req.query;
     const offset = (page - 1) * limit;
 
     let where = "p.status = 'approved'";
     const params = [];
+
+    // Featured filter: only featured posts
+    if (featured === '1') {
+      where += ' AND p.is_featured = 1';
+    }
 
     // Following filter: only posts from users I follow
     if (following) {

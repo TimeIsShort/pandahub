@@ -1755,6 +1755,8 @@ async function loadPosts() {
       return;
     }
     params.set('following', user.id);
+  } else if (currentSort === 'featured') {
+    params.set('featured', '1');
   } else {
     params.set('sort', currentSort);
   }

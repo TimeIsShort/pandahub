@@ -3517,9 +3517,30 @@ function expandCode(id, btn) {
 
 function renderContent(str) {
   if (!str) return '';
-  let html = escapeHtml(str);
+  let html = str; // NO escapeHtml here first - process markdown FIRST
 
-  // Code blocks (```...```) - styled with traffic lights + copy + collapse
+  // Step 1: Convert markdown images to placeholders (so escapeHtml doesn't kill them)
+  html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g, function(match, alt, url) {
+    return '<MDIMG_PLACEHOLDER>' + btoa(unescape(encodeURIComponent(url))) + '</MDIMG>';
+  });
+
+  // Step 2: Convert standalone upload links to placeholders
+  html = html.replace(/(^|<br>)(\/uploads\/[\w\-./%]+?\.(?:png|jpe?g|gif|webp))(?=<br>|$)/gi, function(all, prefix, url) {
+    return prefix + '<MDIMG_PLACEHOLDER>' + btoa(unescape(encodeURIComponent(url))) + '</MDIMG>';
+  });
+
+  // Step 3: Now safe to escape HTML
+  html = escapeHtml(html);
+
+  // Step 4: Restore images from placeholders
+  html = html.replace(/<MDIMG_PLACEHOLDER>([^<]+)<\/MDIMG>/g, function(match, encoded) {
+    try {
+      var url = decodeURIComponent(escape(atob(encoded)));
+      return '<img class="post-inline-image" src="' + url + '" alt="帖子图片" loading="lazy">';
+    } catch(e) { return match; }
+  });
+
+  // Step 5: Code blocks (```...```) - styled with traffic lights + copy + collapse
   html = html.replace(/```([\s\S]*?)```/g, function(match, code) {
     code = code.trim();
     var lines = code.split('\n');
@@ -3557,20 +3578,6 @@ function renderContent(str) {
 
   // Blockquote (> quote)
   html = html.replace(/^&gt; (.+)$/gm, '<blockquote class="md-quote">$1</blockquote>');
-
-  // Convert markdown images to img tags
-  html = html.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g, function(match, alt, url) {
-    const safeUrl = sanitizeImageUrl(url);
-    if (!safeUrl) return match;
-    return '<img class="post-inline-image" src="' + safeUrl + '" alt="' + alt + '" loading="lazy">';
-  });
-
-  // Convert standalone upload links to img tags for legacy content
-  html = html.replace(/(^|<br>)(\/uploads\/[^\s<]+?\.(?:png|jpe?g|gif|webp))(?=<br>|$)/gi, function(all, prefix, url) {
-    const safeUrl = sanitizeImageUrl(url);
-    if (!safeUrl) return all;
-    return prefix + '<img class="post-inline-image" src="' + safeUrl + '" alt="帖子图片" loading="lazy">';
-  });
 
   // Convert newlines to <br> (but preserve existing tags)
   html = html.replace(/\n/g, '<br>');

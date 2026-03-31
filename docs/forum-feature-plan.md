@@ -896,3 +896,15 @@
 - `routes/rss.js` - 新建 RSS 路由
 - `public/index.html` - 导航栏 RSS 按钮
 - `public/js/app.js` - 登录后显示 RSS 按钮
+### P3 管理员操作日志完善 ✅
+- ✅ 置顶/加精/取消加精/取消置顶操作均记录到 moderation_log
+- ✅ 管理员登录时记录 `admin_login`，登出时记录 `admin_logout`
+- ✅ `POST /auth/logout` 接口（仅管理员调用时记录日志）
+- ✅ 客户端 logout 时调用 `/auth/logout` API 记录登出
+- ✅ admin-log 页面 actionNames 补全所有操作类型中文标签
+
+### 涉及文件
+- `routes/admin.js` - pin/feature 路由加 logAction
+- `routes/auth.js` - 新增 `/logout` 路由，登录时记录 admin_login
+- `public/js/app.js` - logout() 调用 API 记录登出
+- `public/admin-login.html` - actionNames 补全

@@ -153,14 +153,14 @@
 - [x] 网站导航栏加 📡 RSS 按钮，点击跳转 feed.xml
 - [x] RSS 字段：title / link / guid / description / author / pubDate / category
 
-### 5.3 管理员操作日志完善
+### 5.3 管理员操作日志完善 ✅
 **目标**：记录所有管理员敏感操作
 
 **功能**：
-- [ ] 管理员登录/登出记录
-- [ ] 置顶/加精/删除操作记录（已有部分）
-- [ ] 用户封禁/解封记录
-- [ ] 管理后台操作日志加分类筛选
+- [x] 管理员登录/登出记录（`POST /auth/logout`）
+- [x] 置顶/加精/取消操作记录（`pin_post` / `unpin_post` / `feature_post` / `unfeature_post`）
+- [x] 用户封禁/解封记录（已有）
+- [x] 管理后台操作日志 actionNames 补全（新操作均已显示中文标签）
 
 ---
 

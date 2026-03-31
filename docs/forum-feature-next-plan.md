@@ -64,8 +64,14 @@
 
 ---
 
-### 2.2 前端 i18n（国际化）
-**优先级**：🟡 高
+### 2.2 前端 i18n（国际化）✅ 已完成
+**实现**：
+- \`public/i18n/zh.json\` + \`en.json\` 两套翻译文件
+- \`public/js/i18n.js\` 核心：\`i18n.t(key)\` / \`i18n.switchLang(lang)\` / 自动应用 \`data-i18n\` 属性
+- 导航栏右上角 **EN/中文** 切换按钮，点击实时切换
+- 首页 Hero 标题、副标题、搜索框占位符接入 i18n
+- 语言偏好存 \`localStorage.setItem('lang')\`，刷新保持
+**分支**：feature-next（commit 76a6223）
 **目标**：关键页面支持中英文切换
 **方案**：
 - 建立 `/public/i18n/zh.json` 和 `en.json`

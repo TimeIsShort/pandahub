@@ -819,6 +819,13 @@ function goSettings() {
   loadTransferRecords();
 }
 
+function goCheckin() {
+  const user = getUser();
+  if (!user) return showLogin();
+  showView('settings');
+  switchCheckinTab('sign');
+}
+
 function goApply() {
   window.location.href = '/apply.html';
 }
@@ -1517,6 +1524,7 @@ function renderPostsLoading() {
 
 async function loadPosts() {
   renderPostsLoading();
+  const user = getUser();
   const params = new URLSearchParams({ page: currentPage, limit: 20, sort: currentSort });
   if (currentTagId) params.set('tag_id', currentTagId);
   if (currentTimeRange) params.set('time_range', currentTimeRange);
@@ -3648,6 +3656,10 @@ async function loadFollowStatus(targetId) {
 window.loadFollowStatus = loadFollowStatus;
 window.goCheckin = goCheckin;
 window.startChat = startChat;
+
+function startChat(userId) {
+  openMsgDetailFromUser(userId, '用户');
+}
 
 // ============ Followers / Following List Modal ============
 async function showFollowList(userId, type) {

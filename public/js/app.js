@@ -628,7 +628,8 @@ function updateNav() {
   const user = getUser();
   document.getElementById('nav-login').style.display = user ? 'none' : 'inline-block';
   document.getElementById('nav-register').style.display = user ? 'none' : 'inline-block';
-  document.getElementById('nav-user-menu').style.display = user ? 'block' : 'none';
+  var userMenu = document.getElementById('nav-user-menu');
+  if (userMenu) userMenu.style.display = user ? 'block' : 'none';
   document.getElementById('nav-ai').style.display = user ? 'inline-block' : 'none';
   document.getElementById('nav-notif').style.display = user ? 'inline-block' : 'none';
   document.getElementById('nav-toolbox').style.display = 'inline-block';
@@ -638,10 +639,9 @@ function updateNav() {
   if (user) {
     // Update avatar button
     var icon = document.getElementById('nav-avatar-icon');
-    var name = document.getElementById('nav-username');
+    var nameEl = document.getElementById('nav-username');
     if (icon) icon.textContent = ((user.nickname || user.username)[0] || '?').toUpperCase();
-    if (name) name.textContent = user.nickname || user.username;
-    // Show/hide admin in dropdown
+    if (nameEl) nameEl.textContent = user.nickname || user.username;
     var adminItem = document.getElementById('dd-admin');
     if (adminItem) adminItem.style.display = (user.role === 'admin') ? 'block' : 'none';
 

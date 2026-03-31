@@ -109,8 +109,15 @@
 
 ---
 
-### 3.2 用户关注/粉丝系统
-**目标**：用户之间可以互相关注
+### 3.2 用户关注/粉丝系统 ✅ 已完成
+**实现**：
+- `follows` 表（follower_id / following_id）已创建
+- 后端 API：`/follow/:id`（POST/DELETE）、`/follow/status/:id`、`/followers/:id`、`/following/:id`
+- 个人主页（Profile）：展示关注/粉丝数量、关注按钮、用户帖子列表
+- 关注弹窗：点击粉丝/关注数可查看用户列表
+- 首页筛选：「关注」sort 选项，仅显示关注的人的帖子
+- 未登录时点关注 → 弹出登录框
+**分支**：feature-next（commit f6317bc）
 **方案**：
 - 新增 `follows` 表（follower_id / following_id）
 - 个人主页展示「关注」和「粉丝」数量

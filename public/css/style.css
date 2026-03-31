@@ -1511,6 +1511,48 @@ main.container {
   flex-shrink: 0;
 }
 
+/* Step 1: Icon smooth transition with bouncy cubic-bezier */
+#view-home .post-stats-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: #94a3b8;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+/* Step 2: Hover card → scale & brighten icons */
+#view-home .post-card:hover .post-stats-row span {
+  color: #475569;
+  transform: scale(1.15);
+}
+
+/* Like icon: brighter red on hover */
+#view-home .post-card:hover .post-stats-row span:first-child {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* Step 3: Like icon bounce keyframe on hover */
+@keyframes icon-bounce {
+  0%, 100% { transform: scale(1.15) translateY(0); }
+  50% { transform: scale(1.15) translateY(-4px); }
+}
+
+#view-home .post-card:hover .post-stats-row span[title="赞"] {
+  animation: icon-bounce 0.4s ease-in-out;
+  color: #ef4444;
+}
+
+/* Avoid layout reflow: post-title and post-excerpt stay stable */
+#view-home .post-card .post-title,
+#view-home .post-card .post-excerpt {
+  transition: none;
+}
+
 #view-home .post-meta span {
   display: inline-flex;
   align-items: center;

@@ -1637,9 +1637,9 @@ async function loadPosts() {
             <span style="font-size:11px;color:#a8bfc9;">🕐 ${formatDate(post.created_at)}</span>
           </div>
           <div class="post-stats-row">
-            <span style="font-size:11px;color:#94a3b8;">👍 ${post.like_count || 0}</span>
-            <span style="font-size:11px;color:#94a3b8;">💬 ${post.comment_count || 0}</span>
-            <span style="font-size:11px;color:#94a3b8;">👁 ${post.views || 0}</span>
+            <span title="赞" style="font-size:11px;color:#94a3b8;">👍 ${post.like_count || 0}</span>
+            <span title="评论" style="font-size:11px;color:#94a3b8;">💬 ${post.comment_count || 0}</span>
+            <span title="浏览" style="font-size:11px;color:#94a3b8;">👁 ${post.views || 0}</span>
           </div>
         </div>
       </div>

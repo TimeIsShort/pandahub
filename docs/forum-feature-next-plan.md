@@ -1,91 +1,17 @@
-# PandaHub 功能规划 (feature-next)
+# pandahub feature-next 功能规划
 
-> 分支：feature-next | 基于 v1.5 master 分支
+> v1.5 功能开发分支 · 基于 master 的增量开发
 
 ---
 
 ## P1 功能
 
 ### 1.1 COS 图片存储 ✅ 已完成
-**目标**：用户发帖上传的图片存到腾讯云 COS，CDN 全球加速分发
-**方案**：
-1. 开通腾讯云 COS + CI 图片处理
-2. 新增 `/api/upload/image` 路由调用 COS SDK，返回 CDN URL
-3. 前端发帖图片上传改用 COS URL
-4. 存量 `/uploads/` 图片迁移到 COS
-5. COS bucket 绑定自定义域名，Cloudflare 回源 COS
-
----
-
-### 1.2 管理后台 - 安全管控 ✅ 已完成
-**文件**：`routes/admin.js`（新增 `/api/admin/security-logs` + `/api/admin/unlock-ip`）
-
----
-
-### 1.3 评论楼内回复嵌套展示 ✅ 已完成
-**优化内容**：
-- 竖线醒目：depth-1 紫色渐变 3px 竖线 + 左端点连接（::before）；depth-2 更细浅紫
-- 展开动画：max-height Q弹展开 + opacity 淡入（cubic-bezier 回弹曲线）
-- 内嵌回复输入框：点「回复」直接在楼层下方出现输入框，Enter 发送，取消消失
-- 深层评论分页：每次最多显示 10 条，「加载更多」按钮逐步展开
-
----
-
-## P2 功能
-
-### 2.1 每日签到提醒（Web Push）✅ 已完成
-**文件**：`services/reminderScheduler.js` / `routes/reminder.js` / `public/sw.js`
-**commit**：feature-next
-
----
-
-### 2.2 前端 i18n（国际化）✅ 已完成
-**文件**：`public/i18n/zh.json` / `en.json` / `public/js/i18n.js`
-**commit**：feature-next
-
----
-
-### 2.3 回复通知推送 ✅ 已完成
-**说明**：v1.4 已完整实现（通知表 + API + 导航栏通知按钮 + 轮询）
-
----
-
-## P3 功能
-
-### 3.1 Service Worker + 资源缓存优化 ✅ 已完成
-**文件**：`public/sw.js`（Cache-First / Network-First 分层策略）
-**commit**：feature-next
-
----
-
-### 3.2 用户关注/粉丝系统 ✅ 已完成
-**文件**：`routes/follow.js` / `models/database.js`（follows 表）/ `public/js/app.js`
-**commit**：feature-next
-
----
-
-### 3.3 精华帖标记 ✅ 已完成
-**实现**：首页工具栏排序下拉新增「⭐ 精选」选项，后端 `featured=1` 参数过滤，管理后台已有完整加精/取消功能
-**commit**：feature-next（225ca15）
-
----
-
-## P4 功能
-
-### 4.1 AI 对话历史分页 ✅ 已完成
-**实现**：
-- 后端 `/ai/history` 新增 `page` + `limit` 参数，返回 `total`/`pages`/`page`
-- 每页最多 20 条，默认 LIMIT 50，上限 50
-- 前端 AI 聊天框顶部新增「加载更多」按钮（追加历史消息到顶部）
-- 按钮显示剩余页数，点击后追加更早的消息
-**commit**：feature-next（6c67b12）
-
-### 1.1 COS 图片存储 ✅ 已完成
 **目标**：将本地存储改为腾讯云 COS，提升图片加载速度，支持 CDN 加速
 
 **实现**：
 - `lib/cos.js` - COS 上传工具封装（uploadToCOS / deleteFromCOS）
-- `routes/upload.js` - multer memoryStorage + COS 上V5 SDK 上传
+- `routes/upload.js` - multer memoryStorage + COS SDK v5 直传
 - `.env` - TENCENT_COS_SECRET_ID / SECRET_KEY / REGION / BUCKET 四要素
 - `cos-nodejs-sdk-v5` - 官方 Node.js SDK
 
@@ -96,11 +22,65 @@
 
 ---
 
-### 4.2 帖子多条件筛选增强 ⏳ 待开发
-**目标**：AI 对话历史支持翻页，不只是最新 20 条
+### 1.2 管理后台 - 安全管控 ✅ 已完成
+**文件**：`routes/admin.js`（新增 `/api/admin/security-logs` + `/api/admin/unlock-ip`）
 
-### 4.2 帖子多条件筛选增强 ⏳ 待开发
+---
+
+### 1.3 评论楼内回复嵌套展示 ✅ 已完成
+**文件**：`public/js/app.js`（展开动画 + 深层嵌套分页加载 + 内嵌回复输入框）
+
+---
+
+## P2 功能
+
+### 2.1 每日签到提醒（Web Push）✅ 已完成
+**文件**：`routes/reminder.js` + `public/sw.js` + `public/js/app.js`
+
+---
+
+### 2.2 前端 i18n（国际化）✅ 已完成
+**文件**：`public/i18n/zh.json` + `en.json` + `public/js/i18n.js` + `toggleLang()`
+
+---
+
+## P3 功能
+
+### 3.1 Service Worker + 资源缓存优化 ✅ 已完成
+**文件**：`public/sw.js`（Cache-First / Network-First 分层策略）
+
+---
+
+### 3.2 用户关注/粉丝系统 ✅ 已完成
+**文件**：`routes/follows.js` + `public/js/app.js`
+
+---
+
+### 3.3 精华帖标记 ✅ 已完成
+**文件**：`routes/posts.js` + `public/js/app.js`
+
+---
+
+## P4 功能
+
+### 4.1 AI 对话历史分页 ✅ 已完成
+**目标**：支持加载更多 AI 聊天历史记录
+
+**实现**：
+- 后端 `/ai/history` 新增 `page` / `limit` / `total` / `pages` 参数
+- 前端消息顶部显示「加载更多 N 条更早消息」按钮
+- 点击追加历史记录到顶部，分页加载
+
+---
+
+### 4.2 帖子多条件筛选增强 ✅ 已完成
 **目标**：支持按标签+时间+积分范围组合筛选，URL 参数化分享
+
+**实现**：
+- 工具栏新增积分范围下拉（0-100 / 100-500 / 500-2000 / 2000+）
+- 筛选条件写入 URL（`history.replaceState`）
+- 页面刷新自动从 URL 恢复所有筛选状态
+- 切换筛选器自动重置到第一页
 
 ---
 
@@ -108,14 +88,15 @@
 
 | 功能 | 分支 | 状态 |
 |------|------|------|
+| P1.1 COS 图片存储 | feature-next | ✅ |
 | P1.2 管理后台安全管控 | feature-next | ✅ |
 | P1.3 评论嵌套四大优化 | feature-next | ✅ |
 | P2.1 每日签到提醒 | feature-next | ✅ |
 | P2.2 前端 i18n | feature-next | ✅ |
-| P2.3 回复通知推送 | v1.4 | ✅ |
 | P3.1 SW 缓存优化 | feature-next | ✅ |
 | P3.2 关注/粉丝系统 | feature-next | ✅ |
 | P3.3 精华帖标记 | feature-next | ✅ |
-| P1.1 COS 图片存储 | ✅ 已完成 | feature-next |
 | P4.1 AI 对话分页 | feature-next | ✅ |
-| P4.2 多条件筛选 | ✅ 完成 | ⏳ |
+| P4.2 多条件筛选 | feature-next | ✅ |
+
+**v1.5 功能全部完成 ✅**

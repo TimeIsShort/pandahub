@@ -94,9 +94,14 @@
 
 ## P3 功能（体验优化）
 
-### 3.1 Service Worker + 资源缓存优化
-**目标**：Service Worker 缓存静态资源，减少加载时间
-**方案**：
+### 3.1 Service Worker + 资源缓存优化 ✅ 已完成
+**实现**：
+- public/sw.js 升级为完整缓存策略（原有 push 通知功能保留）
+- init() 时自动注册 Service Worker
+- Cache-First：JS/CSS/图片/字体 → 优先读缓存，后台更新
+- Network-First：API 调用 → 优先网络，失败回退缓存
+- 导航请求：Network-First + Shell 缓存兜底，保证离线可用
+- 缓存版本控制：CACHE_VERSION = v2，升级版本号自动清理旧缓存
 - 注册 SW 拦截 `/js/` `/css/` `/assets/` 请求
 - 缓存优先，CDN 辅助
 - 版本号更新时强制刷新缓存

@@ -116,6 +116,13 @@
               <option value="week">本周</option>
               <option value="month">本月</option>
             </select>
+            <select id="points-range-select" onchange="setPointsRange(this.value)" style="padding:7px 9px;border:1.5px solid #d5ddff;border-radius:10px;font-size:12px;color:#1e3a5f;background:#fff;cursor:pointer;">
+              <option value="">全部积分</option>
+              <option value="0-100">0-100</option>
+              <option value="100-500">100-500</option>
+              <option value="500-2000">500-2000</option>
+              <option value="2000-10000">2000+</option>
+            </select>
             <button id="btn-trending" onclick="toggleTrendingDropdown()" style="background:linear-gradient(135deg,#ff6b6b,#ff8e53);color:#fff;border:none;padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;flex-shrink:0;">
               🔥 热议
             </button>

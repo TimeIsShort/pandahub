@@ -1,6 +1,7 @@
 const API_BASE = '/api';
 let currentUser = null;
 let currentTagId = null;
+let currentPointsRange = null;
 let currentPostId = null;
 let currentPage = 1;
 let selectedImages = [];
@@ -1055,6 +1056,29 @@ function goAdmin() {
   }
 }
 
+function parseUrlFilters() {
+  var params = new URLSearchParams(window.location.search);
+  if (params.get("sort")) {
+    currentSort = params.get("sort");
+    var sel = document.getElementById("sort-select");
+    if (sel) sel.value = currentSort;
+  }
+  if (params.get("time_range")) {
+    currentTimeRange = params.get("time_range");
+    var tsel = document.getElementById("time-select");
+    if (tsel) tsel.value = currentTimeRange;
+  }
+  if (params.get("points_min") && params.get("points_max")) {
+    currentPointsRange = params.get("points_min") + "-" + params.get("points_max");
+    var psel = document.getElementById("points-range-select");
+    if (psel) psel.value = currentPointsRange;
+  }
+  if (params.get("search")) {
+    var inp = document.getElementById("search-input");
+    if (inp) inp.value = params.get("search");
+  }
+}
+
 function showView(name) {
   document.querySelectorAll('[id^="view-"]').forEach(el => el.style.display = 'none');
   const target = document.getElementById(`view-${name}`);
@@ -1072,6 +1096,7 @@ function showView(name) {
   if (fab) fab.style.display = isHome ? '' : 'none';
 
   if (isHome) {
+    parseUrlFilters();
     initPetalRain();
   }
 }
@@ -1700,6 +1725,12 @@ function searchPosts() {
   loadPosts();
 }
 
+function setPointsRange(range) {
+    currentPointsRange = range || null;
+    currentPage = 1;
+    searchPosts();
+}
+
 function setSearchSort(sort) {
   if (sort === 'following' && !getUser()) {
     showLogin();
@@ -1722,6 +1753,7 @@ function setSearchTime(range) {
     var btn = document.getElementById(id);
     if (btn) btn.classList.toggle('active', id === 'time-' + (range || 'all'));
   });
+  currentPage = 1;
   searchPosts();
 }
 
@@ -1766,6 +1798,11 @@ async function loadPosts() {
   if (search) params.set('search', search);
 
   try {
+  if (currentPointsRange) {
+    var prParts = currentPointsRange.split("-");
+    if (prParts.length === 2) { params.set("points_min", prParts[0]); params.set("points_max", prParts[1]); }
+  }
+  history.replaceState(null, "", window.location.pathname + "?" + params.toString());
     const res = await api(`/posts?${params}`);
     const container = document.getElementById('post-list');
 

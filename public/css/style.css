@@ -1533,6 +1533,11 @@ main.container {
 /* Like icon: brighter red on hover */
 #view-home .post-card:hover .post-stats-row span:first-child {
   color: #ef4444;
+
+/* Favorite star: gold on hover */
+#view-home .post-card:hover .post-stats-row span[onclick*="toggleFavorite"] {
+  color: #f59e0b;
+}
   font-weight: 700;
 }
 

@@ -1833,6 +1833,7 @@ async function loadPosts() {
             <span title="赞" style="font-size:11px;color:#94a3b8;">👍 ${post.like_count || 0}</span>
             <span title="评论" style="font-size:11px;color:#94a3b8;">💬 ${post.comment_count || 0}</span>
             <span title="浏览" style="font-size:11px;color:#94a3b8;">👁 ${post.views || 0}</span>
+            <span onclick="event.stopPropagation();toggleFavorite(${post.id})" id="fav-btn-${post.id}" title="收藏" style="font-size:11px;color:#94a3b8;cursor:pointer;">☆ 收藏</span>
           </div>
         </div>
       </div>
@@ -4266,6 +4267,7 @@ window.loadFollowList = loadFollowList;
 async function toggleFavorite(postId) {
   if (!getUser()) { showToast('请先登录', 'error'); return; }
   var btn = document.getElementById('btn-favorite');
+  var listBtn = document.getElementById('fav-btn-' + postId);
   var isFav = btn && btn.dataset.favorited === '1';
 
   try {
@@ -4274,11 +4276,13 @@ async function toggleFavorite(postId) {
       if (res.error) { showToast(res.error, 'error'); return; }
       showToast('已取消收藏', 'success');
       if (btn) { btn.textContent = '☆ 收藏'; btn.dataset.favorited = '0'; }
+      if (listBtn) { listBtn.textContent = '☆ 收藏'; listBtn.style.color = '#94a3b8'; }
     } else {
       var res2 = await api('/favorites', { method: 'POST', body: JSON.stringify({ post_id: postId }) });
       if (res2.error) { showToast(res2.error, 'error'); return; }
       showToast('收藏成功！', 'success');
       if (btn) { btn.textContent = '★ 已收藏'; btn.dataset.favorited = '1'; }
+      if (listBtn) { listBtn.textContent = '★ 已收藏'; listBtn.style.color = '#f59e0b'; }
     }
   } catch (e) {
     showToast('操作失败', 'error');

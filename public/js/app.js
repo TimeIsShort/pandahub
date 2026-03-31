@@ -1590,7 +1590,9 @@ async function loadPosts() {
       return;
     }
 
-    container.innerHTML = res.posts.map(post => `
+    container.innerHTML = res.posts.map(post => {
+        const e = (name) => name ? name[0].toUpperCase() + name.slice(1) : "A";
+        return `
       <div class="post-card" data-post-id="${post.id}" onclick="viewPost(${post.id})">
         <div class="post-title">${escapeHtml(post.title)}</div>
         <div class="post-meta">
@@ -1609,7 +1611,8 @@ async function loadPosts() {
         </div>
         <div class="post-excerpt">${escapeHtml(stripMarkdown(post.content).substring(0, 120))}${stripMarkdown(post.content).length > 120 ? '…' : ''}</div>
       </div>
-    `).join('');
+        `;
+    }).join('');
 
     renderPagination(res.pages, res.page);
   } catch (e) {

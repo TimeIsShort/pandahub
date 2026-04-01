@@ -110,7 +110,7 @@ router.delete('/unsubscribe', authMiddleware, (req, res) => {
 // GET: check if subscribed
 router.get('/subscribed', authMiddleware, (req, res) => {
   try {
-    const sub = db.prepare('SELECT id FROM push_subscriptions WHERE user_id = ?').get(req.user.id);
+    const sub = db.prepare('SELECT user_id FROM push_subscriptions WHERE user_id = ?').get(req.user.id);
     res.json({ subscribed: !!sub });
   } catch (err) {
     res.status(500).json({ error: '查询失败' });

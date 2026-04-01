@@ -2117,16 +2117,13 @@ async function viewPost(id) {
       return;
     }
 
-    // Fetch user's vote status
-    let userVote = null;
-    if (user) {
-      try {
-        const voteRes = await api(`/posts/${postId}/votes`);
-        userVote = voteRes.userVote;
-      } catch (e) {
-        // Ignore vote fetch error
-      }
-    }
+    // Fetch user's reaction status
+    let userReaction = null;
+    let reactionMap = {};
+    try {
+      const reactionRes = await api(`/reactions/posts/${postId}/reactions`);
+      reactionMap = reactionRes.reactions || {};
+    } catch (e) {}
 
     // Load favorite status
     if (user) {
@@ -2144,13 +2141,12 @@ async function viewPost(id) {
           <span>🕐 ${formatDate(res.post.created_at)}</span>
           <span>👁 ${res.post.views}</span>
         </div>
-        <div class="post-vote-bar">
-          <button id="vote-like-btn" class="vote-btn ${userVote === 'like' ? 'active' : ''}" onclick="event.stopPropagation();votePost(${res.post.id}, 'like')">
-            👍 <span id="vote-like-count">${res.post.like_count || 0}</span>
-          </button>
-          <button id="vote-dislike-btn" class="vote-btn ${userVote === 'dislike' ? 'active' : ''}" onclick="event.stopPropagation();votePost(${res.post.id}, 'dislike')">
-            👎 <span id="vote-dislike-count">${res.post.dislike_count || 0}</span>
-          </button>
+        <div class="post-vote-bar" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          ${['👍','❤️','😂','😮','😢','😡'].map(function(e) {
+            var cnt = reactionMap[e] || 0;
+            var isActive = userReaction === e;
+            return '<button class="vote-btn ' + (isActive ? 'active' : '') + '" onclick="event.stopPropagation();togglePostReaction(' + res.post.id + ', \'' + e + '\')" style="font-size:15px;padding:4px 10px;background:' + (isActive ? '#667eea22' : 'transparent') + ';border:1.5px solid ' + (isActive ? '#667eea' : '#d5ddff') + ';border-radius:20px;cursor:pointer;transition:all .15s;">' + e + (cnt > 0 ? ' <span style="font-size:12px;color:#627582;">' + cnt + '</span>' : '') + '</button>';
+          }).join('')}
         </div>
         <div class="post-detail-content">${renderContent(res.post.content)}</div>
         ${user ? `
@@ -2754,6 +2750,53 @@ async function votePost(id, voteType) {
   } catch (e) {
     showToast('投票失败', 'error');
   }
+}
+
+async function togglePostReaction(postId, emoji) {
+  const user = getUser();
+  if (!user) {
+    showToast('请先登录', 'info');
+    showLogin();
+    return;
+  }
+  try {
+    const res = await api(`/reactions/posts/${postId}/react`, {
+      method: 'POST',
+      body: JSON.stringify({ emoji: emoji })
+    });
+    if (res.error) { showToast(res.error, 'error'); return; }
+    // Re-render reaction buttons
+    renderPostReactionBar(postId, res.reactions, res.userReaction);
+  } catch (e) {
+    showToast('操作失败', 'error');
+  }
+}
+
+function renderPostReactionBar(postId, reactions, userReaction) {
+  // Update all reaction buttons for this post (in post detail and in post list cards)
+  var buttons = document.querySelectorAll('[data-post-reaction-btn]');
+  var allBtns = document.querySelectorAll('.post-vote-bar button');
+  var emojis = ['👍','❤️','😂','😮','😢','😡'];
+  emojis.forEach(function(e) {
+    var cnt = reactions[e] || 0;
+    // Find buttons that match this emoji
+    allBtns.forEach(function(btn) {
+      if (btn.textContent.trim().startsWith(e)) {
+        var isActive = userReaction === e;
+        btn.style.background = isActive ? '#667eea22' : 'transparent';
+        btn.style.borderColor = isActive ? '#667eea' : '#d5ddff';
+        // Update count display
+        var span = btn.querySelector('span');
+        if (cnt > 0) {
+          if (span) span.textContent = ' ' + cnt;
+          else btn.innerHTML = e + ' <span style="font-size:12px;color:#627582;"> ' + cnt + '</span>';
+        } else {
+          if (span) span.remove();
+          else btn.textContent = e;
+        }
+      }
+    });
+  });
 }
 
 // Update vote counts in the post list cards (without reloading)

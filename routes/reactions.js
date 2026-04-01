@@ -95,3 +95,57 @@ router.post('/comments/:commentId/react', authMiddleware, (req, res) => {
 
 module.exports = router;
 module.exports.REACTION_EMOJIS = REACTION_EMOJIS;
+
+// ============ Post Reactions ============
+router.post('/posts/:postId/react', authMiddleware, (req, res) => {
+  try {
+    const { emoji } = req.body;
+    const postId = Number(req.params.postId);
+    const userId = req.user.id;
+
+    if (!REACTION_EMOJIS.includes(emoji)) {
+      return res.status(400).json({ error: '无效的表情' });
+    }
+
+    const post = db.prepare('SELECT id FROM posts WHERE id = ?').get(postId);
+    if (!post) return res.status(404).json({ error: '帖子不存在' });
+
+    const existing = db.prepare(
+      'SELECT id FROM post_reactions WHERE post_id = ? AND user_id = ?'
+    ).get(postId, userId);
+
+    if (existing) {
+      db.prepare('DELETE FROM post_reactions WHERE id = ?').run(existing.id);
+    }
+    db.prepare('INSERT INTO post_reactions (post_id, user_id, emoji) VALUES (?, ?, ?)').run(postId, userId, emoji);
+
+    const counts = db.prepare(`
+      SELECT emoji, COUNT(*) as count FROM post_reactions WHERE post_id = ? GROUP BY emoji
+    `).all(postId);
+    const reactionMap = {};
+    counts.forEach(c => { reactionMap[c.emoji] = c.count; });
+    const userReaction = db.prepare(
+      'SELECT emoji FROM post_reactions WHERE post_id = ? AND user_id = ?'
+    ).get(postId, userId);
+
+    res.json({ success: true, reactions: reactionMap, userReaction: userReaction ? userReaction.emoji : null });
+  } catch (err) {
+    console.error('[PostReactions]', err);
+    res.status(500).json({ error: '操作失败' });
+  }
+});
+
+// Get post reactions
+router.get('/posts/:postId/reactions', (req, res) => {
+  try {
+    const postId = Number(req.params.postId);
+    const counts = db.prepare(`
+      SELECT emoji, COUNT(*) as count FROM post_reactions WHERE post_id = ? GROUP BY emoji
+    `).all(postId);
+    const reactionMap = {};
+    counts.forEach(c => { reactionMap[c.emoji] = c.count; });
+    res.json({ reactions: reactionMap });
+  } catch (err) {
+    res.status(500).json({ error: '获取表情失败' });
+  }
+});

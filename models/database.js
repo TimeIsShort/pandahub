@@ -665,3 +665,17 @@ try {
     )
   `);
 } catch(e) { /* table may already exist */ }
+
+// ============ Post Reactions (replaces old like/dislike) ============
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS post_reactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      post_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      emoji TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(post_id, user_id)
+    )
+  `);
+} catch(e) { /* table may already exist */ }

@@ -52,6 +52,7 @@
               <div class="dropdown-item" onclick="goProfile();closeUserMenu();">👤 个人主页</div>
               <div class="dropdown-item" onclick="goSettings();closeUserMenu();">⚙️ 设置</div>
               <div class="dropdown-item" onclick="goActionLogs();closeUserMenu();">📊 操作记录</div>
+              <div class="dropdown-item" onclick="showRSSPage();closeUserMenu();">📡 RSS订阅</div>
               <div class="dropdown-item" id="dd-admin" style="display:none;" onclick="goAdmin();closeUserMenu();">🛠 管理后台</div>
               <div style="border-top:1px solid #f0f4f8;margin:4px 0;"></div>
               <div class="dropdown-item dropdown-item-logout" onclick="logout();closeUserMenu();">🚪 退出登录</div>
@@ -360,6 +361,15 @@
           <h2>📊 操作记录</h2>
           <div id="action-logs-list" style="margin-top:12px;"></div>
           <div id="action-logs-pagination" style="margin-top:14px;display:flex;gap:8px;align-items:center;justify-content:center;"></div>
+        </div>
+      </div>
+
+      <!-- RSS Subscription View -->
+      <div id="view-rss" style="display:none;">
+        <button class="btn-back" onclick="goHome()">← 返回</button>
+        <div class="form-card">
+          <h2>📡 RSS 订阅</h2>
+          <div id="rss-content" style="margin-top:14px;"></div>
         </div>
       </div>
     </main>

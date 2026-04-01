@@ -1105,6 +1105,66 @@ function goActionLogs() {
   loadActionLogs(1);
 }
 
+function showRSSPage() {
+  showView('rss');
+  loadRSSContent();
+}
+
+async function loadRSSContent() {
+  var el = document.getElementById('rss-content');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;">加载中...</div>';
+  try {
+    var feedRes = await fetch('/feed.xml');
+    var xmlText = await feedRes.text();
+    var parser = new DOMParser();
+    var xml = parser.parseFromString(xmlText, 'text/xml');
+    var items = xml.querySelectorAll('item');
+    var siteUrl = xml.querySelector('link') ? xml.querySelector('link').textContent : 'https://pandahub.cloud';
+
+    if (!items.length) {
+      el.innerHTML = '<div style="color:#94a3b8;text-align:center;">暂无内容</div>';
+      return;
+    }
+
+    var html = '<div style="margin-bottom:16px;padding:14px;background:linear-gradient(135deg,#667eea22,#764ba222);border-radius:14px;border:1px solid #d5ddff;">' +
+      '<div style="font-size:15px;font-weight:700;color:#1e3a5f;margin-bottom:6px;">📡 熊猫社区 RSS 订阅源</div>' +
+      '<div style="font-size:13px;color:#627582;margin-bottom:8px;">复制以下链接，添加到你的 RSS 阅读器</div>' +
+      '<div style="display:flex;gap:8px;align-items:center;background:#fff;padding:8px 12px;border-radius:8px;border:1px solid #e5e7eb;">' +
+      '<code id="rss-feed-url" style="flex:1;font-size:12px;color:#667eea;word-break:break-all;">' + siteUrl + '/feed.xml</code>' +
+      '<button onclick="copyRSSUrl()" style="padding:4px 12px;background:#667eea;border:none;border-radius:6px;color:#fff;font-size:12px;cursor:pointer;white-space:nowrap;">复制</button></div>' +
+      '<div style="font-size:12px;color:#94a3b8;margin-top:8px;">支持的阅读器：Reeder、Feedly、Inoreader、NetNewsWire 等</div>' +
+      '</div>' +
+      '<h3 style="font-size:14px;color:#374151;margin-bottom:10px;">📰 最新帖子</h3>';
+
+    items.forEach(function(item) {
+      var title = item.querySelector('title') ? item.querySelector('title').textContent : '无标题';
+      var link = item.querySelector('link') ? item.querySelector('link').textContent : '#';
+      var desc = item.querySelector('description') ? item.querySelector('description').textContent : '';
+      var pubDate = item.querySelector('pubDate') ? new Date(item.querySelector('pubDate').textContent).toLocaleDateString('zh-CN') : '';
+      html += '<div style="margin-bottom:12px;padding:12px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;" onclick="window.open(\' + link + \', \'_blank\')">' +
+        '<div style="font-size:13px;font-weight:600;color:#1e3a5f;margin-bottom:4px;">' + escapeHtml(title) + '</div>' +
+        (pubDate ? '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">📅 ' + pubDate + '</div>' : '') +
+        (desc ? '<div style="font-size:12px;color:#627582;line-height:1.5;">' + escapeHtml(desc.substring(0, 100)) + '...</div>' : '') +
+        '</div>';
+    });
+
+    html += '<div style="text-align:center;margin-top:16px;"><a href="/feed.xml" target="_blank" style="font-size:13px;color:#667eea;text-decoration:none;">🔗 在新窗口查看 XML 源</a></div>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div style="color:#94a3b8;text-align:center;">加载失败，请刷新重试</div>';
+  }
+}
+
+function copyRSSUrl() {
+  var url = document.getElementById('rss-feed-url') ? document.getElementById('rss-feed-url').textContent : window.location.origin + '/feed.xml';
+  navigator.clipboard.writeText(url).then(function() {
+    showToast('订阅地址已复制！', 'success');
+  }).catch(function() {
+    prompt('复制订阅地址：', url);
+  });
+}
+
 let actionLogsPage = 1;
 let actionLogsCache = [];
 

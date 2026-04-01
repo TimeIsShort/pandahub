@@ -3377,7 +3377,11 @@ async function loadReminderSettings() {
       return '<label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:' + (checked ? '#667eea' : '#94a3b8') + ';white-space:nowrap;"><input type="checkbox" value="' + d + '" ' + (checked ? 'checked' : '') + ' onchange="updateReminderDays(this)" style="accent-color:#667eea;">' + dayLabels[d] + '</label>';
     }).join('&nbsp;');
 
-    var reminderSection = '<div style="margin-top:16px;padding-top:14px;border-top:1.5px dashed #d5ddff;">' +
+    // Remove existing before re-adding to prevent duplicates
+    var existing = document.getElementById('checkin-reminder-section');
+    if (existing) existing.remove();
+
+    var reminderSection = '<div id="checkin-reminder-section" style="margin-top:16px;padding-top:14px;border-top:1.5px dashed #d5ddff;">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">' +
       '<div style="font-size:13px;font-weight:700;color:#1e3a5f;">🔔 每日签到提醒</div>' +
       '<div style="display:flex;align-items:center;gap:8px;">' +

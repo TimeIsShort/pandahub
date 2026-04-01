@@ -1480,6 +1480,7 @@ function initModalInteractions() {
 let captchaCallback = null;
 let captchaSolved = false;
 let captchaTargetX = 0;
+let captchaToken = '';
 let isCaptchaDragging = false;
 let captchaStartX = 0;
 let currentCaptchaX = 0;
@@ -1488,10 +1489,18 @@ const CAPTCHA_THRESHOLD = 12;
 const captchaIcons = ['→', '↑', '←', '↓', '➤', '▲', '◀', '▼'];
 const CAPTCHA_HINT_TEXT = '请拖动滑块完成验证';
 
-function openCaptcha(callback) {
+async function openCaptcha(callback) {
   captchaCallback = callback;
   captchaSolved = false;
   window._captchaPassed = false;
+  try {
+    const res = await api('/captcha/challenge');
+    captchaToken = res.token;
+    captchaTargetX = res.targetX;
+  } catch (e) {
+    showToast('验证服务异常，请重试', 'error');
+    return;
+  }
   document.getElementById('captcha-modal').style.display = 'flex';
   initCaptchaModal();
 }
@@ -1554,7 +1563,7 @@ function doCaptchaDrag(e) {
   e.preventDefault();
 }
 
-function endCaptchaDrag() {
+async function endCaptchaDrag() {
   if (!isCaptchaDragging || captchaSolved) return;
   isCaptchaDragging = false;
   const thumb = document.getElementById('captchaSliderThumb');
@@ -1563,6 +1572,31 @@ function endCaptchaDrag() {
   const msg = document.getElementById('captchaMsg');
   thumb.style.cursor = 'grab';
 
+  // Server-side verification first
+  if (captchaToken) {
+    try {
+      const res = await api('/captcha/verify', {
+        method: 'POST',
+        body: JSON.stringify({ token: captchaToken, slideX: finalX })
+      });
+      if (res && res.ok) {
+        captchaSolved = true;
+        captchaToken = '';
+        thumb.classList.add('success');
+        track.classList.add('success');
+        thumb.querySelector('span').textContent = '✓';
+        const btn = document.getElementById('captchaConfirmBtn');
+        btn.disabled = false;
+        msg.className = 'captcha-msg success';
+        msg.textContent = '验证成功，点击继续';
+        return;
+      }
+    } catch (_) {}
+    // Token consumed (fail or error), clear it for retry
+    captchaToken = '';
+  }
+
+  // Fallback: client-side tolerance check
   if (Math.abs(finalX - captchaTargetX) <= CAPTCHA_THRESHOLD) {
     captchaSolved = true;
     thumb.classList.add('success');

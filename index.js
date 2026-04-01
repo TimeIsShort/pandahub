@@ -58,6 +58,7 @@ const favoritesRoutes = require('./routes/favorites');
 const reportRoutes = require('./routes/reports');
 const pointRoutes = require('./routes/points');
 const rssRoutes = require('./routes/rss');
+const captchaRoutes = require('./routes/captcha');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -136,6 +137,7 @@ app.use('/api', followRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/points', pointRoutes);
+app.use('/api/captcha', captchaRoutes);
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));

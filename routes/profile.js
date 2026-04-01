@@ -152,4 +152,29 @@ router.post('/avatar', authMiddleware, avatarUpload.single('avatar'), (req, res)
   }
 });
 
+
+
+// User action logs - GET /api/profile/action-logs
+router.get('/action-logs', authMiddleware, (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    const total = db.prepare(
+      'SELECT COUNT(*) as count FROM user_actions_log WHERE user_id = ?'
+    ).get(req.user.id).count;
+
+    const logs = db.prepare(
+      'SELECT action, target_type, target_id, details, ip_address, created_at ' +
+      'FROM user_actions_log WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    ).all(req.user.id, limit, offset);
+
+    res.json({ logs, page, limit, total, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '获取记录失败' });
+  }
+});
+
 module.exports = router;

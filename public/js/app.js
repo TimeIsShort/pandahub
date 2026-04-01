@@ -1080,6 +1080,86 @@ function goSettings() {
   loadTransferRecords();
 }
 
+function goActionLogs() {
+  const user = getUser();
+  if (!user) return showLogin();
+  showView('action-logs');
+  loadActionLogs(1);
+}
+
+let actionLogsPage = 1;
+let actionLogsCache = [];
+
+function loadActionLogs(page) {
+  actionLogsPage = page || 1;
+  api('/api/profile/action-logs?page=' + actionLogsPage + '&limit=20')
+    .then(data => {
+      if (data.error) { showToast(data.error, 'error'); return; }
+      actionLogsCache = data.logs || [];
+      renderActionLogs(data);
+    })
+    .catch(() => showToast('加载操作记录失败', 'error'));
+}
+
+function renderActionLogs(data) {
+  const el = document.getElementById('action-logs-list');
+  if (!actionLogsCache.length) {
+    el.innerHTML = '<div style="padding:30px;text-align:center;color:#888;font-size:14px;">暂无操作记录</div>';
+    document.getElementById('action-logs-pagination').innerHTML = '';
+    return;
+  }
+  const actionNames = {
+    'view_post': '👁️ 浏览帖子',
+    'create_post': '📝 发布帖子',
+    'delete_post': '🗑️ 删除帖子',
+    'admin_delete_post': '🗑️ 管理员删除帖子',
+    'create_comment': '💬 发布评论',
+    'delete_comment': '🗑️ 删除评论',
+    'admin_delete_comment': '🗑️ 管理员删除评论',
+    'user_register': '🎉 注册账号',
+    'user_login': '🔐 登录',
+    'transfer_points': '💸 积分转账',
+    'checkin': '✅ 每日签到',
+    'receive_points': '🎁 获得积分',
+  };
+  const actionColors = {
+    'create_post': '#10b981',
+    'delete_post': '#ef4444',
+    'admin_delete_post': '#ef4444',
+    'create_comment': '#10b981',
+    'delete_comment': '#ef4444',
+    'admin_delete_comment': '#ef4444',
+    'transfer_points': '#f59e0b',
+    'checkin': '#10b981',
+    'receive_points': '#10b981',
+  };
+  let html = '<div style="display:flex;flex-direction:column;gap:10px;">';
+  for (const log of actionLogsCache) {
+    const actionName = actionNames[log.action] || log.action;
+    const color = actionColors[log.action] || '#667eea';
+    const time = new Date(log.created_at).toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f8fafc;border-radius:10px;border-left:3px solid ' + color + ';">';
+    html += '<div>';
+    html += '<span style="font-weight:600;font-size:13px;color:#334155;">' + actionName + '</span>';
+    if (log.details) html += '<div style="font-size:12px;color:#64748b;margin-top:2px;">' + escapeHtml(log.details) + '</div>';
+    html += '</div>';
+    html += '<div style="font-size:11px;color:#94a3b8;white-space:nowrap;margin-left:12px;">' + time + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+
+  // Pagination
+  const totalPages = data.pages || 1;
+  const pg = document.getElementById('action-logs-pagination');
+  if (totalPages <= 1) { pg.innerHTML = ''; return; }
+  let pgHtml = '';
+  if (actionLogsPage > 1) pgHtml += '<button class="btn-secondary" onclick="loadActionLogs(' + (actionLogsPage - 1) + ')">上一页</button>';
+  pgHtml += '<span style="padding:0 12px;font-size:13px;color:#64748b;">第 ' + actionLogsPage + ' / ' + totalPages + ' 页</span>';
+  if (actionLogsPage < totalPages) pgHtml += '<button class="btn-secondary" onclick="loadActionLogs(' + (actionLogsPage + 1) + ')">下一页</button>';
+  pg.innerHTML = pgHtml;
+}
+
 function goCheckin() {
   const user = getUser();
   if (!user) return showLogin();

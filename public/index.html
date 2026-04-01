@@ -51,6 +51,7 @@
             <div id="user-dropdown" class="user-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:6px;min-width:160px;box-shadow:0 8px 24px rgba(17,33,47,0.14);z-index:9999;">
               <div class="dropdown-item" onclick="goProfile();closeUserMenu();">👤 个人主页</div>
               <div class="dropdown-item" onclick="goSettings();closeUserMenu();">⚙️ 设置</div>
+              <div class="dropdown-item" onclick="goActionLogs();closeUserMenu();">📊 操作记录</div>
               <div class="dropdown-item" id="dd-admin" style="display:none;" onclick="goAdmin();closeUserMenu();">🛠 管理后台</div>
               <div style="border-top:1px solid #f0f4f8;margin:4px 0;"></div>
               <div class="dropdown-item dropdown-item-logout" onclick="logout();closeUserMenu();">🚪 退出登录</div>
@@ -339,6 +340,16 @@
           <button class="btn-primary" onclick="submitTransfer()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#f97316);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">确认转账</button>
 
           <div id="transfer-records" style="margin-top:16px;"></div>
+        </div>
+      </div>
+
+      <!-- Action Logs View -->
+      <div id="view-action-logs" style="display:none;">
+        <button class="btn-back" onclick="goHome()">← 返回</button>
+        <div class="form-card">
+          <h2>📊 操作记录</h2>
+          <div id="action-logs-list" style="margin-top:12px;"></div>
+          <div id="action-logs-pagination" style="margin-top:14px;display:flex;gap:8px;align-items:center;justify-content:center;"></div>
         </div>
       </div>
     </main>
@@ -689,7 +700,7 @@
   </nav>
 
   <script src="/js/i18n.js"></script>
-  <script src="/js/app.js?v=20260401m"></script>
+  <script src="/js/app.js?v=20260401n"></script>
   <!-- Service Worker for Push Notifications -->
   <script>
     if ('serviceWorker' in navigator) {

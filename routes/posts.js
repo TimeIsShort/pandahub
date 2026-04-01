@@ -157,8 +157,8 @@ router.get('/:id', optionalAuth, (req, res) => {
       });
     }
 
-    // Get comments
-    const comments = db.prepare(`
+    // Get comments with nested structure (parent first, then children)
+    const flatComments = db.prepare(`
       SELECT c.*, u.username, u.nickname, u.avatar,
              ru.nickname as reply_to_nickname, ru.username as reply_to_username,
              (SELECT COUNT(*) FROM comment_votes cv WHERE cv.comment_id = c.id) as like_count
@@ -169,7 +169,19 @@ router.get('/:id', optionalAuth, (req, res) => {
       ORDER BY c.created_at ASC
     `).all(req.params.id);
 
-    res.json({ post, comments });
+    // Build nested tree (max 3 levels)
+    const commentMap = {};
+    const roots = [];
+    flatComments.forEach(c => { commentMap[c.id] = { ...c, children: [] }; });
+    flatComments.forEach(c => {
+      if (c.parent_id && commentMap[c.parent_id]) {
+        commentMap[c.parent_id].children.push(commentMap[c.id]);
+      } else {
+        roots.push(commentMap[c.id]);
+      }
+    });
+
+    res.json({ post, comments: roots });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '获取帖子失败' });

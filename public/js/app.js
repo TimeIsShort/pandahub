@@ -1182,6 +1182,7 @@ function goCheckin() {
   if (!user) return showLogin();
   showView('settings');
   switchCheckinTab('sign');
+  loadCheckinStatus();
 }
 
 function goApply() {
@@ -3532,6 +3533,7 @@ function switchCheckinTab(tab) {
     var hp = document.getElementById('checkin-history-panel');
     if (sp) sp.style.display = '';
     if (hp) hp.style.display = 'none';
+    loadCheckinStatus();
   } else {
     if (signBtn) { signBtn.classList.remove('active'); signBtn.style.color = '#94a3b8'; }
     if (histBtn) { histBtn.classList.add('active'); histBtn.style.color = '#667eea'; }

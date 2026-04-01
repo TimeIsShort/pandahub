@@ -1581,6 +1581,7 @@ async function endCaptchaDrag() {
       });
       if (res && res.ok) {
         captchaSolved = true;
+        window._captchaToken = captchaToken; // Save before clearing
         captchaToken = '';
         thumb.classList.add('success');
         track.classList.add('success');
@@ -1729,14 +1730,45 @@ async function sendRegCode() {
   const password = document.getElementById('register-password') ? document.getElementById('register-password').value : '';
   const hp = document.getElementById('reg-website') ? document.getElementById('reg-website').value : '';
   const ts = document.getElementById('reg-form-ts') ? document.getElementById('reg-form-ts').value : '';
-  try {
+
+  // Helper: actually send the code request
+  async function doSendCode(captchaToken) {
     const res = await fetch('/auth/send-register-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, username, password, __hp: hp, __ts: ts })
+      body: JSON.stringify({ email, username, password, __hp: hp, __ts: ts, captchaToken: captchaToken || undefined })
     });
-    const data = await res.json();
-    if (!res.ok) { showToast(data.error || '发送失败', 'error'); btn.disabled = false; btn.textContent = '重新发送'; return; }
+    return res.json();
+  }
+
+  try {
+    const data = await doSendCode();
+
+    // Server says CAPTCHA required — open it and retry with token
+    if (data.captchaRequired) {
+      btn.disabled = false;
+      btn.textContent = '重新发送';
+      openCaptcha(async () => {
+        btn.disabled = true;
+        btn.textContent = '发送中...';
+        const retryData = await doSendCode(window._captchaToken);
+        window._captchaToken = '';
+        window._captchaPassed = false;
+        if (!retryData.success) {
+          showToast(retryData.error || '发送失败', 'error');
+          btn.disabled = false;
+          btn.textContent = '重新发送';
+          return;
+        }
+        showToast('验证码已发送到邮箱', 'success');
+        regVerifyEmail = email;
+        updateRegStep(2);
+        startRegCountdown();
+      });
+      return;
+    }
+
+    if (!data.success) { showToast(data.error || '发送失败', 'error'); btn.disabled = false; btn.textContent = '重新发送'; return; }
     showToast('验证码已发送到邮箱', 'success');
     regVerifyEmail = email;
     updateRegStep(2);

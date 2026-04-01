@@ -49,7 +49,10 @@ function checkRegistrationRate(ip) {
   if (recentRegs.c >= 5) {
     return { blocked: true, reason: '该IP注册过于频繁，请1小时后再试' };
   }
-  return { blocked: false };
+  if (recentRegs.c >= 3) {
+    return { captchaRequired: true };
+  }
+  return { blocked: false, captchaRequired: false };
 }
 
 function recordRegistrationAttempt(ip) {
@@ -62,10 +65,28 @@ function recordRegistrationAttempt(ip) {
   }
 }
 
+function verifyCaptchaToken(token, slideX) {
+  if (!token) return { valid: false, error: '缺少验证码' };
+  const { getChallenge, deleteChallenge } = require('../utils/captchaStore');
+  const challenge = getChallenge(token);
+  if (!challenge) return { valid: false, error: '验证已过期，请重试' };
+  if (challenge.expiresAt < Date.now()) {
+    deleteChallenge(token);
+    return { valid: false, error: '验证已过期，请重试' };
+  }
+  const diff = Math.abs(challenge.targetX - Number(slideX));
+  if (diff > 6) {
+    deleteChallenge(token);
+    return { valid: false, error: '验证失败，请重试' };
+  }
+  deleteChallenge(token);
+  return { valid: true };
+}
+
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { username, password, nickname, email, __hp, __ts } = req.body;
+    const { username, password, nickname, email, __hp, __ts, captchaToken } = req.body;
     const ip = getClientIp(req);
 
     // Honeypot check — bots fill hidden fields
@@ -82,6 +103,15 @@ router.post('/register', async (req, res) => {
     const regCheck = checkRegistrationRate(ip);
     if (regCheck.blocked) {
       return res.status(429).json({ error: regCheck.reason });
+    }
+    if (regCheck.captchaRequired) {
+      if (!captchaToken) {
+        return res.status(400).json({ error: 'captcha_required', captchaRequired: true });
+      }
+      const captchaResult = verifyCaptchaToken(captchaToken);
+      if (!captchaResult.valid) {
+        return res.status(400).json({ error: captchaResult.error, captchaRequired: true });
+      }
     }
 
     if (!username || !password) {
@@ -129,7 +159,7 @@ router.post('/register', async (req, res) => {
 // Send registration verification code
 router.post('/send-register-code', async (req, res) => {
   try {
-    const { email, username, password, __hp, __ts } = req.body;
+    const { email, username, password, __hp, __ts, captchaToken } = req.body;
     const ip = getClientIp(req);
 
     // Honeypot check — bots fill hidden fields
@@ -142,10 +172,19 @@ router.post('/send-register-code', async (req, res) => {
       return res.status(400).json({ error: '操作太快，请稍后重试' });
     }
 
-    // IP rate limit: 5 registrations per IP per hour
+    // IP rate limit: 5 registrations per IP per hour; >= 3 requires captcha
     const regCheck = checkRegistrationRate(ip);
     if (regCheck.blocked) {
       return res.status(429).json({ error: regCheck.reason });
+    }
+    if (regCheck.captchaRequired) {
+      if (!captchaToken) {
+        return res.status(400).json({ error: 'captcha_required', captchaRequired: true });
+      }
+      const captchaResult = verifyCaptchaToken(captchaToken);
+      if (!captchaResult.valid) {
+        return res.status(400).json({ error: captchaResult.error, captchaRequired: true });
+      }
     }
 
     if (!email) {

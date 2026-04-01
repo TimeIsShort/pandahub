@@ -98,6 +98,14 @@ function escapeHtml(str) {
 }
 
 async function notifyUserNewComment(userId, postTitle, commenterName, postUrl) {
+  // Web Push
+  sendPushToUser(userId, {
+    title: '💬 新评论',
+    body: (commenterName || '有人') + ' 评论了你的帖子「' + (postTitle || '').substring(0, 20) + '」',
+    url: postUrl || '/',
+    tag: 'comment'
+  });
+  // Email
   await sendEmailToUser(userId, {
     subject: '💬 您在熊猫社区的帖子有新评论',
     html: '<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px;">' +
@@ -111,6 +119,14 @@ async function notifyUserNewComment(userId, postTitle, commenterName, postUrl) {
 }
 
 async function notifyUserNewReply(userId, postTitle, replierName, postUrl) {
+  // Web Push
+  sendPushToUser(userId, {
+    title: '💬 新回复',
+    body: (replierName || '有人') + ' 回复了你的评论',
+    url: postUrl || '/',
+    tag: 'reply'
+  });
+  // Email
   await sendEmailToUser(userId, {
     subject: '💬 您在熊猫社区的评论有新回复',
     html: '<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px;">' +
@@ -124,6 +140,13 @@ async function notifyUserNewReply(userId, postTitle, replierName, postUrl) {
 }
 
 async function notifyUserPostApproved(userId, postTitle, postUrl) {
+  // Web Push
+  sendPushToUser(userId, {
+    title: '🎉 帖子已通过审核',
+    body: '您的帖子「' + (postTitle || '').substring(0, 20) + '」已上线啦！',
+    url: postUrl || '/',
+    tag: 'approved'
+  });
   await sendEmailToUser(userId, {
     subject: '🎉 您的帖子已通过审核 - 熊猫社区',
     html: '<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px;">' +
@@ -137,6 +160,13 @@ async function notifyUserPostApproved(userId, postTitle, postUrl) {
 }
 
 async function notifyUserPostRejected(userId, postTitle, reason, postUrl) {
+  // Web Push
+  sendPushToUser(userId, {
+    title: '❌ 帖子未通过审核',
+    body: '您的帖子「' + (postTitle || '').substring(0, 20) + '」未通过审核' + (reason ? '：' + reason : ''),
+    url: '/',
+    tag: 'rejected'
+  });
   var reasonHtml = reason ? '<div style="margin-top:8px;font-size:14px;">原因：' + escapeHtml(reason) + '</div>' : '';
   await sendEmailToUser(userId, {
     subject: '❌ 您的帖子未通过审核 - 熊猫社区',

@@ -3537,10 +3537,16 @@ async function subscribePush() {
     return;
   }
   try {
+    // Fetch the correct VAPID public key from server
+    var keyRes = await api('/push/vapid-key');
+    if (keyRes.error) {
+      document.getElementById('push-status').textContent = '⚠️ ' + (keyRes.error || '推送服务未配置');
+      return;
+    }
     var reg = await navigator.serviceWorker.register('/sw.js');
     var sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array('BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U')
+      applicationServerKey: urlBase64ToUint8Array(keyRes.key)
     });
     await api('/reminder/subscribe', {
       method: 'POST',

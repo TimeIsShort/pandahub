@@ -730,3 +730,19 @@ DEFAULT_BADGES.forEach(b => {
     db.prepare('INSERT OR IGNORE INTO badges (id, name, description, icon, condition_type, condition_value) VALUES (?, ?, ?, ?, ?, ?)').run(b.id, b.name, b.description, b.icon, b.condition_type, b.condition_value);
   } catch(e) {}
 });
+
+// ============ AI Chat History ============
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ai_chat_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      model TEXT,
+      tokens_used INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_ai_chat_user ON ai_chat_history(user_id, created_at DESC)');
+} catch(e) {}

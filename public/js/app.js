@@ -65,6 +65,23 @@ const AI_PROVIDER_MODELS = {
 
 // Utils
 
+// User level helper
+const LEVELS = [
+  { min: 0,    max: 100,   name: '萌新',   icon: '🌱', color: '#86efac' },
+  { min: 101,  max: 500,   name: '入门',   icon: '🌿', color: '#86efac' },
+  { min: 501,  max: 1000,  name: '进阶',   icon: '🌳', color: '#fde047' },
+  { min: 1001, max: 3000,  name: '老鸟',   icon: '🔥', color: '#fb923c' },
+  { min: 3001, max: Infinity, name: '大佬', icon: '⭐', color: '#f472b6' },
+];
+
+function getUserLevel(points) {
+  const p = Number(points) || 0;
+  for (const lv of LEVELS) {
+    if (p >= lv.min && p <= lv.max) return lv;
+  }
+  return LEVELS[0];
+}
+
 // Strip Markdown syntax from text, returns plain text
 function stripMarkdown(content) {
   if (!content) return '';

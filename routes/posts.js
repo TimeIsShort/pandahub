@@ -6,6 +6,7 @@ const { logAction } = require('../middleware/moderationLog');
 const { logUserAction } = require('../middleware/actionLogger');
 const { updatePostFTS, getUserLevel, POINT_COST } = require('../models/database');
 const { sendPushToUser, notifyUserNewComment, notifyUserNewReply, processMentions } = require('../utils/pushHelper');
+const { incrementDailyPostCount, incrementDailyCommentCount } = require('./dailyTasks');
 
 const router = express.Router();
 
@@ -234,6 +235,9 @@ router.post('/', authMiddleware, (req, res) => {
     // Sync to FTS index
     updatePostFTS(post.id);
 
+    // Update daily post count for task system
+    incrementDailyPostCount(req.user.id);
+
     // Deduct points
     db.prepare('UPDATE users SET points = points - ? WHERE id = ?').run(cost, req.user.id);
 
@@ -426,6 +430,9 @@ router.post('/:id/comments', authMiddleware, async (req, res) => {
     }
 
     res.json({ comment, points_deducted: cost });
+
+    // Update daily comment count for task system
+    incrementDailyCommentCount(req.user.id);
 
     logUserAction({
       userId: req.user.id,

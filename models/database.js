@@ -506,6 +506,12 @@ const POINT_COST = {
   create_comment: 2,
 };
 
+const DAILY_TASKS = [
+  { id: 'post',    name: '发布帖子',   desc: '今日发布1篇帖子',   target: 1, reward: 5,  icon: '📝' },
+  { id: 'comment', name: '发表评论',   desc: '今日评论3次',       target: 3, reward: 3,  icon: '💬' },
+  { id: 'checkin', name: '每日签到',  desc: '今日完成签到',      target: 1, reward: 2,  icon: '✅' },
+];
+
 ensureColumn('posts', 'is_pinned', 'INTEGER DEFAULT 0');
 ensureColumn('posts', 'is_featured', 'INTEGER DEFAULT 0');
 ensureColumn('posts', 'rejected_reason', 'TEXT');
@@ -582,6 +588,7 @@ db.exec(`
 module.exports.getUserLevel = getUserLevel;
 module.exports.LEVELS = LEVELS;
 module.exports.POINT_COST = POINT_COST;
+module.exports.DAILY_TASKS = DAILY_TASKS;
 
 // ============ Post Views Log ============
 db.exec(`
@@ -624,3 +631,23 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   )
 `);
+
+// ============ Daily Task System ============
+ensureColumn('users', 'daily_posts_date', 'TEXT');
+ensureColumn('users', 'daily_posts_count', 'INTEGER DEFAULT 0');
+ensureColumn('users', 'daily_comments_date', 'TEXT');
+ensureColumn('users', 'daily_comments_count', 'INTEGER DEFAULT 0');
+
+ensureColumn('users', 'reward_claimed_date', 'TEXT');
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_task_claims (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      claim_date TEXT NOT NULL,
+      reward_points INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, claim_date)
+    )
+  `);
+} catch(e) { /* table may already exist */ }

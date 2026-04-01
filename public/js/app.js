@@ -3528,6 +3528,57 @@ async function doCheckin() {
   }
 }
 
+// ============ Daily Tasks ============
+async function loadDailyTasks() {
+  var el = document.getElementById('daily-tasks-list');
+  var progEl = document.getElementById('daily-tasks-progress');
+  var claimEl = document.getElementById('daily-tasks-claim-area');
+  if (!el) return;
+  try {
+    var res = await api('/daily-tasks/status');
+    if (res.error) return;
+
+    var tasks = res.tasks || [];
+    var doneCount = tasks.filter(t => t.done).length;
+    if (progEl) progEl.textContent = doneCount + '/' + tasks.length;
+
+    el.innerHTML = tasks.map(function(t) {
+      var pct = Math.round((t.current / t.target) * 100);
+      var barColor = t.done ? '#10b981' : '#d1d5db';
+      return '<div style="margin-bottom:12px;">' +
+        '<div style="display:flex;justify-content:space-between;font-size:13px;color:#374151;margin-bottom:5px;">' +
+        '<span>' + t.name + ' <span style="font-size:11px;color:#94a3b8;">(' + t.current + '/' + t.target + ')</span></span>' +
+        '<span style="color:#f59e0b;font-weight:600;">+' + t.reward + '积分</span></div>' +
+        '<div style="height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden;">' +
+        '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:3px;transition:width .4s;"></div></div></div>';
+    }).join('');
+
+    // Claim button
+    if (res.allDone && doneCount === tasks.length) {
+      claimEl.innerHTML = '<button id="btn-claim-tasks" onclick="claimDailyTasks()" style="width:100%;padding:12px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;animation:pulse 2s infinite;">🎉 全部完成！点击领取 ' + res.totalReward + ' 积分</button>';
+    } else {
+      claimEl.innerHTML = '<div style="text-align:center;font-size:13px;color:#94a3b8;">完成全部任务可领取 <span style="color:#f59e0b;font-weight:600;">+' + res.totalReward + '</span> 积分</div>';
+    }
+  } catch(e) {
+    el.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;">加载失败</div>';
+  }
+}
+
+async function claimDailyTasks() {
+  var btn = document.getElementById('btn-claim-tasks');
+  if (btn) { btn.disabled = true; btn.textContent = '领取中...'; }
+  try {
+    var res = await api('/daily-tasks/claim', { method: 'POST' });
+    if (res.error) { showToast(res.error, 'error'); if (btn) { btn.disabled = false; btn.textContent = '🎉 全部完成！点击领取'; } return; }
+    showToast('恭喜获得 ' + res.rewardPoints + ' 积分！', 'success');
+    loadUserInfo();
+    loadDailyTasks();
+  } catch(e) {
+    showToast('领取失败', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '🎉 全部完成！点击领取'; }
+  }
+}
+
 function switchCheckinTab(tab) {
   var signBtn = document.getElementById('tab-sign-btn');
   var histBtn = document.getElementById('tab-history-btn');
@@ -3659,6 +3710,7 @@ async function loadSettings() {
   } finally {
     // Always load check-in and email binding independently
     loadCheckinStatus();
+    loadDailyTasks();
     loadEmailBind();
     // Load push subscription status
     initPushNotification();

@@ -5026,6 +5026,7 @@ window.openMessages = async function() {
   document.getElementById('msg-modal').style.display = 'flex';
   document.getElementById('msg-detail-modal').style.display = 'none';
   await loadMsgConversations();
+  await loadMsgUnreadCount();
 };
 
 window.closeMessages = function() {
@@ -5047,6 +5048,7 @@ window.openMsgDetail = async function(partnerId, partnerName) {
   document.getElementById('msg-modal').style.display = 'none';
   document.getElementById('msg-detail-modal').style.display = 'flex';
   await loadMsgHistory(partnerId);
+  await loadMsgUnreadCount();
 };
 
 async function loadMsgHistory(partnerId) {

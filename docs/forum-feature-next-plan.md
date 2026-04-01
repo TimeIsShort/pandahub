@@ -120,3 +120,14 @@
 **现状**：筛选条件只在页内状态，刷新丢失
 
 **实现**：URL query string 同步筛选状态
+
+---
+
+### 4.1 AI聊天历史记录加载更多 ✅
+**实现**：
+- 新建 `ai_chat_history` 表持久化存储聊天记录
+- `POST /api/ai-chat` 保存单条，`POST /api/ai-chat/batch` 批量保存
+- `GET /api/ai-chat?limit=20&before=` 分页获取历史
+- 前端 `loadHistory()` 优先从服务器加载，加载失败回退 localStorage
+- `loadMore()` 使用 `before` 参数向服务器请求更早的消息
+- 发消息时同时 POST 到服务器（fire-and-forget）

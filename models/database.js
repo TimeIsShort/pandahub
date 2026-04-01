@@ -355,6 +355,34 @@ try {
   // table might not exist yet on first run
 }
 
+// ============ FTS5 Triggers (keep index in sync) ============
+db.exec(`
+  CREATE TRIGGER IF NOT EXISTS posts_fts_insert AFTER INSERT ON posts BEGIN
+    INSERT INTO posts_fts(post_id, title, content, username, tag_name)
+    SELECT NEW.id, NEW.title, NEW.content, u.username, t.name
+    FROM posts NEW
+    LEFT JOIN users u ON NEW.user_id = u.id
+    LEFT JOIN tags t ON NEW.tag_id = t.id;
+  END
+`);
+
+db.exec(`
+  CREATE TRIGGER IF NOT EXISTS posts_fts_update AFTER UPDATE ON posts BEGIN
+    DELETE FROM posts_fts WHERE post_id = OLD.id;
+    INSERT INTO posts_fts(post_id, title, content, username, tag_name)
+    SELECT NEW.id, NEW.title, NEW.content, u.username, t.name
+    FROM posts NEW
+    LEFT JOIN users u ON NEW.user_id = u.id
+    LEFT JOIN tags t ON NEW.tag_id = t.id;
+  END
+`);
+
+db.exec(`
+  CREATE TRIGGER IF NOT EXISTS posts_fts_delete AFTER DELETE ON posts BEGIN
+    DELETE FROM posts_fts WHERE post_id = OLD.id;
+  END
+`);
+
 // Search posts via FTS5
 function searchPostsFTS(query, options = {}) {
   const { tag_id, page = 1, limit = 20 } = options;

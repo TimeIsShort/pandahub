@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
+const { checkBadges } = require('./badges');
 const router = express.Router();
 
 const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '😡'];
@@ -107,7 +108,7 @@ router.post('/posts/:postId/react', authMiddleware, (req, res) => {
       return res.status(400).json({ error: '无效的表情' });
     }
 
-    const post = db.prepare('SELECT id FROM posts WHERE id = ?').get(postId);
+    const post = db.prepare('SELECT id, user_id FROM posts WHERE id = ?').get(postId);
     if (!post) return res.status(404).json({ error: '帖子不存在' });
 
     const existing = db.prepare(
@@ -129,6 +130,11 @@ router.post('/posts/:postId/react', authMiddleware, (req, res) => {
     ).get(postId, userId);
 
     res.json({ success: true, reactions: reactionMap, userReaction: userReaction ? userReaction.emoji : null });
+
+    // Check badges for post owner (reactions received)
+    if (post.user_id !== userId) {
+      checkBadges(post.user_id);
+    }
   } catch (err) {
     console.error('[PostReactions]', err);
     res.status(500).json({ error: '操作失败' });

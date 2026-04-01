@@ -7,6 +7,7 @@ const { logUserAction } = require('../middleware/actionLogger');
 const { updatePostFTS, getUserLevel, POINT_COST } = require('../models/database');
 const { sendPushToUser, notifyUserNewComment, notifyUserNewReply, processMentions } = require('../utils/pushHelper');
 const { incrementDailyPostCount, incrementDailyCommentCount } = require('./dailyTasks');
+const { checkBadges } = require('./badges');
 
 const router = express.Router();
 
@@ -237,6 +238,7 @@ router.post('/', authMiddleware, (req, res) => {
 
     // Update daily post count for task system
     incrementDailyPostCount(req.user.id);
+    checkBadges(req.user.id);
 
     // Deduct points
     db.prepare('UPDATE users SET points = points - ? WHERE id = ?').run(cost, req.user.id);
@@ -433,6 +435,7 @@ router.post('/:id/comments', authMiddleware, async (req, res) => {
 
     // Update daily comment count for task system
     incrementDailyCommentCount(req.user.id);
+    checkBadges(req.user.id);
 
     logUserAction({
       userId: req.user.id,

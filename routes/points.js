@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
+const { checkBadges } = require('./badges');
 const { logUserAction } = require('../middleware/actionLogger');
 
 const router = express.Router();
@@ -38,6 +39,8 @@ router.post('/transfer', authMiddleware, (req, res) => {
     db.prepare('UPDATE users SET points = points - ? WHERE id = ?').run(amountNum, fromUserId);
     // Add to receiver
     db.prepare('UPDATE users SET points = points + ? WHERE id = ?').run(amountNum, toUser.id);
+    // Check badges for receiver (points milestone)
+    checkBadges(toUser.id);
     // Record transfer
     const result = db.prepare(
       'INSERT INTO point_transfers (from_user_id, to_user_id, amount, note) VALUES (?, ?, ?, ?)'

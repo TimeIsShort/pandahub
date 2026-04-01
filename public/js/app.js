@@ -4197,6 +4197,7 @@ async function loadProfile(userId) {
           ${!isSelf ? `<div style="margin-top:14px;"><button id="btn-follow" class="btn-follow" onclick="toggleFollow(${userId})" style="min-width:120px;">+ 关注</button><button class="btn-follow" style="margin-left:8px;background:linear-gradient(135deg,#5d6dff22,#7e5ad622);border:1.5px solid #d5ddff;color:#667eea;" onclick="startChat(${userId})">💬 发私信</button></div>` : ''}
           ${isSelf ? `<div style="margin-top:14px;font-size:12px;color:#94a3b8;">🕐 加入于 ${formatDate(res.user.created_at)}</div>` : ''}
         </div>
+        <div id="profile-badges-area" style="margin-top:12px;"></div>
         ${isSelf ? `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
           <button onclick="goSettings()" style="flex:1;padding:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">⚙️ 编辑个人资料</button>
           <button onclick="goCheckin()" style="flex:1;padding:12px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;">🎁 每日签到</button>
@@ -4253,8 +4254,30 @@ async function loadProfile(userId) {
     }
     // Always load follow counts for the profile header
     loadFollowCounts(userId);
+    loadProfileBadges(userId);
   } catch (e) {
     console.error(e);
+  }
+}
+
+async function loadProfileBadges(userId) {
+  var el = document.getElementById('profile-badges-area');
+  if (!el) return;
+  try {
+    var res = await api('/badges/' + userId);
+    var badges = res.badges || [];
+    if (!badges.length) {
+      el.innerHTML = '';
+      return;
+    }
+    el.innerHTML = '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;">' +
+      '<span style="font-size:12px;color:#94a3b8;margin-right:4px;">🏅 成就：</span>' +
+      badges.map(function(b) {
+        return '<span title="' + escapeHtml(b.description || '') + '" style="font-size:18px;cursor:default;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));">' + b.icon + '</span>';
+      }).join('') +
+      '</div>';
+  } catch (e) {
+    el.innerHTML = '';
   }
 }
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
+const { checkBadges } = require('./badges');
 
 const router = express.Router();
 
@@ -129,6 +130,9 @@ router.post('/checkin', authMiddleware, (req, res) => {
 
     // Get updated user
     const updatedUser = db.prepare('SELECT points, checkin_streak FROM users WHERE id = ?').get(req.user.id);
+
+    // Check and award badges
+    checkBadges(req.user.id);
 
     res.json({
       success: true,

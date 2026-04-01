@@ -60,6 +60,7 @@ const pointRoutes = require('./routes/points');
 const rssRoutes = require('./routes/rss');
 const captchaRoutes = require('./routes/captcha');
 const dailyTaskRoutes = require('./routes/dailyTasks');
+const badgeRoutes = require('./routes/badges');
 const reactionRoutes = require('./routes/reactions');
 
 const app = express();
@@ -141,6 +142,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/points', pointRoutes);
 app.use('/api/captcha', captchaRoutes);
 app.use('/api/daily-tasks', dailyTaskRoutes);
+app.use('/api/badges', badgeRoutes);
 app.use('/api/reactions', reactionRoutes);
 
 // Static files

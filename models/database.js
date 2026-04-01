@@ -679,3 +679,54 @@ try {
     )
   `);
 } catch(e) { /* table may already exist */ }
+
+// ============ User Badges System ============
+ensureColumn('users', 'checkin_streak', 'INTEGER DEFAULT 0');
+ensureColumn('users', 'last_checkin_date', 'TEXT');
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS badges (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT,
+      icon TEXT,
+      condition_type TEXT,
+      condition_value INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+} catch(e) {}
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_badges (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      badge_id TEXT NOT NULL,
+      earned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, badge_id)
+    )
+  `);
+} catch(e) {}
+
+// Seed default badges
+const DEFAULT_BADGES = [
+  { id: 'first_post',     name: '🌱 初来乍到',    description: '发布第一篇帖子',          icon: '🌱', condition_type: 'posts_count',    condition_value: 1 },
+  { id: 'posts_10',       name: '✍️ 笔耕不辍',    description: '累计发布10篇帖子',        icon: '✍️', condition_type: 'posts_count',    condition_value: 10 },
+  { id: 'posts_50',      name: '📝 文章等身',    description: '累计发布50篇帖子',         icon: '📝', condition_type: 'posts_count',    condition_value: 50 },
+  { id: 'checkin_3',     name: '🔥 三天打鱼',    description: '连续签到3天',             icon: '🔥', condition_type: 'checkin_streak', condition_value: 3 },
+  { id: 'checkin_7',     name: '🏆 周冠军',       description: '连续签到7天',             icon: '🏆', condition_type: 'checkin_streak', condition_value: 7 },
+  { id: 'checkin_30',    name: '👑 月冠',        description: '连续签到30天',            icon: '👑', condition_type: 'checkin_streak', condition_value: 30 },
+  { id: 'comments_10',   name: '💬 评论达人',     description: '累计发布10条评论',          icon: '💬', condition_type: 'comments_count',  condition_value: 10 },
+  { id: 'comments_50',  name: '🗣️ 评论大师',    description: '累计发布50条评论',          icon: '🗣️', condition_type: 'comments_count',  condition_value: 50 },
+  { id: 'level_1000',   name: '⭐ 四级大佬',    description: '积分达到1000',            icon: '⭐', condition_type: 'points',          condition_value: 1000 },
+  { id: 'level_3000',   name: '🌟 五级宗师',    description: '积分达到3000',            icon: '🌟', condition_type: 'points',          condition_value: 3000 },
+  { id: 'level_5000',   name: '💎 至尊王者',    description: '积分达到5000',            icon: '💎', condition_type: 'points',          condition_value: 5000 },
+  { id: 'reactions_10',  name: '👍 人气博主',    description: '帖子累计获得10个赞',        icon: '👍', condition_type: 'reactions_count', condition_value: 10 },
+];
+DEFAULT_BADGES.forEach(b => {
+  try {
+    db.prepare('INSERT OR IGNORE INTO badges (id, name, description, icon, condition_type, condition_value) VALUES (?, ?, ?, ?, ?, ?)').run(b.id, b.name, b.description, b.icon, b.condition_type, b.condition_value);
+  } catch(e) {}
+});

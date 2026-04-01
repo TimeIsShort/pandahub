@@ -147,7 +147,7 @@ async function loadTrending() {
   if (!el) return;
   el.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">加载中...</div>';
   try {
-    var res = await api('/posts?sort=hot&limit=5');
+    var res = await api('/leaderboard/hot-posts?limit=5&hours=168');
     var posts = (res && res.posts) ? res.posts : [];
     if (posts.length === 0) {
       el.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">暂无热议内容</div>';
@@ -157,9 +157,10 @@ async function loadTrending() {
       var title = stripMarkdown(p.title || '无标题').substring(0, 22);
       var name = p.nickname || p.username || '匿名';
       var commentCount = p.comment_count || 0;
+      var score = p.hot_score || 0;
       return '<div onclick="goPost(' + p.id + ')" style="display:flex;gap:8px;align-items:flex-start;padding:8px 4px;border-radius:10px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background=\'#fff8f0\'" onmouseout="this.style.background=\'\'">' +
         '<span style="font-size:16px;flex-shrink:0;">🔥</span>' +
-        '<div style="flex:1;min-width:0;"><div style="font-size:12px;color:#1e3a5f;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(title) + '</div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">' + escapeHtml(name) + ' · 💬' + commentCount + '</div></div></div>';
+        '<div style="flex:1;min-width:0;"><div style="font-size:12px;color:#1e3a5f;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(title) + '</div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">' + escapeHtml(name) + ' · 💬' + commentCount + ' · ' + score + '热度</div></div></div>';
     }).join('');
   } catch(e) {
     if (el) el.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">加载失败</div>';

@@ -75,3 +75,55 @@ router.get('/me', (req, res) => {
 });
 
 module.exports = router;
+
+// ============ Hot Posts Ranking ============
+// Hot score algorithm: based on views, likes, comments, and recency
+router.get('/hot-posts', (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 10, 50);
+    const hours = Number(req.query.hours) || 72;
+    const cutoff = new Date(Date.now() - hours * 3600000).toISOString();
+
+    // Score = (views * 0.1) + (likes * 5) + (comments * 3) + recency_bonus
+    // recency_bonus: newer posts get higher bonus (max ~10 for very recent, 0 for old)
+    const decayHours = Math.max(hours, 1);
+    const posts = db.prepare(`
+      SELECT
+        p.id,
+        p.title,
+        p.content,
+        p.views,
+        p.like_count,
+        p.dislike_count,
+        p.created_at,
+        p.tag_id,
+        u.username, u.nickname, u.avatar,
+        t.name as tag_name, t.color as tag_color,
+        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
+        ROUND(
+          COALESCE(p.views, 0) * 0.1
+          + COALESCE(p.like_count, 0) * 5
+          + (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) * 3
+          + MAX(0, (${decayHours} - (CAST((JULIANDAY('now') - JULIANDAY(p.created_at)) * 24 AS REAL))) / ${decayHours}) * 15
+        , 0) as hot_score
+      FROM posts p
+      LEFT JOIN users u ON p.user_id = u.id
+      LEFT JOIN tags t ON p.tag_id = t.id
+      WHERE p.status = 'approved'
+        AND p.created_at >= ?
+      ORDER BY hot_score DESC, p.created_at DESC
+      LIMIT ?
+    `).all(cutoff, limit);
+
+    // Strip HTML from content for preview
+    posts.forEach(p => {
+      p.preview = (p.content || '').replace(/<[^>]+>/g, '').substring(0, 80);
+      p.hot_score = Number(p.hot_score);
+    });
+
+    res.json({ posts });
+  } catch (err) {
+    console.error('[HotPosts]', err);
+    res.status(500).json({ error: '获取热榜失败' });
+  }
+});

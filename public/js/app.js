@@ -2207,6 +2207,11 @@ async function viewPost(id) {
       var actionsHtml = '<div class="comment-actions">' +
         '<button class="comment-action-btn comment-like-btn" id="clike-btn-' + comment.id + '" onclick="voteComment(' + comment.id + ')" title="赞一个" style="color:#94a3b8;">' +
         '👍 <span id="clike-count-' + comment.id + '">' + (comment.like_count || 0) + '</span></button>' +
+        '<button class="comment-action-btn comment-react-btn" id="creact-btn-' + comment.id + '" onclick="toggleReactionPicker(' + comment.id + ', event)" title="表情反应" style="color:#94a3b8;position:relative;">' +
+        '<span id="creact-display-' + comment.id + '"></span>' +
+        '<span id="creact-btn-text-' + comment.id + '">😃</span>' +
+        '</button>' +
+        '<div id="creact-picker-' + comment.id + '" class="reaction-picker-popup" style="display:none;position:absolute;bottom:30px;left:0;background:#fff;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:6px 8px;z-index:999;gap:4px;display:none;flex-wrap:wrap;width:160px;align-items:center;" onclick="event.stopPropagation()"></div>' +
         (user && user.id !== comment.user_id ? '<button class="comment-action-btn" onclick="openReportModal(\'comment\', ' + comment.id + ')" style="color:#94a3b8;">🚩 举报</button>' : '') +
         (user ? '<button class="comment-action-btn" onclick="startReply(' + comment.id + ', ' + comment.user_id + ', \'' + escapeHtml(comment.nickname || comment.username) + '\')">回复</button>' : '') +
         '</div>';
@@ -2275,6 +2280,20 @@ async function viewPost(id) {
         : '<div style="color:#888;padding:20px;text-align:center;">暂无评论</div>';
     }
     loadCommentVoteStatus();
+
+    // Load reactions for all visible comments
+    if (comments.length > 0) {
+      var allIds = [];
+      function collectIds(list) {
+        list.forEach(function(c) {
+          allIds.push(c.id);
+          if (c.replies) collectIds(c.replies);
+        });
+      }
+      collectIds(commentTree);
+      loadCommentReactions(allIds);
+    }
+
     window._commentsFlatData = comments; // expose for expandReplies
   } catch (e) {
     console.error(e);
@@ -4903,6 +4922,9 @@ function expandReplies(commentId) {
         '<div class="comment-content">' + escapeHtml(r.content) + '</div>' +
         '<div class="comment-actions">' +
         '<button class="comment-action-btn comment-like-btn" id="clike-btn-' + r.id + '" onclick="voteComment(' + r.id + ')" style="color:#94a3b8;">👍 <span id="clike-count-' + r.id + '">' + (r.like_count || 0) + '</span></button>' +
+        '<button class="comment-action-btn comment-react-btn" id="creact-btn-' + r.id + '" onclick="toggleReactionPicker(' + r.id + ', event)" style="color:#94a3b8;position:relative;">' +
+        '<span id="creact-display-' + r.id + '"></span><span id="creact-btn-text-' + r.id + '">😃</span></button>' +
+        '<div id="creact-picker-' + r.id + '" class="reaction-picker-popup" style="display:none;position:absolute;bottom:30px;left:0;background:#fff;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:6px 8px;z-index:999;gap:4px;display:none;flex-wrap:wrap;width:160px;align-items:center;" onclick="event.stopPropagation()"></div>' +
         '</div></div>';
     });
     html += '</div>';
@@ -4913,6 +4935,12 @@ function expandReplies(commentId) {
   }
 
   container.innerHTML = renderPage(commentId, 1);
+  // Load reactions for newly rendered replies
+  var state = _expandedReplies[commentId];
+  if (state) {
+    var ids = state.items.slice(0, state.page * PAGE).map(function(r) { return r.id; });
+    loadCommentReactions(ids);
+  }
   container.style.display = '';
   container.style.maxHeight = '2000px';
   container.style.opacity = '1';
@@ -4952,6 +4980,9 @@ function loadMoreReplies(commentId) {
       '<div class="comment-content">' + escapeHtml(r.content) + '</div>' +
       '<div class="comment-actions">' +
       '<button class="comment-action-btn comment-like-btn" id="clike-btn-' + r.id + '" onclick="voteComment(' + r.id + ')" style="color:#94a3b8;">👍 <span id="clike-count-' + r.id + '">' + (r.like_count || 0) + '</span></button>' +
+      '<button class="comment-action-btn comment-react-btn" id="creact-btn-' + r.id + '" onclick="toggleReactionPicker(' + r.id + ', event)" style="color:#94a3b8;position:relative;">' +
+      '<span id="creact-display-' + r.id + '"></span><span id="creact-btn-text-' + r.id + '">😃</span></button>' +
+      '<div id="creact-picker-' + r.id + '" class="reaction-picker-popup" style="display:none;position:absolute;bottom:30px;left:0;background:#fff;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:6px 8px;z-index:999;gap:4px;display:none;flex-wrap:wrap;width:160px;align-items:center;" onclick="event.stopPropagation()"></div>' +
       '</div></div>';
   });
 
@@ -4966,6 +4997,10 @@ function loadMoreReplies(commentId) {
     } else {
       loadMoreBtn.remove();
     }
+  }
+  // Load reactions for newly loaded replies
+  if (pageItems && pageItems.length > 0) {
+    loadCommentReactions(pageItems.map(function(r) { return r.id; }));
   }
 }
 
@@ -4992,6 +5027,110 @@ async function loadCommentVoteStatus() {
       })
       .catch(function() {});
   });
+}
+
+// ============ Comment Reactions ============
+var _reactionEmojis = ['👍', '❤️', '😂', '😮', '😢', '😡'];
+var _activePicker = null;
+
+function toggleReactionPicker(commentId, event) {
+  event.stopPropagation();
+  var picker = document.getElementById('creact-picker-' + commentId);
+  if (!picker) return;
+
+  // Close any open picker first
+  if (_activePicker && _activePicker !== picker) {
+    _activePicker.style.display = 'none';
+  }
+
+  if (picker.style.display === 'none' || !picker.style.display) {
+    // Build picker content if empty
+    if (!picker.innerHTML.trim()) {
+      picker.innerHTML = _reactionEmojis.map(function(e) {
+        return '<button onclick="addReaction(' + commentId + ', \'' + e + '\')" title="' + e + '">' + e + '</button>';
+      }).join('');
+    }
+    picker.style.display = 'flex';
+    _activePicker = picker;
+    // Close on outside click
+    setTimeout(function() {
+      document.addEventListener('click', closeReactionPicker);
+    }, 0);
+  } else {
+    picker.style.display = 'none';
+    _activePicker = null;
+  }
+}
+
+function closeReactionPicker() {
+  if (_activePicker) {
+    _activePicker.style.display = 'none';
+    _activePicker = null;
+  }
+  document.removeEventListener('click', closeReactionPicker);
+}
+
+async function addReaction(commentId, emoji) {
+  closeReactionPicker();
+  try {
+    var res = await api('/reactions/comments/' + commentId + '/react', {
+      method: 'POST',
+      body: JSON.stringify({ emoji: emoji })
+    });
+    if (res.error) { showToast(res.error, 'error'); return; }
+    // Update reaction display
+    renderReactionDisplay(commentId, res.reactions, res.userReaction);
+  } catch(e) {
+    showToast('操作失败', 'error');
+  }
+}
+
+function renderReactionDisplay(commentId, reactions, userReaction) {
+  var displayEl = document.getElementById('creact-display-' + commentId);
+  var btnTextEl = document.getElementById('creact-btn-text-' + commentId);
+  if (!displayEl) return;
+
+  // Build reaction summary string
+  var parts = [];
+  var emojis = _reactionEmojis;
+  for (var i = 0; i < emojis.length; i++) {
+    var e = emojis[i];
+    if (reactions && reactions[e]) {
+      var display = e + ' ' + reactions[e];
+      parts.push(display);
+    }
+  }
+  displayEl.textContent = parts.length > 0 ? ' ' + parts.join(' ') : '';
+  if (btnTextEl) {
+    btnTextEl.textContent = userReaction || '😃';
+    btnTextEl.style.color = userReaction ? '#667eea' : '#94a3b8';
+  }
+}
+
+// Load reactions for all visible comments
+async function loadCommentReactions(commentIds) {
+  if (!commentIds || !commentIds.length) return;
+  try {
+    var res = await api('/reactions/comments/batch', {
+      method: 'POST',
+      body: JSON.stringify({ commentIds: commentIds })
+    });
+    if (res.error || !res.reactions) return;
+    var reactionsMap = res.reactions;
+    for (var commentId in reactionsMap) {
+      var reactions = reactionsMap[commentId];
+      var userReact = null;
+      if (user && reactions) {
+        for (var e in reactions) {
+          var users = reactions[e];
+          for (var j = 0; j < users.length; j++) {
+            if (users[j].userId === user.id) userReact = e;
+          }
+        }
+      }
+      renderReactionDisplay(Number(commentId), reactions, userReact);
+    }
+  } catch(e) {}
 }
 
 window.voteComment = voteComment;

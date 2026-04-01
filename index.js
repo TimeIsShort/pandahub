@@ -60,6 +60,7 @@ const pointRoutes = require('./routes/points');
 const rssRoutes = require('./routes/rss');
 const captchaRoutes = require('./routes/captcha');
 const dailyTaskRoutes = require('./routes/dailyTasks');
+const reactionRoutes = require('./routes/reactions');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -140,6 +141,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/points', pointRoutes);
 app.use('/api/captcha', captchaRoutes);
 app.use('/api/daily-tasks', dailyTaskRoutes);
+app.use('/api/reactions', reactionRoutes);
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));

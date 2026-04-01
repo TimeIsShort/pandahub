@@ -3781,7 +3781,14 @@ async function loadEmailBind() {
   if (!area) return;
   try {
     const res = await api('/profile/me');
-    const user = res.user;
+
+    // If error (not logged in / token expired), show login
+    if (res.error) {
+      area.innerHTML = '<div style="color:#94a3b8;font-size:13px;">请先 <a href="#" onclick="showLogin();return false;">登录</a> 后绑定邮箱</div>';
+      return;
+    }
+
+    const user = res.user || {};
     const isVerified = user.email_verified === 1;
     const email = user.email || '';
 
@@ -3797,7 +3804,7 @@ async function loadEmailBind() {
       area.innerHTML = `
         <div class="email-bind-form" id="email-bind-form">
           <div class="email-input-row">
-            <input type="email" id="email-input" placeholder="输入邮箱地址" value="${email}">
+            <input type="email" id="email-input" placeholder="输入邮箱地址" value="${escapeHtml(email)}">
             <button id="btn-send-email-code" class="btn-secondary" onclick="sendEmailCode()">发送验证码</button>
           </div>
           <div id="email-verify-row" style="display:none;margin-top:8px;">
@@ -3812,6 +3819,7 @@ async function loadEmailBind() {
       `;
     }
   } catch (e) {
+    console.error('[loadEmailBind]', e);
     area.innerHTML = '<div style="color:#888;">加载失败</div>';
   }
 }

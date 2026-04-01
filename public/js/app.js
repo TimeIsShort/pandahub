@@ -4199,13 +4199,30 @@ async function loadProfile(userId) {
     `;
 
     // Load follow status for non-self profiles
-
-    // Load follow status for non-self profiles
     if (!isSelf) {
       loadFollowStatus(userId);
     }
+    // Always load follow counts for the profile header
+    loadFollowCounts(userId);
   } catch (e) {
     console.error(e);
+  }
+}
+
+// Load follower/following counts for profile header
+async function loadFollowCounts(userId) {
+  try {
+    // Use public counts endpoint (no auth required)
+    var res = await api('/follow/counts/' + userId);
+    var followersEl = document.getElementById('profile-followers-count');
+    var followingEl = document.getElementById('following-count');
+    if (followersEl) followersEl.textContent = res.followers_count || 0;
+    if (followingEl) followingEl.textContent = res.following_count || 0;
+  } catch (e) {
+    var followersEl = document.getElementById('profile-followers-count');
+    var followingEl = document.getElementById('following-count');
+    if (followersEl) followersEl.textContent = '?';
+    if (followingEl) followingEl.textContent = '?';
   }
 }
 

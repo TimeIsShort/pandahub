@@ -122,6 +122,23 @@ router.get('/following/:userId', (req, res) => {
 });
 
 // Check if current user follows a specific user
+// Public: get follower/following counts (no auth required)
+router.get('/counts/:userId', (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const followersCount = db.prepare(
+      'SELECT COUNT(*) as c FROM follows WHERE following_id = ?'
+    ).get(userId).c;
+    const followingCount = db.prepare(
+      'SELECT COUNT(*) as c FROM follows WHERE follower_id = ?'
+    ).get(userId).c;
+    res.json({ followers_count: followersCount, following_count: followingCount });
+  } catch (err) {
+    res.status(500).json({ error: '查询失败' });
+  }
+});
+
+// Check if current user follows a specific user
 router.get('/status/:userId', authMiddleware, (req, res) => {
   try {
     const myId = req.user.id;

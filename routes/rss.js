@@ -3,6 +3,9 @@ const db = require('../models/database');
 
 const router = express.Router();
 
+// Canonical site URL (non-www, single source of truth)
+const SITE_URL = process.env.SITE_URL || 'https://pandahub.cloud';
+
 router.get('/', (req, res) => {
   try {
     const posts = db.prepare(`
@@ -17,7 +20,6 @@ router.get('/', (req, res) => {
       LIMIT 20
     `).all();
 
-    const siteUrl = 'https://pandahub.cloud';
     const siteTitle = '熊猫社区 pandahub.cloud';
     const siteDesc = '技术交流社区，支持 AI 主题讨论';
 
@@ -25,17 +27,17 @@ router.get('/', (req, res) => {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>${escapeXml(siteTitle)}</title>
-    <link>${siteUrl}</link>
+    <link>${SITE_URL}</link>
     <description>${escapeXml(siteDesc)}</description>
     <language>zh-cn</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-    <atom:link href="${siteUrl}/feed.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="${SITE_URL}/feed.xml" rel="self" type="application/rss+xml"/>
     <generator>pandahub.cloud</generator>
 `;
 
     posts.forEach(p => {
       const author = p.nickname || p.username || '匿名';
-      const link = `${siteUrl}/#/post/${p.id}`;
+      const link = `${SITE_URL}/#/post/${p.id}`;
       // Strip HTML tags for description
       const desc = (p.content || '').replace(/<[^>]+>/g, '').substring(0, 300);
       const pubDate = new Date(p.created_at).toUTCString();

@@ -8,7 +8,9 @@
     "dev": "node index.js",
     "sync:three-runtime": "node scripts/sync-three-runtime.mjs",
     "build:mascot": "node scripts/generate-panda-mascot.mjs",
-    "build:mascot:full": "npm run sync:three-runtime && npm run build:mascot"
+    "build:mascot:full": "npm run sync:three-runtime && npm run build:mascot",
+    "test:smoke": "npx playwright test tests/smoke.spec.js --reporter=line",
+    "test:smoke:ci": "npx playwright test tests/smoke.spec.js --reporter=github"
   },
   "keywords": [],
   "author": "",
@@ -29,5 +31,8 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.4",
     "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
   }
 }

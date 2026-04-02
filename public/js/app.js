@@ -2252,6 +2252,7 @@ async function sendRegCode() {
 
   const username = document.getElementById('register-username') ? document.getElementById('register-username').value.trim() : '';
   const password = document.getElementById('register-password') ? document.getElementById('register-password').value : '';
+  const invite_code = document.getElementById('register-invite-code') ? document.getElementById('register-invite-code').value.trim() : '';
   const hp = document.getElementById('reg-website') ? document.getElementById('reg-website').value : '';
   const ts = document.getElementById('reg-form-ts') ? document.getElementById('reg-form-ts').value : '';
 
@@ -2260,7 +2261,7 @@ async function sendRegCode() {
     const res = await fetch('/auth/send-register-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, username, password, __hp: hp, __ts: ts, captchaToken: captchaToken || undefined })
+      body: JSON.stringify({ email, username, password, invite_code, __hp: hp, __ts: ts, captchaToken: captchaToken || undefined })
     });
     return res.json();
   }
@@ -5243,6 +5244,114 @@ async function openLeaderboard(type) {
 function closeLeaderboard() {
   document.getElementById('leaderboard-modal').style.display = 'none';
   enableBottomNav();
+}
+
+async function openInviteModal() {
+  var modal = document.getElementById('invite-modal');
+  modal.style.display = 'flex';
+  disableBottomNav();
+  await loadInviteData();
+}
+
+function closeInviteModal() {
+  document.getElementById('invite-modal').style.display = 'none';
+  enableBottomNav();
+}
+
+async function loadInviteData() {
+  var body = document.getElementById('invite-modal-body');
+  body.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">加载中...</div>';
+  try {
+    var res = await api('/invites/my');
+    var codes = res.codes || [];
+    var records = res.records || [];
+
+    var totalInvited = records.length;
+    var html = '';
+
+    // Generate section
+    html += '<div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;padding:20px;color:#fff;margin-bottom:16px;text-align:center;">';
+    html += '<div style="font-size:13px;opacity:.9;margin-bottom:4px;">已邀请人数</div>';
+    html += '<div style="font-size:36px;font-weight:700;">' + totalInvited + '</div>';
+    html += '<div style="font-size:12px;opacity:.8;margin-top:4px;">每邀请1人，双方各得8~15积分</div>';
+    html += '</div>';
+
+    html += '<button id="btn-gen-invite" onclick="generateInviteCode()" style="width:100%;padding:12px;border-radius:10px;border:none;background:#f59e0b;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:16px;">🎁 生成邀请码（消耗5积分）</button>';
+
+    // Codes list
+    if (codes.length > 0) {
+      html += '<div style="font-size:13px;font-weight:600;color:#64748b;margin-bottom:8px;">我的邀请码</div>';
+      for (var i = 0; i < codes.length; i++) {
+        var c = codes[i];
+        var expired = c.expires_at && new Date(c.expires_at) < new Date();
+        var used = c.uses_remaining <= 0;
+        var statusColor = expired ? '#f87171' : used ? '#94a3b8' : '#22c55e';
+        var statusText = expired ? '已过期' : used ? '已用完' : '可用';
+        html += '<div style="display:flex;align-items:center;padding:10px 12px;background:#f8fafc;border-radius:8px;margin-bottom:6px;border:1px solid #e2e8f0;">';
+        html += '<div style="flex:1;">';
+        html += '<div style="font-size:16px;font-weight:700;font-family:monospace;letter-spacing:2px;color:#1e293b;">' + c.code + '</div>';
+        html += '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">奖励' + c.reward_points + '积分 | 有效期至' + (c.expires_at ? c.expires_at.slice(0,10) : '永久') + '</div>';
+        html += '</div>';
+        html += '<div style="font-size:12px;color:' + statusColor + ';font-weight:600;">' + statusText + '</div>';
+        html += '</div>';
+        if (!expired && !used) {
+          var link = 'https://pandahub.cloud/register?code=' + c.code;
+          html += '<div style="display:flex;gap:6px;margin-top:-2px;margin-bottom:8px;">';
+          html += '<input id="inv-link-' + i + '" value="' + link + '" readonly style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid #e2e8f0;font-size:12px;color:#64748b;background:#f1f5f9;">';
+          html += '<button onclick="copyInviteLink(\'' + link + '\')" style="padding:6px 12px;border-radius:6px;border:none;background:#667eea;color:#fff;font-size:12px;cursor:pointer;font-weight:600;">复制</button>';
+          html += '</div>';
+        }
+      }
+    }
+
+    // Invite history
+    if (records.length > 0) {
+      html += '<div style="font-size:13px;font-weight:600;color:#64748b;margin:12px 0 8px;">邀请记录</div>';
+      for (var j = 0; j < records.length; j++) {
+        var r = records[j];
+        html += '<div style="display:flex;align-items:center;padding:8px 12px;background:#f8fafc;border-radius:8px;margin-bottom:4px;">';
+        html += '<div style="width:28px;height:28px;border-radius:50%;background:#e0e7ff;color:#667eea;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-right:8px;">' + ((r.invitee_username || '?')[0] || '?').toUpperCase() + '</div>';
+        html += '<div style="flex:1;font-size:13px;color:#334155;">' + r.invitee_username + '</div>';
+        html += '<div style="font-size:12px;color:#22c55e;font-weight:600;">+' + r.inviter_reward + '</div>';
+        html += '</div>';
+      }
+    } else {
+      html += '<div style="text-align:center;padding:20px;color:#94a3b8;font-size:13px;">暂无邀请记录</div>';
+    }
+
+    body.innerHTML = html;
+  } catch(err) {
+    body.innerHTML = '<div style="text-align:center;padding:40px;color:#f87171;">加载失败</div>';
+  }
+}
+
+async function generateInviteCode() {
+  var btn = document.getElementById('btn-gen-invite');
+  if (btn) { btn.disabled = true; btn.textContent = '生成中...'; }
+  try {
+    var res = await api('/invites/generate', { method: 'POST' });
+    if (res.error) { showToast(res.error, 'error'); if (btn) { btn.disabled = false; btn.textContent = '🎁 生成邀请码（消耗5积分）'; } return; }
+    showToast('邀请码 ' + res.code + ' 生成成功！', 'success');
+    loadInviteData();
+    loadUserInfo();
+  } catch(e) {
+    showToast('生成失败', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '🎁 生成邀请码（消耗5积分）'; }
+  }
+}
+
+function copyInviteLink(link) {
+  navigator.clipboard.writeText(link).then(function() {
+    showToast('链接已复制！', 'success');
+  }).catch(function() {
+    var input = document.createElement('input');
+    input.value = link;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    showToast('链接已复制！', 'success');
+  });
 }
 
 function switchLeaderboardTab(type) {

@@ -87,7 +87,7 @@ function verifyCaptchaToken(token, slideX) {
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { username, password, nickname, email, __hp, __ts, captchaToken } = req.body;
+    const { username, password, nickname, email, invite_code, __hp, __ts, captchaToken } = req.body;
     const ip = getClientIp(req);
 
     // Honeypot check — bots fill hidden fields
@@ -128,6 +128,22 @@ router.post('/register', async (req, res) => {
     // Track registration
     recordRegistrationAttempt(ip);
 
+    // Validate invite code if provided
+    let validInviteCode = null;
+    if (invite_code) {
+      const invite = db.prepare('SELECT * FROM invite_codes WHERE code = ?').get(invite_code);
+      if (!invite) {
+        return res.status(400).json({ error: '邀请码不存在' });
+      }
+      if (invite.uses_remaining <= 0) {
+        return res.status(400).json({ error: '邀请码已被使用' });
+      }
+      if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
+        return res.status(400).json({ error: '邀请码已过期' });
+      }
+      validInviteCode = invite_code;
+    }
+
     const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
     if (existing) {
       return res.status(400).json({ error: '用户名已存在' });
@@ -135,8 +151,8 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     db.prepare(
-      'INSERT INTO users (username, password, nickname, email, approved, email_verified) VALUES (?, ?, ?, ?, 0, 0)'
-    ).run(username, hashedPassword, nickname || username, email || null);
+      'INSERT INTO users (username, password, nickname, email, approved, email_verified, invite_code) VALUES (?, ?, ?, ?, 0, 0, ?)'
+    ).run(username, hashedPassword, nickname || username, email || null, validInviteCode);
 
     logUserAction({
       userId: null,
@@ -160,7 +176,7 @@ router.post('/register', async (req, res) => {
 // Send registration verification code
 router.post('/send-register-code', async (req, res) => {
   try {
-    const { email, username, password, __hp, __ts, captchaToken } = req.body;
+    const { email, username, password, invite_code, __hp, __ts, captchaToken } = req.body;
     const ip = getClientIp(req);
 
     // Honeypot check — bots fill hidden fields
@@ -220,9 +236,19 @@ router.post('/send-register-code', async (req, res) => {
     // Create user (pending approval, unverified)
     const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Validate invite code if provided
+    let validInviteCode = null;
+    if (invite_code) {
+      const invite = db.prepare('SELECT * FROM invite_codes WHERE code = ?').get(invite_code);
+      if (invite && invite.uses_remaining > 0 && (!invite.expires_at || new Date(invite.expires_at) > new Date())) {
+        validInviteCode = invite_code;
+      }
+    }
+
     const result = db.prepare(
-      'INSERT INTO users (username, password, nickname, email, approved, email_verified) VALUES (?, ?, ?, ?, 0, 0)'
-    ).run(username, hashedPassword, username, email);
+      'INSERT INTO users (username, password, nickname, email, approved, email_verified, invite_code) VALUES (?, ?, ?, ?, 0, 0, ?)'
+    ).run(username, hashedPassword, username, email, validInviteCode);
     const userId = result.lastInsertRowid;
 
     // Generate code
@@ -308,13 +334,35 @@ router.post('/verify-register', async (req, res) => {
     // Activate user
     db.prepare('UPDATE users SET approved = 1, email_verified = 1 WHERE id = ?').run(record.user_id);
 
+    // Process invite code if any
+    let inviteReward = 0;
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(record.user_id);
+    if (user?.invite_code) {
+      const invite = db.prepare('SELECT * FROM invite_codes WHERE code = ?').get(user.invite_code);
+      if (invite && invite.uses_remaining > 0 && (!invite.expires_at || new Date(invite.expires_at) > new Date()) && invite.creator_id !== user.id) {
+        // Use invite code
+        db.prepare('UPDATE invite_codes SET uses_remaining = uses_remaining - 1, claimed_by_id = ?, claimed_by_username = ?, claimed_at = datetime("now") WHERE code = ?').run(user.id, user.username, user.invite_code);
+        // Reward inviter
+        db.prepare('UPDATE users SET points = points + ? WHERE id = ?').run(invite.reward_points, invite.creator_id);
+        // Reward invitee (new user)
+        const INVITEE_BONUS = 20;
+        db.prepare('UPDATE users SET points = points + ? WHERE id = ?').run(INVITEE_BONUS, user.id);
+        // Record
+        db.prepare('INSERT INTO invite_records (code, inviter_id, inviter_username, invitee_id, invitee_username, inviter_reward, invitee_reward) VALUES (?, ?, ?, ?, ?, ?, ?)').run(user.invite_code, invite.creator_id, invite.creator_username, user.id, user.username, invite.reward_points, INVITEE_BONUS);
+        inviteReward = INVITEE_BONUS;
+        // Clear invite_code from user
+        db.prepare('UPDATE users SET invite_code = NULL WHERE id = ?').run(user.id);
+      }
+    }
+
     // Check milestones (new user registered)
     const newMilestones = checkMilestones('users');
 
     res.json({
       success: true,
-      message: '账号激活成功，请登录！',
-      username
+      message: inviteReward > 0 ? `账号激活成功！邀请奖励+${inviteReward}积分已到账，请登录！` : '账号激活成功，请登录！',
+      username,
+      inviteReward
     });
   } catch (err) {
     console.error(err);

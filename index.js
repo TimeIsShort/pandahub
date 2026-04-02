@@ -69,6 +69,7 @@ const captchaRoutes = require('./routes/captcha');
 const dailyTaskRoutes = require('./routes/dailyTasks');
 const badgeRoutes = require('./routes/badges');
 const aiChatRoutes = require('./routes/aiChat');
+const inviteCodesRoutes = require('./routes/inviteCodes');
 const reactionRoutes = require('./routes/reactions');
 
 const app = express();
@@ -159,6 +160,7 @@ app.use('/api/captcha', captchaRoutes);
 app.use('/api/daily-tasks', dailyTaskRoutes);
 app.use('/api/badges', badgeRoutes);
 app.use('/api/ai-chat', aiChatRoutes);
+app.use('/api/invites', inviteCodesRoutes);
 app.use('/api/reactions', reactionRoutes);
 
 // Static files

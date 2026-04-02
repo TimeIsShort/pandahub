@@ -2578,7 +2578,7 @@ async function loadPosts() {
           ${post.tag_name ? `<span class="post-tag" style="background:${post.tag_color}">${escapeHtml(post.tag_name)}</span>` : ''}
         </div>
         <div class="post-title">${escapeHtml(post.title)}</div>
-        <div class="post-excerpt">${escapeHtml(stripMarkdown(post.content).substring(0, 80))}${stripMarkdown(post.content).length > 80 ? '…' : ''}</div>
+        <div class="post-excerpt">${post.summary ? '<span style="color:#667eea;font-size:11px;margin-right:4px;">🤖</span>' + escapeHtml(post.summary) : escapeHtml(stripMarkdown(post.content).substring(0, 80)) + (post.content && post.content.length > 160 ? '…' : '')}</div>
         <div class="post-bottom-meta">
           <div class="post-author-info">
             <span class="avatar-small">${post.avatar ? `<img src="${post.avatar}" alt="avatar">` : (post.nickname || post.username)[0].toUpperCase()}</span>

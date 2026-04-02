@@ -9,6 +9,7 @@ const { sendPushToUser, notifyUserNewComment, notifyUserNewReply, processMention
 const { incrementDailyPostCount, incrementDailyCommentCount } = require('./dailyTasks');
 const { checkBadges } = require('./badges');
 const { checkMilestones } = require('../utils/milestones');
+const { generatePostSummary } = require('../utils/summarize');
 
 const router = express.Router();
 
@@ -287,6 +288,17 @@ router.put('/:id', authMiddleware, (req, res) => {
     db.prepare(`
       UPDATE posts SET title = ?, content = ?, tag_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
     `).run(title || post.title, content || post.content, tag_id !== undefined ? tag_id : post.tag_id, req.params.id);
+
+    // Regenerate AI summary on content change
+    const newContent = content || post.content;
+    const newTitle = title || post.title;
+    if (newContent && newTitle) {
+      generatePostSummary(newTitle, newContent).then(summary => {
+        if (summary && summary.length > 5) {
+          db.prepare('UPDATE posts SET summary = ? WHERE id = ?').run(summary, req.params.id);
+        }
+      }).catch(() => {});
+    }
 
     const updated = db.prepare(`
       SELECT p.*, u.username, u.nickname, u.avatar, t.name as tag_name, t.color as tag_color

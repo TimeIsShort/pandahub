@@ -1,0 +1,4 @@
+-- Add AI summary field to posts
+-- This column is used to store AI-generated post summaries for display in post lists
+-- Only add if it doesn't exist (migration is idempotent for fresh installs)
+-- The column will be empty for existing posts; summaries are generated on post approval

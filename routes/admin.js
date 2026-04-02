@@ -6,6 +6,7 @@ const { logAction } = require('../middleware/moderationLog');
 const { callBailianModeration, parseModerationResult } = require('../middleware/autoModeration');
 const { sendPushToUser, notifyUserPostApproved, notifyUserPostRejected } = require('../utils/pushHelper');
 const { checkMilestones } = require('../utils/milestones');
+const { generatePostSummary } = require('../utils/summarize');
 
 const router = express.Router();
 const AI_DAILY_QUOTA = 100;
@@ -150,6 +151,15 @@ router.post('/posts/:id/approve', authMiddleware, (req, res) => {
     db.prepare("UPDATE posts SET status = 'approved' WHERE id = ?").run(req.params.id);
 
     logAction({ adminId: req.user.id, action: 'approve_post', targetType: 'post', targetId: Number(req.params.id), details: `通过帖子: ${post.title}` });
+
+    // Generate AI summary (fire-and-forget, don't await)
+    if (post.content) {
+      generatePostSummary(post.title, post.content).then(summary => {
+        if (summary && summary.length > 5) {
+          db.prepare('UPDATE posts SET summary = ? WHERE id = ?').run(summary, req.params.id);
+        }
+      }).catch(() => {});
+    }
 
     // Check milestones (post approved)
     checkMilestones('posts');
@@ -464,6 +474,14 @@ router.post('/posts/:id/auto-review', authMiddleware, async (req, res) => {
 
   if (result === 'approved') {
     db.prepare("UPDATE posts SET status = 'approved' WHERE id = ?").run(post.id);
+    // Generate AI summary (fire-and-forget)
+    if (post.content) {
+      generatePostSummary(post.title, post.content).then(summary => {
+        if (summary && summary.length > 5) {
+          db.prepare('UPDATE posts SET summary = ? WHERE id = ?').run(summary, post.id);
+        }
+      }).catch(() => {});
+    }
     db.prepare(`
       INSERT INTO notifications (user_id, type, title, content, post_id)
       VALUES (?, 'post_approved', '🎉 帖子审核通过', '您的帖子「' || ? || '」已通过审核，现在可以在社区看到了！', ?)
@@ -532,6 +550,14 @@ router.post('/posts/auto-review-all', authMiddleware, async (req, res) => {
 
     if (result === 'approved') {
       db.prepare("UPDATE posts SET status = 'approved' WHERE id = ?").run(post.id);
+      // Generate AI summary
+      if (post.content) {
+        generatePostSummary(post.title, post.content).then(summary => {
+          if (summary && summary.length > 5) {
+            db.prepare('UPDATE posts SET summary = ? WHERE id = ?').run(summary, post.id);
+          }
+        }).catch(() => {});
+      }
       db.prepare(`
         INSERT INTO notifications (user_id, type, title, content, post_id)
         VALUES (?, 'post_approved', '🎉 帖子审核通过', '您的帖子「' || ? || '」已通过审核，现在可以在社区看到了！', ?)

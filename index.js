@@ -53,6 +53,7 @@ const i18nRoutes = require('./routes/i18n');
 const sitemapRoutes = require('./routes/sitemap');
 const messageRoutes = require('./routes/messages');
 const leaderboardRoutes = require('./routes/leaderboard');
+const activityLeaderboardRoutes = require('./routes/activityLeaderboard');
 const followRoutes = require('./routes/follow');
 const favoritesRoutes = require('./routes/favorites');
 const sectionRoutes = require('./routes/sections');
@@ -149,6 +150,7 @@ app.use('/sitemap.xml', sitemapRoutes);
 app.use('/feed.xml', rssRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/activity-leaderboard', activityLeaderboardRoutes);
 app.use('/api', followRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/reports', reportRoutes);
@@ -174,6 +176,7 @@ app.use((err, req, res, next) => {
 });
 
 try { require('./services/reminderScheduler').startReminderScheduler(); } catch(e) { console.warn('[Reminder] Scheduler start failed:', e.message); }
+try { require('./services/leaderboardScheduler').startLeaderboardScheduler(); } catch(e) { console.warn('[Leaderboard] Scheduler start failed:', e.message); }
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`论坛已启动: http://0.0.0.0:${PORT}`);

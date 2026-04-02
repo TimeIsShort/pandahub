@@ -620,92 +620,98 @@
       <span class="modal-close" onclick="closeModal()">&times;</span>
       <div id="auth-form-login">
         <h2>登录</h2>
-        <div class="form-group">
-          <label>用户名</label>
-          <input type="text" id="login-username">
-        </div>
-        <div class="form-group">
-          <label>密码</label>
-          <input type="password" id="login-password">
-        </div>
-        <div class="form-actions">
-          <button id="btn-login-submit" class="btn-primary" onclick="login()">登录</button>
-          <button class="btn-link" onclick="switchToRegister()">没有账号？申请内测</button>
-          <button class="btn-link" style="margin-left:auto;" onclick="showForgotPassword()">忘记密码？</button>
-        </div>
+        <form id="login-form" onsubmit="login(); return false;" autocomplete="on">
+          <div class="form-group">
+            <label for="login-username">用户名</label>
+            <input type="text" id="login-username" autocomplete="username" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">密码</label>
+            <input type="password" id="login-password" autocomplete="current-password" required>
+          </div>
+          <div class="form-actions">
+            <button id="btn-login-submit" class="btn-primary" type="submit">登录</button>
+            <button class="btn-link" type="button" onclick="switchToRegister()">没有账号？申请内测</button>
+            <button class="btn-link" style="margin-left:auto;" type="button" onclick="showForgotPassword()">忘记密码？</button>
+          </div>
+        </form>
       </div>
 
       <div id="auth-form-forgot" style="display:none;">
         <h2>找回密码</h2>
-        <div id="forgot-step-1">
-          <p style="font-size:13px;color:#888;margin-bottom:12px;">输入您绑定的邮箱地址，我们将发送验证码</p>
-          <div class="form-group">
-            <label>邮箱</label>
-            <input type="email" id="forgot-email" placeholder="输入绑定的邮箱" onkeypress="if(event.key==='Enter')forgotSendCode()">
-          </div>
-          <div id="forgot-verify-row" style="display:none;margin-top:8px;">
+        <form id="forgot-form" onsubmit="handleForgotSubmit(); return false;" autocomplete="on">
+          <div id="forgot-step-1">
+            <p style="font-size:13px;color:#888;margin-bottom:12px;">输入您绑定的邮箱地址，我们将发送验证码</p>
             <div class="form-group">
-              <label>验证码</label>
-              <input type="text" id="forgot-code" placeholder="输入6位验证码" maxlength="6" onkeypress="if(event.key==='Enter')forgotResetPassword()">
+              <label for="forgot-email">邮箱</label>
+              <input type="email" id="forgot-email" placeholder="输入绑定的邮箱" autocomplete="email" required>
             </div>
-            <div class="form-group">
-              <label>新密码</label>
-              <input type="password" id="forgot-new-password" placeholder="新密码（至少6位，含大小写字母和数字）" onkeypress="if(event.key==='Enter')forgotResetPassword()">
+            <div id="forgot-verify-row" style="display:none;margin-top:8px;">
+              <div class="form-group">
+                <label for="forgot-code">验证码</label>
+                <input type="text" id="forgot-code" placeholder="输入6位验证码" maxlength="6" autocomplete="one-time-code">
+              </div>
+              <div class="form-group">
+                <label for="forgot-new-password">新密码</label>
+                <input type="password" id="forgot-new-password" placeholder="新密码（至少6位，含大小写字母和数字）" autocomplete="new-password" required>
+              </div>
+              <div class="form-group">
+                <label for="forgot-confirm-password">确认密码</label>
+                <input type="password" id="forgot-confirm-password" placeholder="再次输入新密码" autocomplete="new-password" required>
+              </div>
             </div>
-            <div class="form-group">
-              <label>确认密码</label>
-              <input type="password" id="forgot-confirm-password" placeholder="再次输入新密码" onkeypress="if(event.key==='Enter')forgotResetPassword()">
+            <div class="form-actions">
+              <button id="btn-forgot-send" class="btn-primary" type="submit">发送验证码</button>
+              <button id="btn-forgot-reset" class="btn-primary" style="display:none;" type="submit">重置密码</button>
+              <button class="btn-link" type="button" onclick="switchToLoginFromForgot()">返回登录</button>
             </div>
+            <div id="forgot-msg" style="font-size:13px;margin-top:8px;"></div>
           </div>
-          <div class="form-actions">
-            <button id="btn-forgot-send" class="btn-primary" onclick="forgotSendCode()">发送验证码</button>
-            <button id="btn-forgot-reset" class="btn-primary" style="display:none;" onclick="forgotResetPassword()">重置密码</button>
-            <button class="btn-link" onclick="switchToLoginFromForgot()">返回登录</button>
-          </div>
-          <div id="forgot-msg" style="font-size:13px;margin-top:8px;"></div>
-        </div>
+        </form>
       </div>
       <div id="auth-form-register" style="display:none;">
         <h2>注册账号</h2>
-        <div class="reg-steps" id="reg-steps">
-          <span class="reg-step active" id="reg-step-1">1 验证邮箱</span>
-          <span class="reg-step-sep">›</span>
-          <span class="reg-step" id="reg-step-2">2 填写信息</span>
-          <span class="reg-step-sep">›</span>
-          <span class="reg-step" id="reg-step-3">3 完成注册</span>
-        </div>
-        <div class="form-group">
-          <label>邮箱 <span style="color:#ef4444">*</span></label>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="email" id="register-email" placeholder="用于接收验证码" style="flex:1;">
-            <button type="button" id="btn-reg-send-code" class="btn-send-code-mini" onclick="sendRegCode()">发送验证码</button>
+        <form id="register-form" onsubmit="register(); return false;" autocomplete="on">
+          <div class="reg-steps" id="reg-steps">
+            <span class="reg-step active" id="reg-step-1">1 验证邮箱</span>
+            <span class="reg-step-sep">›</span>
+            <span class="reg-step" id="reg-step-2">2 填写信息</span>
+            <span class="reg-step-sep">›</span>
+            <span class="reg-step" id="reg-step-3">3 完成注册</span>
           </div>
-          <span id="reg-code-countdown" style="font-size:12px;color:#f59e0b;margin-top:4px;display:block;"></span>
-        </div>
-        <div class="form-group">
-          <label>验证码 <span style="color:#ef4444">*</span></label>
-          <input type="text" id="register-code" placeholder="6位验证码" maxlength="6" inputmode="numeric" autocomplete="one-time-code" style="max-width:200px;">
-        </div>
-        <div class="form-group">
-          <label>用户名 <span style="color:#ef4444">*</span></label>
-          <input type="text" id="register-username" placeholder="3-20位字母数字下划线" maxlength="20">
-        </div>
-        <div class="form-group">
-          <label>昵称</label>
-          <input type="text" id="register-nickname" placeholder="显示名称（不填则用用户名）" maxlength="30">
-        </div>
-        <div class="form-group">
-          <label>密码 <span style="color:#ef4444">*</span></label>
-          <input type="password" id="register-password" placeholder="包含大小写字母和数字，至少6位">
-        </div>
-        <!-- Honeypot + timestamp anti-bot fields (hidden from humans) -->
-        <input type="text" name="website" id="reg-website" value="" placeholder="网站" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;">
-        <input type="hidden" id="reg-form-ts" value="">
+          <div class="form-group">
+            <label for="register-email">邮箱 <span style="color:#ef4444">*</span></label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="email" id="register-email" placeholder="用于接收验证码" style="flex:1;" autocomplete="email" required>
+              <button type="button" id="btn-reg-send-code" class="btn-send-code-mini" onclick="sendRegCode()">发送验证码</button>
+            </div>
+            <span id="reg-code-countdown" style="font-size:12px;color:#f59e0b;margin-top:4px;display:block;"></span>
+          </div>
+          <div class="form-group">
+            <label for="register-code">验证码 <span style="color:#ef4444">*</span></label>
+            <input type="text" id="register-code" placeholder="6位验证码" maxlength="6" inputmode="numeric" autocomplete="one-time-code" style="max-width:200px;">
+          </div>
+          <div class="form-group">
+            <label for="register-username">用户名 <span style="color:#ef4444">*</span></label>
+            <input type="text" id="register-username" placeholder="3-20位字母数字下划线" maxlength="20" autocomplete="username" required>
+          </div>
+          <div class="form-group">
+            <label for="register-nickname">昵称</label>
+            <input type="text" id="register-nickname" placeholder="显示名称（不填则用用户名）" maxlength="30" autocomplete="nickname">
+          </div>
+          <div class="form-group">
+            <label for="register-password">密码 <span style="color:#ef4444">*</span></label>
+            <input type="password" id="register-password" placeholder="包含大小写字母和数字，至少6位" autocomplete="new-password" required>
+          </div>
+          <!-- Honeypot + timestamp anti-bot fields (hidden from humans) -->
+          <input type="text" name="website" id="reg-website" value="" placeholder="网站" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;">
+          <input type="hidden" id="reg-form-ts" value="">
 
-        <div class="form-actions">
-          <button id="btn-register-submit" class="btn-primary" onclick="register()">立即注册</button>
-          <button class="btn-link" onclick="switchToLogin()">已有账号？去登录</button>
-        </div>
+          <div class="form-actions">
+            <button id="btn-register-submit" class="btn-primary" type="submit">立即注册</button>
+            <button class="btn-link" type="button" onclick="switchToLogin()">已有账号？去登录</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

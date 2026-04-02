@@ -1725,6 +1725,16 @@ function switchToLoginFromForgot() {
 let forgotCountdown = 0;
 let forgotTimer = null;
 
+async function handleForgotSubmit() {
+  // Detect which step we're on based on visibility of reset button
+  const resetBtn = document.getElementById('btn-forgot-reset');
+  if (resetBtn && resetBtn.style.display !== 'none') {
+    await forgotResetPassword();
+  } else {
+    await forgotSendCode();
+  }
+}
+
 async function forgotSendCode() {
   const email = document.getElementById('forgot-email').value.trim();
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

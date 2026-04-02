@@ -5,6 +5,7 @@ const { authMiddleware } = require('../middleware/auth');
 const { logAction } = require('../middleware/moderationLog');
 const { callBailianModeration, parseModerationResult } = require('../middleware/autoModeration');
 const { sendPushToUser, notifyUserPostApproved, notifyUserPostRejected } = require('../utils/pushHelper');
+const { checkMilestones } = require('../utils/milestones');
 
 const router = express.Router();
 const AI_DAILY_QUOTA = 100;
@@ -149,6 +150,9 @@ router.post('/posts/:id/approve', authMiddleware, (req, res) => {
     db.prepare("UPDATE posts SET status = 'approved' WHERE id = ?").run(req.params.id);
 
     logAction({ adminId: req.user.id, action: 'approve_post', targetType: 'post', targetId: Number(req.params.id), details: `通过帖子: ${post.title}` });
+
+    // Check milestones (post approved)
+    checkMilestones('posts');
 
     // Create notification for the post author
     db.prepare(`
@@ -472,6 +476,8 @@ router.post('/posts/:id/auto-review', authMiddleware, async (req, res) => {
     });
     notifyUserPostApproved(post.user_id, post.title, '/post/' + post.id);
     logAction({ adminId: req.user.id, action: 'auto_approve_post', targetType: 'post', targetId: Number(post.id), details: `AI自动通过: ${post.title} | AI回复: ${raw}` });
+    // Check milestones (post approved by AI)
+    checkMilestones('posts');
     return res.json({ success: true, result: 'approved', ai_response: raw, message: 'AI 审核通过，帖子已发布' });
   }
 

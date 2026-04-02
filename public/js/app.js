@@ -601,6 +601,9 @@ function setAuth(token, user) {
   loadMsgUnreadCount();
   startMsgPolling();
   checkEmailVerifiedBanner();
+  loadMilestoneProgress();
+  // Check for new milestone achievements
+  setTimeout(checkNewMilestones, 2000);
 }
 
 function clearAuth() {
@@ -5122,6 +5125,158 @@ function closeNotifications() {
   enableBottomNav();
 }
 
+var _milestoneCache = null;
+var _milestoneLoaded = 0;
+var _lastMilestoneId = localStorage.getItem('lastMilestoneId') || 0;
+
+async function loadMilestoneProgress() {
+  if (!getUser()) return;
+  var now = Date.now();
+  if (_milestoneCache && now - _milestoneLoaded < 60000) return _milestoneCache;
+  try {
+    var res = await api('/milestones');
+    _milestoneCache = res;
+    _milestoneLoaded = now;
+    updateMilestoneNavBadge(res);
+    return res;
+  } catch(e) {}
+  return null;
+}
+
+function updateMilestoneNavBadge(data) {
+  var btn = document.getElementById('nav-milestone-btn');
+  if (!btn) return;
+  var pending = (data.milestones || []).filter(function(m) { return !m.achieved; });
+  if (pending.length === 0) {
+    btn.style.display = 'none';
+    return;
+  }
+  // Show next upcoming milestone
+  var stats = data.stats || {};
+  var nextUp = pending.sort(function(a, b) {
+    var progA = (stats[a.milestone_type] || 0) / a.threshold;
+    var progB = (stats[b.milestone_type] || 0) / b.threshold;
+    return progB - progA;
+  })[0];
+  var val = stats[nextUp.milestone_type] || 0;
+  var icon = document.getElementById('milestone-icon');
+  var text = document.getElementById('milestone-progress-text');
+  if (icon) icon.textContent = nextUp.icon || '🎯';
+  if (text) text.textContent = val + '/' + nextUp.threshold;
+  btn.style.display = 'inline-flex';
+}
+
+async function openMilestones() {
+  var modal = document.getElementById('milestones-modal');
+  var list = document.getElementById('milestones-list');
+  var summary = document.getElementById('milestone-stats-summary');
+  modal.style.display = 'flex';
+
+  // Load fresh data
+  try {
+    var data = await api('/milestones');
+    _milestoneCache = data;
+    _milestoneLoaded = Date.now();
+    updateMilestoneNavBadge(data);
+    var stats = data.stats || {};
+    summary.textContent = '👥 ' + stats.users + ' 用户 · 📝 ' + stats.posts + ' 帖子 · 💬 ' + stats.comments + ' 评论';
+
+    var ms = data.milestones || [];
+    var achieved = ms.filter(function(m) { return m.achieved; });
+    var pending = ms.filter(function(m) { return !m.achieved; });
+
+    var html = '<div style="font-size:12px;font-weight:700;color:#94a3b8;padding:4px 0 8px;">🎉 已达成 (' + achieved.length + ')</div>';
+    for (var i = 0; i < achieved.length; i++) {
+      var m = achieved[i];
+      html += '<div style="display:flex;align-items:center;padding:10px 12px;background:#f0fdf4;border-radius:10px;margin-bottom:6px;border:1px solid #bbf7d0;">';
+      html += '<span style="font-size:24px;margin-right:10px;">' + m.icon + '</span>';
+      html += '<div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#166534;">' + m.title + '</div>';
+      html += '<div style="font-size:11px;color:#16a34a;margin-top:2px;">' + m.description + '</div></div>';
+      html += '<span style="font-size:18px;">✅</span></div>';
+    }
+
+    html += '<div style="font-size:12px;font-weight:700;color:#94a3b8;padding:12px 0 8px;">🎯 进行中</div>';
+    for (var j = 0; j < pending.length; j++) {
+      var p = pending[j];
+      var val = stats[p.milestone_type] || 0;
+      var pct = Math.min(100, Math.round((val / p.threshold) * 100));
+      var barColor = pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#e2e8f0';
+      html += '<div style="padding:10px 12px;background:#f8fafc;border-radius:10px;margin-bottom:6px;">';
+      html += '<div style="display:flex;align-items:center;margin-bottom:6px;">';
+      html += '<span style="font-size:20px;margin-right:8px;">' + p.icon + '</span>';
+      html += '<div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#475569;">' + p.title + '</div>';
+      html += '<div style="font-size:11px;color:#94a3b8;margin-top:1px;">' + p.description + '</div></div>';
+      html += '<span style="font-size:11px;color:#94a3b8;">' + val + '/' + p.threshold + '</span></div>';
+      html += '<div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:3px;transition:width .3s;"></div></div></div>';
+    }
+    list.innerHTML = html;
+  } catch(e) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">加载失败，请重试</div>';
+  }
+}
+
+function closeMilestones() {
+  document.getElementById('milestones-modal').style.display = 'none';
+}
+
+function closeMilestoneModal() {
+  document.getElementById('milestone-modal').style.display = 'none';
+  enableBottomNav();
+}
+
+async function checkNewMilestones() {
+  if (!getUser()) return;
+  var prevId = parseInt(localStorage.getItem('lastMilestoneId') || '0');
+  try {
+    var res = await api('/milestones/latest');
+    if (res.milestone && res.milestone.id > prevId) {
+      localStorage.setItem('lastMilestoneId', res.milestone.id);
+      showMilestoneCelebration(res.milestone);
+    }
+  } catch(e) {}
+}
+
+function showMilestoneCelebration(milestone) {
+  var modal = document.getElementById('milestone-modal');
+  var icon = document.getElementById('milestone-modal-icon');
+  var name = document.getElementById('milestone-modal-name');
+  var desc = document.getElementById('milestone-modal-desc');
+  icon.textContent = milestone.icon || '🎉';
+  name.textContent = milestone.title || '社区里程碑达成！';
+  desc.textContent = milestone.description || '感谢大家的支持！';
+  modal.style.display = 'flex';
+  disableBottomNav();
+
+  // Confetti burst
+  spawnConfetti();
+}
+
+function spawnConfetti() {
+  var colors = ['#f59e0b','#ef4444','#22c55e','#3b82f6','#a855f7','#ec4899','#f97316'];
+  var container = document.createElement('div');
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999999;overflow:hidden;';
+  document.body.appendChild(container);
+  for (var i = 0; i < 60; i++) {
+    var conf = document.createElement('div');
+    var size = Math.random() * 10 + 5;
+    var color = colors[Math.floor(Math.random() * colors.length)];
+    var startX = Math.random() * window.innerWidth;
+    var startY = -20;
+    var endX = startX + (Math.random() - 0.5) * 300;
+    var endY = window.innerHeight + 20;
+    var duration = Math.random() * 1500 + 1000;
+    conf.style.cssText = 'position:absolute;left:' + startX + 'px;top:' + startY + 'px;width:' + size + 'px;height:' + size + 'px;background:' + color + ';border-radius:' + (Math.random() > 0.5 ? '50%' : '2px') + ';opacity:1;transform:rotate(' + (Math.random() * 360) + 'deg);transition:all ' + duration + 'ms cubic-bezier(.25,.46,.45,.94);';
+    container.appendChild(conf);
+    setTimeout(function(c, ex, ey) {
+      c.style.left = ex + 'px';
+      c.style.top = ey + 'px';
+      c.style.opacity = '0';
+      c.style.transform = 'rotate(' + (Math.random() * 720) + 'deg)';
+    }, 20, conf, endX, endY);
+  }
+  setTimeout(function() { container.remove(); }, 4000);
+}
+
 function switchInboxTab(tab) {
   inboxTab = tab;
   notifPage = 1;
@@ -6728,6 +6883,13 @@ async function init() {
   initModalInteractions();
   currentUser = getUser();
   updateNav();
+
+  // Load milestone progress if logged in
+  if (currentUser) {
+    loadMilestoneProgress();
+    // Check for new milestones after a delay
+    setTimeout(checkNewMilestones, 3000);
+  }
 
   // Critical: load sections, tags, trending in parallel for faster first paint
   await Promise.all([

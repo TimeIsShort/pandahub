@@ -741,6 +741,20 @@ main.container {
   display: none !important;
 }
 
+/* Milestone styles */
+#nav-milestone-btn {
+  display: none;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  transition: background 0.2s;
+  align-items: center;
+  gap: 4px;
+}
+#nav-milestone-btn:hover {
+  background: rgba(245, 158, 11, 0.2) !important;
+}
+
 .panda-scene {
   position: relative;
   min-height: unset;

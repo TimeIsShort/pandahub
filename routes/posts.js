@@ -8,6 +8,7 @@ const { updatePostFTS, getUserLevel, POINT_COST } = require('../models/database'
 const { sendPushToUser, notifyUserNewComment, notifyUserNewReply, processMentions } = require('../utils/pushHelper');
 const { incrementDailyPostCount, incrementDailyCommentCount } = require('./dailyTasks');
 const { checkBadges } = require('./badges');
+const { checkMilestones } = require('../utils/milestones');
 
 const router = express.Router();
 
@@ -394,6 +395,9 @@ router.post('/:id/comments', authMiddleware, async (req, res) => {
     const result = db.prepare(
       'INSERT INTO comments (post_id, user_id, content, parent_id, reply_to_user_id) VALUES (?, ?, ?, ?, ?)'
     ).run(req.params.id, req.user.id, content, parent_id || null, reply_to_user_id || null);
+
+    // Check milestones (new comment)
+    checkMilestones('comments');
 
     const comment = db.prepare(`
       SELECT c.*, u.username, u.nickname, u.avatar,

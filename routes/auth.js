@@ -6,6 +6,7 @@ const { JWT_SECRET, authMiddleware } = require('../middleware/auth');
 const { getUserLevel, getLevelBenefits } = require('../models/database');
 const { logAction } = require('../middleware/moderationLog');
 const { logUserAction } = require('../middleware/actionLogger');
+const { checkMilestones } = require('../utils/milestones');
 
 const router = express.Router();
 
@@ -306,6 +307,9 @@ router.post('/verify-register', async (req, res) => {
 
     // Activate user
     db.prepare('UPDATE users SET approved = 1, email_verified = 1 WHERE id = ?').run(record.user_id);
+
+    // Check milestones (new user registered)
+    const newMilestones = checkMilestones('users');
 
     res.json({
       success: true,

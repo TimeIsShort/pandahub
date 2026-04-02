@@ -414,8 +414,28 @@
             <label>消息通知</label>
             <div class="push-toggle-wrap">
               <input type="checkbox" id="push-toggle" onchange="handlePushToggle(this)">
-              <span>浏览器推送通知（新回复、私信等）</span>
+              <span>浏览器推送通知</span>
               <span id="push-status"></span>
+            </div>
+            <div class="push-toggle-wrap" style="margin-top:8px;">
+              <input type="checkbox" id="email-notify-toggle">
+              <span>邮件通知</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <input type="checkbox" id="quiet-hours-toggle" onchange="handleQuietHoursToggle(this)">
+              <span>🌙 免打扰时段</span>
+            </div>
+            <div id="quiet-hours-range" style="display:none;margin-left:28px;">
+              <div style="display:flex;gap:8px;align-items:center;font-size:13px;color:#64748b;">
+                <span>从</span>
+                <input type="time" id="quiet-start" value="22:00" style="padding:4px 8px;border-radius:6px;border:1px solid #e2e8f0;font-size:13px;">
+                <span>到</span>
+                <input type="time" id="quiet-end" value="08:00" style="padding:4px 8px;border-radius:6px;border:1px solid #e2e8f0;font-size:13px;">
+              </div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:4px;">此时段内不发送推送和邮件通知</div>
             </div>
           </div>
 

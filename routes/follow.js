@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
+const { sendPushToUser, sendEmailToUser, escapeHtml } = require('../utils/pushHelper');
 
 const router = express.Router();
 
@@ -32,6 +33,34 @@ router.post('/follow/:userId', authMiddleware, (req, res) => {
     db.prepare(
       'INSERT INTO follows (follower_id, following_id) VALUES (?, ?)'
     ).run(followerId, followingId);
+    // Get follower info
+    const follower = db.prepare('SELECT username, nickname FROM users WHERE id = ?').get(followerId);
+    const followerName = follower?.nickname || follower?.username || '有人';
+
+    // In-app notification
+    db.prepare(
+      "INSERT INTO notifications (user_id, type, title, content) VALUES (?, 'new_follower', '👤 新粉丝', ?)"
+    ).run(followingId, followerName + ' 关注了你');
+
+    // Web Push
+    sendPushToUser(followingId, {
+      title: '👤 新粉丝',
+      body: followerName + ' 关注了你',
+      url: '/profile/' + followerId,
+      tag: 'follow-' + followerId
+    });
+
+    // Email
+    sendEmailToUser(followingId, {
+      subject: '👤 有人关注了你 - 熊猫社区',
+      html: '<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px;">' +
+        '<div style="text-align:center;margin-bottom:24px;"><h2 style="color:#667eea;">🐼 熊猫社区</h2></div>' +
+        '<p style="font-size:16px;color:#333;">您好！</p>' +
+        '<p style="font-size:16px;color:#333;"><strong>' + escapeHtml(followerName) + '</strong> 关注了你</p>' +
+        '<div style="background:#f0f7ff;border-radius:8px;padding:16px;margin:20px 0;font-size:15px;color:#1e3a5f;">' +
+        '你的粉丝+1，继续活跃吧！💪</div>' +
+        '<a href="https://pandahub.cloud/profile/' + followerId + '" style="display:inline-block;background:#667eea;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;margin-top:12px;">查看Ta的主页 →</a></div>',
+    });
 
     res.json({ success: true, message: '关注成功' });
   } catch (err) {

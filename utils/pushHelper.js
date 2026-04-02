@@ -20,12 +20,40 @@ function initPush() {
   }
 }
 
-async function sendPushToUser(userId, { title, body, url, tag }) {
-  initPush();
-  if (!webpushReady) return;
-
+function isInQuietHours(userId) {
   try {
     const db = require('../models/database');
+    const user = db.prepare(
+      'SELECT notification_quiet_hours, notification_quiet_start, notification_quiet_end FROM users WHERE id = ?'
+    ).get(Number(userId));
+    if (!user || !user.notification_quiet_hours) return false;
+
+    const now = new Date();
+    const currentHHMM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    const start = user.notification_quiet_start || '22:00';
+    const end = user.notification_quiet_end || '08:00';
+
+    if (start <= end) {
+      return currentHHMM >= start && currentHHMM < end;
+    } else {
+      // Overnight (e.g. 22:00 - 08:00)
+      return currentHHMM >= start || currentHHMM < end;
+    }
+  } catch (e) {
+    return false;
+  }
+}
+
+async function sendPushToUser(userId, { title, body, url, tag }) {
+  try {
+    const db = require('../models/database');
+    const user = db.prepare('SELECT notify_push FROM users WHERE id = ?').get(Number(userId));
+    if (!user || !user.notify_push) return;
+    if (isInQuietHours(userId)) return;
+
+    initPush();
+    if (!webpushReady) return;
+
     const sub = db.prepare('SELECT * FROM push_subscriptions WHERE user_id = ?').get(Number(userId));
     if (!sub) return;
 
@@ -66,16 +94,18 @@ function initEmail() {
 }
 
 async function sendEmailToUser(userId, { subject, html }) {
-  initEmail();
-  if (!emailTransporter) return;
-
   try {
     const db = require('../models/database');
     const user = db.prepare(
-      'SELECT email, email_verified, nickname FROM users WHERE id = ?'
+      'SELECT email, email_verified, nickname, notify_email FROM users WHERE id = ?'
     ).get(Number(userId));
 
     if (!user || !user.email || user.email_verified !== 1) return;
+    if (!user.notify_email) return;
+    if (isInQuietHours(userId)) return; // Quiet hours apply to email too
+
+    initEmail();
+    if (!emailTransporter) return;
 
     const fromStr = '"熊猫社区" <' + (process.env.SMTP_FROM || 'noreply@pandahub.cloud') + '>';
     await emailTransporter.sendMail({

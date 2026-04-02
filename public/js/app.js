@@ -4530,9 +4530,36 @@ async function loadSettings() {
     loadEmailBind();
     // Load push subscription status
     initPushNotification();
+    // Load notification settings
+    loadNotificationSettings();
     // Load level benefits
     loadLevelBenefits();
   }
+}
+
+async function loadNotificationSettings() {
+  try {
+    var res = await api('/users/me/notification-settings');
+    if (res.error || !res.settings) return;
+    var s = res.settings;
+    var emailToggle = document.getElementById('email-notify-toggle');
+    var quietToggle = document.getElementById('quiet-hours-toggle');
+    var quietRange = document.getElementById('quiet-hours-range');
+    var quietStart = document.getElementById('quiet-start');
+    var quietEnd = document.getElementById('quiet-end');
+    if (emailToggle) emailToggle.checked = s.notify_email !== 0;
+    if (quietToggle) {
+      quietToggle.checked = s.notification_quiet_hours === 1;
+      if (quietRange) quietRange.style.display = s.notification_quiet_hours === 1 ? 'block' : 'none';
+    }
+    if (quietStart) quietStart.value = s.notification_quiet_start || '22:00';
+    if (quietEnd) quietEnd.value = s.notification_quiet_end || '08:00';
+  } catch (e) {}
+}
+
+function handleQuietHoursToggle(checkbox) {
+  var range = document.getElementById('quiet-hours-range');
+  if (range) range.style.display = checkbox.checked ? 'block' : 'none';
 }
 
 async function loadLevelBenefits() {
@@ -4938,12 +4965,26 @@ async function saveSettings() {
       user.role = res.user.role;
       localStorage.setItem('user', JSON.stringify(user));
       updateNav();
-
-      showToast('设置已保存', 'success');
-      goHome();
     } else {
       showToast(res.error || '保存失败', 'error', 2800);
     }
+
+    // Save notification settings
+    var emailToggle = document.getElementById('email-notify-toggle');
+    var quietToggle = document.getElementById('quiet-hours-toggle');
+    var quietStart = document.getElementById('quiet-start');
+    var quietEnd = document.getElementById('quiet-end');
+    var notifSettings = {};
+    if (emailToggle) notifSettings.notify_email = emailToggle.checked;
+    if (quietToggle) notifSettings.notification_quiet_hours = quietToggle.checked;
+    if (quietStart) notifSettings.notification_quiet_start = quietStart.value;
+    if (quietEnd) notifSettings.notification_quiet_end = quietEnd.value;
+    try {
+      await api('/users/me/notification-settings', { method: 'POST', body: JSON.stringify(notifSettings) });
+    } catch (e) { console.warn('Notification settings save failed:', e); }
+
+    showToast('设置已保存', 'success');
+    goHome();
   } catch (e) {
     showToast('保存失败', 'error', 2800);
   } finally {

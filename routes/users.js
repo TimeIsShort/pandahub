@@ -224,4 +224,42 @@ router.get('/:id/points-trend', (req, res) => {
   }
 });
 
+
+// GET /api/users/me/notification-settings
+router.get('/me/notification-settings', (req, res) => {
+  const user = db.prepare(
+    'SELECT notification_quiet_hours, notification_quiet_start, notification_quiet_end, notify_email, notify_push FROM users WHERE id = ?'
+  ).get(req.user?.id);
+  if (!user) return res.status(401).json({ error: '未登录' });
+  res.json({ settings: user });
+});
+
+// POST /api/users/me/notification-settings
+router.post('/me/notification-settings', (req, res) => {
+  const { notification_quiet_hours, notification_quiet_start, notification_quiet_end, notify_email, notify_push } = req.body;
+  try {
+    db.prepare(`
+      UPDATE users SET
+        notification_quiet_hours = COALESCE(?, notification_quiet_hours),
+        notification_quiet_start = COALESCE(?, notification_quiet_start),
+        notification_quiet_end = COALESCE(?, notification_quiet_end),
+        notify_email = COALESCE(?, notify_email),
+        notify_push = COALESCE(?, notify_push)
+      WHERE id = ?
+    `).run(
+      notification_quiet_hours !== undefined ? (notification_quiet_hours ? 1 : 0) : null,
+      notification_quiet_start || null,
+      notification_quiet_end || null,
+      notify_email !== undefined ? (notify_email ? 1 : 0) : null,
+      notify_push !== undefined ? (notify_push ? 1 : 0) : null,
+      req.user.id
+    );
+    res.json({ success: true, message: '通知设置已更新' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '更新失败' });
+  }
+});
+
+
 module.exports = router;

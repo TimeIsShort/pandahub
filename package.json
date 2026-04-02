@@ -10,7 +10,8 @@
     "build:mascot": "node scripts/generate-panda-mascot.mjs",
     "build:mascot:full": "npm run sync:three-runtime && npm run build:mascot",
     "test:smoke": "npx playwright test tests/smoke.spec.js --reporter=line",
-    "test:smoke:ci": "npx playwright test tests/smoke.spec.js --reporter=github"
+    "test:smoke:ci": "npx playwright test tests/smoke.spec.js --reporter=github",
+    "test:login-flow": "npx playwright test tests/login-flow.spec.js --reporter=line"
   },
   "keywords": [],
   "author": "",

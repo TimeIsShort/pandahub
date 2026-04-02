@@ -671,6 +671,7 @@ ensureColumn('users', 'daily_posts_date', 'TEXT');
 ensureColumn('users', 'daily_posts_count', 'INTEGER DEFAULT 0');
 ensureColumn('users', 'daily_comments_date', 'TEXT');
 ensureColumn('users', 'daily_comments_count', 'INTEGER DEFAULT 0');
+ensureColumn('user_task_claims', 'consecutive_days', 'INTEGER DEFAULT 0');
 
 ensureColumn('users', 'reward_claimed_date', 'TEXT');
 try {
@@ -680,6 +681,7 @@ try {
       user_id INTEGER NOT NULL,
       claim_date TEXT NOT NULL,
       reward_points INTEGER NOT NULL,
+      consecutive_days INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(user_id, claim_date)
     )

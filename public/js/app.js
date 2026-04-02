@@ -184,6 +184,107 @@ function toggleTrendingDropdown() {
   }
 }
 
+function toggleDailyTasksDropdown() {
+  var dropdown = document.getElementById('daily-tasks-dropdown');
+  if (!dropdown) return;
+  var isHidden = dropdown.style.display === 'none' || !dropdown.style.display;
+  if (isHidden) {
+    dropdown.style.display = 'block';
+    loadDailyTasksDropdown();
+  } else {
+    dropdown.style.display = 'none';
+  }
+}
+
+async function loadDailyTasksDropdown() {
+  var listEl = document.getElementById('daily-tasks-list-dropdown');
+  var streakEl = document.getElementById('daily-tasks-streak');
+  var claimEl = document.getElementById('daily-tasks-claim-dropdown');
+  if (!listEl) return;
+  try {
+    var res = await api('/daily-tasks/status');
+    if (res.error) { listEl.innerHTML = '<div style="color:#94a3b8;text-align:center;font-size:13px;">加载失败</div>'; return; }
+
+    var tasks = res.tasks || [];
+    var doneCount = tasks.filter(function(t) { return t.done; }).length;
+
+    // Streak info
+    if (streakEl) {
+      var streakHtml = '';
+      if (res.consecutiveDays > 0) {
+        streakHtml = '🔥 连续 ' + res.consecutiveDays + ' 天';
+        if (res.consecutiveDays >= 7) {
+          streakHtml += ' · 🏆 周冠军';
+        }
+      } else {
+        streakHtml = '📅 今日开始挑战';
+      }
+      streakEl.innerHTML = streakHtml;
+    }
+
+    // Task list with beautiful UI
+    listEl.innerHTML = tasks.map(function(t) {
+      var pct = Math.round((t.current / t.target) * 100);
+      var barColor = t.done ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #d1d5db, #e5e7eb)';
+      var statusIcon = t.done ? '✅' : (t.current > 0 ? '🔄' : '○');
+      var taskStyle = t.done ? 'opacity:0.7;' : '';
+      return '<div style="' + taskStyle + 'margin-bottom:14px;">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+        '<span style="font-size:16px;">' + statusIcon + '</span>' +
+        '<span style="font-size:13px;font-weight:600;color:#374151;flex:1;">' + t.name + '</span>' +
+        '<span style="font-size:11px;color:#6b7280;">' + t.current + '/' + t.target + '</span>' +
+        '<span style="font-size:12px;color:#f59e0b;font-weight:600;background:#fef3c7;padding:2px 8px;border-radius:10px;">+' + t.reward + '</span></div>' +
+        '<div style="height:8px;background:#f3f4f6;border-radius:4px;overflow:hidden;">' +
+        '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:4px;transition:width .4s;"></div></div></div>';
+    }).join('');
+
+    // Weekly bonus info
+    var bonusHtml = '';
+    if (res.consecutiveDays >= 7 && res.consecutiveDays % 7 === 0) {
+      bonusHtml = '<div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:10px;padding:10px 14px;margin-bottom:12px;text-align:center;">' +
+        '<div style="font-size:12px;color:#92400e;font-weight:600;">🏆 周冠军奖励</div>' +
+        '<div style="font-size:18px;color:#d97706;font-weight:700;">+' + res.weeklyBonus + ' 积分</div></div>';
+    } else {
+      bonusHtml = '<div style="text-align:center;font-size:11px;color:#6b7280;margin-bottom:12px;">' +
+        '再完成 <span style="color:#10b981;font-weight:600;">' + res.daysUntilWeekly + '</span> 天解锁周冠军 (+' + res.weeklyBonus + '积分)</div>';
+    }
+
+    // Claim button
+    if (res.claimed) {
+      claimEl.innerHTML = '<div style="text-align:center;padding:12px;background:#f0fdf4;border-radius:10px;color:#059669;font-size:13px;font-weight:600;">' +
+        '🎉 今日奖励已领取 · 明天再来</div>';
+    } else if (doneCount === tasks.length) {
+      claimEl.innerHTML = bonusHtml +
+        '<button onclick="claimDailyTasksDropdown()" id="btn-claim-tasks-dropdown" style="width:100%;padding:12px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;animation:pulse 2s infinite;">' +
+        '🎉 全部完成！领取 ' + res.totalReward + ' 积分</button>';
+    } else {
+      claimEl.innerHTML = bonusHtml +
+        '<div style="text-align:center;font-size:13px;color:#94a3b8;">完成全部任务领取 <span style="color:#f59e0b;font-weight:600;">+' + res.totalReward + '</span> 积分</div>';
+    }
+  } catch(e) {
+    listEl.innerHTML = '<div style="color:#94a3b8;text-align:center;font-size:13px;">加载失败</div>';
+  }
+}
+
+async function claimDailyTasksDropdown() {
+  var btn = document.getElementById('btn-claim-tasks-dropdown');
+  if (btn) { btn.disabled = true; btn.textContent = '领取中...'; }
+  try {
+    var res = await api('/daily-tasks/claim', { method: 'POST' });
+    if (res.error) { showToast(res.error, 'error'); if (btn) { btn.disabled = false; btn.textContent = '🎉 全部完成！领取'; } return; }
+    var msg = '恭喜获得 ' + res.rewardPoints + ' 积分！';
+    if (res.weeklyBonus > 0) msg += ' + ' + res.weeklyBonus + ' 周冠军奖励！';
+    showToast(msg, 'success');
+    loadUserInfo();
+    loadDailyTasksDropdown();
+    // Also refresh the settings panel version
+    loadDailyTasks();
+  } catch(e) {
+    showToast('领取失败', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '🎉 全部完成！领取'; }
+  }
+}
+
 document.addEventListener('click', function(e) {
   var dropdown = document.getElementById('trending-dropdown');
   var btn = document.getElementById('btn-trending');

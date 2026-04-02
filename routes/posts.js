@@ -446,6 +446,37 @@ router.post('/:id/comments', authMiddleware, async (req, res) => {
       notifyUserNewReply(reply_to_user_id, post.title, comment.nickname || comment.username, '/post/' + req.params.id);
     }
 
+    // Notify post followers (excluding post author, parent reply author, and the commenter themselves)
+    const excludeIds = [post.user_id, req.user.id];
+    if (reply_to_user_id) excludeIds.push(reply_to_user_id);
+    const placeholders = excludeIds.map(() => '?').join(',');
+    const followers = db.prepare(`
+      SELECT f.user_id, u.username, u.nickname
+      FROM post_follows f
+      JOIN users u ON f.user_id = u.id
+      WHERE f.post_id = ? AND f.user_id NOT IN (${placeholders})
+    `).all(req.params.id, ...excludeIds);
+
+    for (const follower of followers) {
+      const preview = content.length > 50 ? content.slice(0, 50) + '...' : content;
+      db.prepare(`
+        INSERT INTO notifications (user_id, type, title, content, post_id)
+        VALUES (?, 'followed_post_reply', '📬 关注帖子有新动态', '「' || ? || '」在「' || ? || '」中回复了', ?)
+      `).run(follower.user_id, comment.nickname || comment.username, post.title, req.params.id);
+
+      db.prepare(`
+        INSERT INTO post_notifications (user_id, post_id, post_title, comment_id, comment_preview, actor_id, actor_username, type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'post_reply')
+      `).run(follower.user_id, req.params.id, post.title, comment.id, preview, req.user.id, comment.nickname || comment.username);
+
+      sendPushToUser(follower.user_id, {
+        title: '📬 关注帖子有新动态',
+        body: (comment.nickname || comment.username) + ' 回复了你关注的帖子「' + post.title + '」',
+        url: '/post/' + req.params.id,
+        tag: 'post-reply-' + req.params.id
+      });
+    }
+
     res.json({ comment, points_deducted: cost });
 
     // Update daily comment count for task system

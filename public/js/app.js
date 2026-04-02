@@ -2659,6 +2659,7 @@ async function viewPost(id) {
     // Load favorite status
     if (user) {
       loadFavoriteStatus(postId);
+      loadPostFollowStatus(postId);
     }
 
     postDetailEl.innerHTML = `
@@ -2683,6 +2684,7 @@ async function viewPost(id) {
         ${user ? `
         <div class="post-actions">
           <button id="btn-favorite" onclick="toggleFavorite(${res.post.id})">☆ 收藏</button>
+          <button id="btn-follow-post" onclick="togglePostFollow(${res.post.id})">＋ 关注帖子</button>
           <button onclick="sharePost(${res.post.id}, '${escapeHtml(res.post.title)}')">🔗 分享</button>
           <button onclick="quoteToAI(${res.post.id}, '${escapeHtml(res.post.title.replace(/'/g, "\\'"))}')">🤖 引用到AI</button>
           ${user && user.id !== res.post.user_id ? `<button onclick="openReportModal('post', ${res.post.id}, '${escapeHtml(res.post.title.replace(/'/g, "\\'"))}')" style="color:#94a3b8;">🚩 举报</button>` : ''}
@@ -5840,6 +5842,47 @@ async function loadFavoriteStatus(postId) {
 
 window.toggleFavorite = toggleFavorite;
 window.loadFavoriteStatus = loadFavoriteStatus;
+
+async function loadPostFollowStatus(postId) {
+  try {
+    var res = await api('/post-follow/follow/' + postId);
+    var btn = document.getElementById('btn-follow-post');
+    if (btn) {
+      if (res.following) {
+        btn.textContent = '✓ 已关注';
+        btn.style.color = '#22c55e';
+        btn.dataset.following = '1';
+      } else {
+        btn.textContent = '＋ 关注帖子';
+        btn.style.color = '';
+        btn.dataset.following = '0';
+      }
+    }
+  } catch (e) {}
+}
+
+async function togglePostFollow(postId) {
+  var user = getUser();
+  if (!user) { showToast('请先登录', 'error'); return; }
+  var btn = document.getElementById('btn-follow-post');
+  var isFollowing = btn && btn.dataset.following === '1';
+  try {
+    if (isFollowing) {
+      var res = await api('/post-follow/follow/' + postId, { method: 'DELETE' });
+      if (btn) { btn.textContent = '＋ 关注帖子'; btn.style.color = ''; btn.dataset.following = '0'; }
+      showToast('已取消关注', 'success');
+    } else {
+      var res = await api('/post-follow/follow/' + postId, { method: 'POST' });
+      if (btn) { btn.textContent = '✓ 已关注'; btn.style.color = '#22c55e'; btn.dataset.following = '1'; }
+      showToast('关注成功！有新回复时会通知你', 'success');
+    }
+  } catch (e) {
+    showToast('操作失败', 'error');
+  }
+}
+
+window.loadPostFollowStatus = loadPostFollowStatus;
+window.togglePostFollow = togglePostFollow;
 
 function switchProfileTab(tab) {
   var postsPanel = document.getElementById('profile-tab-posts');

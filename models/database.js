@@ -4,7 +4,10 @@ const bcrypt = require('bcryptjs');
 
 const db = new Database(path.join(__dirname, '../data/forum.db'));
 
-// Enable foreign keys
+// Performance & concurrency optimizations
+db.pragma('journal_mode = WAL');       // Write-Ahead Logging for concurrent reads during writes
+db.pragma('busy_timeout = 5000');      // Wait up to 5s when database is locked before failing
+db.pragma('synchronous = NORMAL');      // Safer than FULL, faster than OFF
 db.pragma('foreign_keys = ON');
 
 // Create tables

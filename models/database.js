@@ -519,11 +519,16 @@ module.exports.rebuildPostsFTS = rebuildPostsFTS;
 // ============ Points & Level System ============
 
 const LEVELS = [
-  { min: 0,    max: 100,   name: '萌新',   icon: '🌱', color: '#86efac' },
-  { min: 101,  max: 500,   name: '入门',   icon: '🌿', color: '#86efac' },
-  { min: 501,  max: 1000,  name: '进阶',   icon: '🌳', color: '#fde047' },
-  { min: 1001, max: 3000,  name: '老鸟',   icon: '🔥', color: '#fb923c' },
-  { min: 3001, max: Infinity, name: '大佬', icon: '⭐', color: '#f472b6' },
+  { min: 0,    max: 100,   name: '萌新',   icon: '🌱', color: '#86efac', tier: 1,
+    post_bonus: 0,   transfer_bonus: 0,   daily_interest: 0 },
+  { min: 101,  max: 500,   name: '入门',   icon: '🌿', color: '#86efac', tier: 2,
+    post_bonus: 0,   transfer_bonus: 0,   daily_interest: 0 },
+  { min: 501,  max: 1000,  name: '进阶',   icon: '🌳', color: '#fde047', tier: 3,
+    post_bonus: 1,   transfer_bonus: 0,   daily_interest: 0 },
+  { min: 1001, max: 3000,  name: '老鸟',   icon: '🔥', color: '#fb923c', tier: 4,
+    post_bonus: 2,   transfer_bonus: 50,   daily_interest: 0.001 },
+  { min: 3001, max: Infinity, name: '大佬', icon: '⭐', color: '#f472b6', tier: 5,
+    post_bonus: 5,   transfer_bonus: 200,  daily_interest: 0.002 },
 ];
 
 function getUserLevel(points) {
@@ -532,6 +537,22 @@ function getUserLevel(points) {
     if (p >= lv.min && p <= lv.max) return lv;
   }
   return LEVELS[0];
+}
+
+// Get level benefits
+function getLevelBenefits(level) {
+  const benefits = [];
+  if (level.tier >= 3) {
+    benefits.push({ type: 'post_bonus', desc: '每日可多发 +' + level.post_bonus + ' 篇帖子', value: level.post_bonus });
+  }
+  if (level.transfer_bonus > 0) {
+    benefits.push({ type: 'transfer_bonus', desc: '单次转账限额 +' + level.transfer_bonus + ' 积分', value: level.transfer_bonus });
+  }
+  if (level.daily_interest > 0) {
+    const dailyRate = (level.daily_interest * 100).toFixed(2);
+    benefits.push({ type: 'daily_interest', desc: '每日享受 ' + dailyRate + '% 积分利息（复利）', value: level.daily_interest });
+  }
+  return benefits;
 }
 
 // Point costs for actions
@@ -620,6 +641,7 @@ db.exec(`
 `);
 
 module.exports.getUserLevel = getUserLevel;
+module.exports.getLevelBenefits = getLevelBenefits;
 module.exports.LEVELS = LEVELS;
 module.exports.POINT_COST = POINT_COST;
 module.exports.DAILY_TASKS = DAILY_TASKS;
@@ -671,6 +693,7 @@ ensureColumn('users', 'daily_posts_date', 'TEXT');
 ensureColumn('users', 'daily_posts_count', 'INTEGER DEFAULT 0');
 ensureColumn('users', 'daily_comments_date', 'TEXT');
 ensureColumn('users', 'daily_comments_count', 'INTEGER DEFAULT 0');
+ensureColumn('users', 'daily_interest_date', 'TEXT');
 ensureColumn('user_task_claims', 'consecutive_days', 'INTEGER DEFAULT 0');
 
 ensureColumn('users', 'reward_claimed_date', 'TEXT');

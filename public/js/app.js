@@ -4122,6 +4122,77 @@ async function loadSettings() {
     loadEmailBind();
     // Load push subscription status
     initPushNotification();
+    // Load level benefits
+    loadLevelBenefits();
+  }
+}
+
+async function loadLevelBenefits() {
+  var section = document.getElementById('level-benefits-section');
+  if (!section) return;
+  var user = getUser();
+  if (!user) { section.style.display = 'none'; return; }
+
+  try {
+    // Fetch level benefits from /api/users/me/level-benefits
+    var res = await api('/users/me/level-benefits');
+    if (res.error || !res.level) { section.style.display = 'none'; return; }
+
+    var level = res.level;
+    var benefits = res.benefits || [];
+
+    // Show section
+    section.style.display = '';
+
+    // Level info
+    var levelInfo = document.getElementById('level-info');
+    if (levelInfo) {
+      levelInfo.innerHTML = '<span style="font-size:20px;">' + level.icon + '</span>' +
+        '<div><div style="font-size:13px;font-weight:700;color:' + level.color + ';">' + level.name + ' · Lv.' + level.tier + '</div>' +
+        '<div style="font-size:11px;color:#6b7280;">当前 ' + (user.points || 0) + ' 积分</div></div>';
+    }
+
+    // Interest section
+    var interestEl = document.getElementById('level-interest');
+    if (interestEl) {
+      if (level.daily_interest > 0 && res.pendingInterest > 0) {
+        interestEl.style.display = '';
+        var amountEl = document.getElementById('interest-amount');
+        if (amountEl) amountEl.textContent = '+' + res.pendingInterest + ' 积分';
+      } else {
+        interestEl.style.display = 'none';
+      }
+    }
+
+    // Privileges list
+    var privEl = document.getElementById('level-privileges-list');
+    if (privEl) {
+      if (benefits.length === 0) {
+        privEl.innerHTML = '<div style="color:#9ca3af;">Lv.' + level.tier + ' 等级暂无可用特权，升级积分可解锁更多！</div>';
+      } else {
+        privEl.innerHTML = benefits.map(function(b) {
+          return '<div style="margin-top:6px;">' + b.desc + '</div>';
+        }).join('');
+      }
+    }
+  } catch (e) {
+    console.error(e);
+    section.style.display = 'none';
+  }
+}
+
+async function claimDailyInterest() {
+  var btn = document.getElementById('btn-claim-interest');
+  if (btn) { btn.disabled = true; btn.textContent = '领取中...'; }
+  try {
+    var res = await api('/users/me/claim-daily-interest', { method: 'POST' });
+    if (res.error) { showToast(res.error, 'error'); if (btn) { btn.disabled = false; btn.textContent = '领取今日'; } return; }
+    showToast('领取成功！利息 +' + res.interestEarned + ' 积分', 'success');
+    loadUserInfo();
+    loadSettings();
+  } catch (e) {
+    showToast('领取失败', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '领取今日'; }
   }
 }
 

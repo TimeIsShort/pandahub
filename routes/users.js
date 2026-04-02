@@ -1,9 +1,79 @@
 const express = require('express');
 const db = require('../models/database');
 const { optionalAuth } = require('../middleware/auth');
-const { getUserLevel } = require('../models/database');
+const { getUserLevel, getLevelBenefits } = require('../models/database');
 
 const router = express.Router();
+
+// Get level benefits for current user (must be before /:id)
+router.get('/me/level-benefits', optionalAuth, (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: '请先登录' });
+    }
+
+    const user = db.prepare('SELECT points, daily_interest_date FROM users WHERE id = ?').get(req.user.id);
+    const level = getUserLevel(user.points);
+
+    // Calculate daily interest if eligible
+    const today = new Date().toISOString().split('T')[0];
+
+    let pendingInterest = 0;
+    if (user.daily_interest_date !== today && level.daily_interest > 0) {
+      pendingInterest = Math.floor(user.points * level.daily_interest);
+    }
+
+    res.json({
+      level: level,
+      benefits: getLevelBenefits(level),
+      pendingInterest: pendingInterest,
+      nextInterest: level.daily_interest > 0 ? '明天可领取' : null
+    });
+  } catch (err) {
+    console.error('[LevelBenefits error]', err);
+    res.status(500).json({ error: '获取等级特权失败' });
+  }
+});
+
+// Claim daily interest (must be before /:id)
+router.post('/me/claim-daily-interest', optionalAuth, (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: '请先登录' });
+    }
+
+    const user = db.prepare('SELECT points, daily_interest_date FROM users WHERE id = ?').get(req.user.id);
+    const level = getUserLevel(user.points);
+
+    if (level.daily_interest <= 0) {
+      return res.status(400).json({ error: '当前等级没有利息特权' });
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    if (user.daily_interest_date === today) {
+      return res.status(400).json({ error: '今日利息已领取，明天再来！' });
+    }
+
+    const interest = Math.floor(user.points * level.daily_interest);
+    if (interest <= 0) {
+      return res.status(400).json({ error: '积分不足，无法获得利息' });
+    }
+
+    db.prepare('UPDATE users SET points = points + ?, daily_interest_date = ? WHERE id = ?')
+      .run(interest, today, req.user.id);
+
+    const updated = db.prepare('SELECT points FROM users WHERE id = ?').get(req.user.id);
+
+    res.json({
+      success: true,
+      interestEarned: interest,
+      newBalance: updated.points
+    });
+  } catch (err) {
+    console.error('[ClaimInterest error]', err);
+    res.status(500).json({ error: '领取利息失败' });
+  }
+});
 
 // Get user profile
 router.get('/:id', optionalAuth, (req, res) => {

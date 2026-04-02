@@ -334,6 +334,24 @@
             </div>
           </div>
 
+          <!-- Level Benefits Section -->
+          <div class="form-group" id="level-benefits-section" style="display:none;">
+            <label>🏆 等级特权</label>
+            <div id="level-benefits-card" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
+              <div id="level-info" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"></div>
+              <div id="level-interest" style="display:none;background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:8px;padding:10px;margin-bottom:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div>
+                    <div style="font-size:12px;color:#92400e;font-weight:600;">💰 每日利息</div>
+                    <div id="interest-amount" style="font-size:14px;color:#d97706;font-weight:700;margin-top:2px;"></div>
+                  </div>
+                  <button id="btn-claim-interest" onclick="claimDailyInterest()" style="padding:6px 14px;background:#d97706;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">领取今日</button>
+                </div>
+              </div>
+              <div id="level-privileges-list" style="font-size:12px;color:#6b7280;"></div>
+            </div>
+          </div>
+
           <!-- Push Notification -->
           <div class="form-group">
             <label>消息通知</label>

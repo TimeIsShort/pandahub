@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../models/database');
 const { JWT_SECRET, authMiddleware } = require('../middleware/auth');
-const { getUserLevel } = require('../models/database');
+const { getUserLevel, getLevelBenefits } = require('../models/database');
 const { logAction } = require('../middleware/moderationLog');
 const { logUserAction } = require('../middleware/actionLogger');
 
@@ -411,7 +411,7 @@ router.post('/login', async (req, res) => {
 
 // Get current user
 router.get('/me', authMiddleware, (req, res) => {
-  const user = db.prepare('SELECT id, username, nickname, avatar, bio, role, created_at, points, checkin_streak FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT id, username, nickname, avatar, bio, role, created_at, points, checkin_streak, daily_interest_date FROM users WHERE id = ?').get(req.user.id);
   if (!user) {
     return res.status(404).json({ error: '用户不存在' });
   }
@@ -419,6 +419,17 @@ router.get('/me', authMiddleware, (req, res) => {
   user.level_name = level.name;
   user.level_icon = level.icon;
   user.level_color = level.color;
+  user.level_tier = level.tier;
+  user.level_benefits = getLevelBenefits(level);
+
+  // Calculate pending interest
+  const today = new Date().toISOString().split('T')[0];
+  if (user.daily_interest_date !== today && level.daily_interest > 0) {
+    user.pending_interest = Math.floor(user.points * level.daily_interest);
+  } else {
+    user.pending_interest = 0;
+  }
+
   res.json({ user });
 });
 

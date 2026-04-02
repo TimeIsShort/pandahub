@@ -2515,6 +2515,7 @@ async function viewPost(id) {
         <div class="post-actions">
           <button id="btn-favorite" onclick="toggleFavorite(${res.post.id})">☆ 收藏</button>
           <button onclick="sharePost(${res.post.id}, '${escapeHtml(res.post.title)}')">🔗 分享</button>
+          <button onclick="quoteToAI(${res.post.id}, '${escapeHtml(res.post.title.replace(/'/g, "\\'"))}')">🤖 引用到AI</button>
           ${user && user.id !== res.post.user_id ? `<button onclick="openReportModal('post', ${res.post.id}, '${escapeHtml(res.post.title.replace(/'/g, "\\'"))}')" style="color:#94a3b8;">🚩 举报</button>` : ''}
           ${res.user && res.user.id === res.post.user_id || (user && user.role === 'admin') ? `<button onclick="editPost(${res.post.id})" style="color:#5d6dff">✏️ 编辑</button>` : ''}
           ${res.user && res.user.id === res.post.user_id || (user && user.role === 'admin') ? `<button onclick="deletePost(${res.post.id})" style="color:#ef4444">🗑 删除</button>` : ''}
@@ -6342,6 +6343,27 @@ async function clearAIChat() {
     console.error(e);
     showToast('清空失败，请稍后重试', 'error');
   }
+}
+
+async function quoteToAI(postId, postTitle) {
+  // Get selected text, or fall back to post title
+  var selectedText = window.getSelection().toString().trim();
+  var prompt = '';
+  if (selectedText) {
+    prompt = `请根据以下内容续写或分析：\n\n「${selectedText}」\n\n（引用自帖子《${postTitle}》）`;
+  } else {
+    prompt = `请续写或分析以下帖子内容：\n\n《${postTitle}》`;
+  }
+  // Open AI chat
+  openAIChat();
+  // Wait for modal to open, then set input
+  setTimeout(function() {
+    var input = document.getElementById('ai-input');
+    if (input) {
+      input.value = prompt;
+      input.focus();
+    }
+  }, 100);
 }
 
 // ============ WEATHER ============

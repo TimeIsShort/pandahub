@@ -613,6 +613,7 @@
         <button class="tab-btn" id="tabSectionsBtn">📁 版块管理</button>
         <button class="tab-btn" id="tabReportsBtn">🚩 举报管理<span id="pendingReportsBadge"></span></button>
         <button class="tab-btn" id="tabAccessLogsBtn">📂 访问日志</button>
+        <button class="tab-btn" id="tabPollsBtn">📊 投票管理</button>
         <button class="tab-btn" id="tabSecurityBtn">🛡️ 安全日志</button>
       </div>
       <!-- Security Tab -->
@@ -776,6 +777,16 @@
           </div>
           <div id="reportsList"></div>
           <div id="reportsPagination" style="display:flex;gap:8px;justify-content:center;margin-top:16px;"></div>
+        </div>
+      </div>
+      <!-- Polls Tab -->
+      <div id="tabPolls" class="hidden">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <h2>📊 投票管理</h2>
+            <button onclick="openCreatePollModal()" style="padding:8px 16px;background:#667eea;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">➕ 创建投票</button>
+          </div>
+          <div id="pollsList"></div>
         </div>
       </div>
       <!-- Access Logs Tab -->
@@ -961,7 +972,7 @@
 
     function setActiveTab(tab) {
       currentTab = tab;
-      var tabs = ['apps', 'posts', 'users', 'words', 'logs', 'charts', 'tags', 'sections', 'reports', 'accesslogs'];
+      var tabs = ['apps', 'posts', 'users', 'words', 'logs', 'charts', 'tags', 'sections', 'polls', 'reports', 'accesslogs'];
       for (var i = 0; i < tabs.length; i++) {
         var key = tabs[i];
         var panel = document.getElementById('tab' + key.charAt(0).toUpperCase() + key.slice(1));
@@ -984,6 +995,7 @@
       if (tab === 'charts') loadCharts();
       if (tab === 'tags') loadTagsList();
       if (tab === 'sections') loadSectionsList();
+      if (tab === 'polls') loadPollsList();
     }
 
     document.getElementById('tabAppsBtn').onclick = function() { setActiveTab('apps'); };
@@ -994,6 +1006,7 @@
     document.getElementById('tabChartsBtn').onclick = function() { setActiveTab('charts'); };
     document.getElementById('tabTagsBtn').onclick = function() { setActiveTab('tags'); };
     document.getElementById('tabSectionsBtn').onclick = function() { setActiveTab('sections'); };
+    document.getElementById('tabPollsBtn').onclick = function() { setActiveTab('polls'); };
     document.getElementById('tabReportsBtn').onclick = function() { setActiveTab('reports'); loadReports(); };
     document.getElementById('tabAccessLogsBtn').onclick = function() { setActiveTab('accesslogs'); loadAccessLogs(); };
     document.getElementById('tabSecurityBtn').onclick = function() { setActiveTab('security'); loadSecurityLogs(); };
@@ -2040,6 +2053,93 @@
         document.getElementById('sectionDescInput').value = '';
         loadSectionsList();
       }).catch(function() { showToast('添加失败', 'error'); });
+    };
+
+    // Polls Management
+    var pollsCache = [];
+    window.loadPollsList = function() {
+      adminApi('/api/polls/admin/all')
+        .then(function(data) {
+          pollsCache = data.polls || [];
+          var html = '<div style="display:flex;flex-direction:column;gap:12px;">';
+          if (pollsCache.length === 0) {
+            html += '<div style="text-align:center;color:#999;padding:40px;">暂无投票</div>';
+          }
+          pollsCache.forEach(function(poll) {
+            var endDate = poll.end_date ? new Date(poll.end_date).toLocaleString('zh-CN') : '无截止日期';
+            var status = poll.end_date && new Date(poll.end_date) < new Date() ? '已结束' : '进行中';
+            var statusColor = status === '进行中' ? '#10b981' : '#ef4444';
+            html += '<div style="background:#f8f9fa;border:1px solid #e5e7eb;border-radius:12px;padding:16px;">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">';
+            html += '<div style="flex:1;"><div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:4px;">' + escapeHtml(poll.question) + '</div>';
+            html += '<div style="font-size:11px;color:#6b7280;">创建者:' + (poll.creator_name || '未知') + ' | 投票数:' + poll.total_votes + ' | 截止:' + endDate + '</div>';
+            html += '<span style="font-size:11px;background:' + statusColor + '22;color:' + statusColor + ';padding:2px 8px;border-radius:6px;margin-left:8px;">' + status + '</span></div>';
+            html += '<div style="display:flex;gap:6px;">';
+            html += '<button class="btn" onclick="deletePoll(' + poll.id + ')" style="padding:5px 10px;font-size:12px;background:#ef4444;color:#fff;border:none;border-radius:6px;cursor:pointer;">🗑️ 删除</button>';
+            html += '</div></div></div>';
+          });
+          html += '</div>';
+          document.getElementById('pollsList').innerHTML = html;
+        })
+        .catch(function() { showToast('加载投票失败', 'error'); });
+    };
+
+    window.deletePoll = function(id) {
+      if (!confirm('确定删除此投票吗？')) return;
+      adminApi('/api/polls/' + id, { method: 'DELETE' })
+        .then(function() { showToast('已删除', 'success'); loadPollsList(); })
+        .catch(function() { showToast('删除失败', 'error'); });
+    };
+
+    window.openCreatePollModal = function() {
+      var html = '<div style="padding:20px;">';
+      html += '<div style="margin-bottom:14px;"><label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">投票问题</label>';
+      html += '<input id="pollQuestion" type="text" placeholder="例如：你喜欢哪种编程语言？" style="width:100%;padding:8px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:13px;box-sizing:border-box;"></div>';
+      html += '<div style="margin-bottom:14px;"><label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">选项（每行一个，至少2个）</label>';
+      html += '<textarea id="pollOptions" rows="5" placeholder="Python&#10;JavaScript&#10;Java&#10;Go" style="width:100%;padding:8px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea></div>';
+      html += '<div style="margin-bottom:14px;display:flex;gap:20px;">';
+      html += '<label style="font-size:13px;color:#374151;display:flex;align-items:center;gap:6px;"><input type="checkbox" id="pollMultiple"> 多选投票</label>';
+      html += '</div>';
+      html += '<div style="margin-bottom:14px;"><label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">截止日期（可选）</label>';
+      html += '<input id="pollEndDate" type="datetime-local" style="padding:8px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:13px;"></div>';
+      html += '</div>';
+      var modal = document.createElement('div');
+      modal.id = 'create-poll-modal';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
+      modal.innerHTML = '<div style="background:#fff;border-radius:16px;width:420px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e5e7eb;">' +
+        '<h3 style="margin:0;font-size:15px;color:#374151;">📊 创建投票</h3>' +
+        '<button onclick="closeCreatePollModal()" style="background:none;border:none;font-size:20px;color:#999;cursor:pointer;">×</button></div>' +
+        html +
+        '<div style="padding:16px 20px;border-top:1px solid #e5e7eb;display:flex;gap:10px;justify-content:flex-end;">' +
+        '<button onclick="closeCreatePollModal()" style="padding:8px 16px;background:#f5f5f5;color:#666;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;">取消</button>' +
+        '<button onclick="submitCreatePoll()" style="padding:8px 16px;background:#667eea;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">创建</button></div>' +
+        '</div>';
+      document.body.appendChild(modal);
+    };
+
+    window.closeCreatePollModal = function() {
+      var m = document.getElementById('create-poll-modal');
+      if (m) m.remove();
+    };
+
+    window.submitCreatePoll = function() {
+      var question = document.getElementById('pollQuestion').value.trim();
+      var optionsText = document.getElementById('pollOptions').value.trim();
+      var multiple = document.getElementById('pollMultiple').checked;
+      var endDate = document.getElementById('pollEndDate').value;
+      if (!question) { showToast('请输入投票问题', 'error'); return; }
+      var options = optionsText.split('\n').filter(function(o) { return o.trim(); });
+      if (options.length < 2) { showToast('请至少输入2个选项', 'error'); return; }
+      var body = { question: question, options: options, multiple_choice: multiple };
+      if (endDate) body.end_date = new Date(endDate).toISOString();
+      adminApi('/api/polls', { method: 'POST', body: body })
+        .then(function() {
+          showToast('投票创建成功', 'success');
+          closeCreatePollModal();
+          loadPollsList();
+        })
+        .catch(function(e) { showToast(e.message || '创建失败', 'error'); });
     };
 
     window.autoReviewAll = function() {

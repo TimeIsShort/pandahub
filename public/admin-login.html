@@ -610,6 +610,7 @@
         <button class="tab-btn" id="tabLogsBtn">📊 操作日志</button>
         <button class="tab-btn" id="tabChartsBtn">📈 统计看板</button>
         <button class="tab-btn" id="tabTagsBtn">🏷️ 标签管理</button>
+        <button class="tab-btn" id="tabSectionsBtn">📁 版块管理</button>
         <button class="tab-btn" id="tabReportsBtn">🚩 举报管理<span id="pendingReportsBadge"></span></button>
         <button class="tab-btn" id="tabAccessLogsBtn">📂 访问日志</button>
         <button class="tab-btn" id="tabSecurityBtn">🛡️ 安全日志</button>
@@ -743,6 +744,20 @@
             </div>
           </div>
           <div id="tagsList"></div>
+        </div>
+      </div>
+      <!-- Sections Tab -->
+      <div id="tabSections" class="hidden">
+        <div class="card">
+          <h2>📁 版块管理</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+            <input id="sectionNameInput" type="text" placeholder="版块名称" style="padding:8px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:14px;">
+            <input id="sectionIconInput" type="text" placeholder="图标" value="📁" style="padding:8px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:14px;width:60px;">
+            <input id="sectionDescInput" type="text" placeholder="版块描述" style="padding:8px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:14px;width:200px;">
+            <input id="sectionOrderInput" type="number" placeholder="排序" value="0" style="padding:8px 12px;border:1.5px solid #d5ddff;border-radius:8px;font-size:14px;width:70px;">
+            <button class="btn btn-approve" id="addSectionBtn" onclick="addNewSection()" style="padding:8px 16px;">➕ 添加版块</button>
+          </div>
+          <div id="sectionsList"></div>
         </div>
       </div>
       <!-- Reports Tab -->
@@ -946,7 +961,7 @@
 
     function setActiveTab(tab) {
       currentTab = tab;
-      var tabs = ['apps', 'posts', 'users', 'words', 'logs', 'charts', 'tags', 'reports', 'accesslogs'];
+      var tabs = ['apps', 'posts', 'users', 'words', 'logs', 'charts', 'tags', 'sections', 'reports', 'accesslogs'];
       for (var i = 0; i < tabs.length; i++) {
         var key = tabs[i];
         var panel = document.getElementById('tab' + key.charAt(0).toUpperCase() + key.slice(1));
@@ -968,6 +983,7 @@
       if (tab === 'logs') loadLogs(1);
       if (tab === 'charts') loadCharts();
       if (tab === 'tags') loadTagsList();
+      if (tab === 'sections') loadSectionsList();
     }
 
     document.getElementById('tabAppsBtn').onclick = function() { setActiveTab('apps'); };
@@ -977,6 +993,7 @@
     document.getElementById('tabLogsBtn').onclick = function() { setActiveTab('logs'); };
     document.getElementById('tabChartsBtn').onclick = function() { setActiveTab('charts'); };
     document.getElementById('tabTagsBtn').onclick = function() { setActiveTab('tags'); };
+    document.getElementById('tabSectionsBtn').onclick = function() { setActiveTab('sections'); };
     document.getElementById('tabReportsBtn').onclick = function() { setActiveTab('reports'); loadReports(); };
     document.getElementById('tabAccessLogsBtn').onclick = function() { setActiveTab('accesslogs'); loadAccessLogs(); };
     document.getElementById('tabSecurityBtn').onclick = function() { setActiveTab('security'); loadSecurityLogs(); };
@@ -1931,8 +1948,101 @@
         .catch(function() { showToast('删除失败', 'error'); });
     };
 
+    // Sections Management
+    var sectionsCache = [];
+    window.loadSectionsList = function() {
+      adminApi('/api/sections')
+        .then(function(data) {
+          sectionsCache = data.sections || [];
+          var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">';
+          if (sectionsCache.length === 0) {
+            html += '<div style="text-align:center;color:#999;padding:40px;">暂无版块</div>';
+          }
+          sectionsCache.forEach(function(section) {
+            var editNameId = 'editSectionName_' + section.id;
+            var editIconId = 'editSectionIcon_' + section.id;
+            var editDescId = 'editSectionDesc_' + section.id;
+            var editOrderId = 'editSectionOrder_' + section.id;
+            html += '<div style="background:#f8f9fa;border:1px solid #e5e7eb;border-radius:12px;padding:16px;">';
+            html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
+            html += '<span style="font-size:24px;">' + section.icon + '</span>';
+            html += '<span style="font-size:16px;font-weight:600;">' + section.name + '</span>';
+            html += '<span style="font-size:12px;color:#999;margin-left:auto;">排序:' + section.sort_order + '</span>';
+            html += '</div>';
+            html += '<div style="font-size:12px;color:#666;margin-bottom:8px;">' + (section.description || '无描述') + '</div>';
+            html += '<div style="font-size:11px;color:#999;margin-bottom:12px;">标签:' + section.tag_count + ' | 帖子:' + section.post_count + '</div>';
+            html += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+            html += '<button class="btn" onclick="toggleSectionEdit(' + section.id + ')" style="padding:5px 10px;font-size:12px;background:#667eea;color:#fff;border:none;border-radius:6px;cursor:pointer;">✏️ 编辑</button>';
+            html += '<button class="btn" onclick="deleteSection(' + section.id + ')" style="padding:5px 10px;font-size:12px;background:#ef4444;color:#fff;border:none;border-radius:6px;cursor:pointer;">🗑️ 删除</button>';
+            html += '</div>';
+            html += '<div id="' + editNameId + '" class="section-edit-form" style="display:none;margin-top:12px;padding-top:12px;border-top:1px dashed #ddd;">';
+            html += '<div style="display:flex;gap:6px;margin-bottom:8px;">';
+            html += '<input id="' + editIconId + '" type="text" value="' + section.icon + '" placeholder="图标" style="width:40px;padding:4px;border:1px solid #ddd;border-radius:4px;">';
+            html += '<input id="' + editNameId + 'Val" type="text" value="' + section.name + '" placeholder="名称" style="flex:1;padding:4px;border:1px solid #ddd;border-radius:4px;">';
+            html += '</div>';
+            html += '<input id="' + editDescId + '" type="text" value="' + (section.description || '') + '" placeholder="描述" style="width:100%;padding:4px;border:1px solid #ddd;border-radius:4px;margin-bottom:8px;box-sizing:border-box;">';
+            html += '<input id="' + editOrderId + '" type="number" value="' + section.sort_order + '" placeholder="排序" style="width:80px;padding:4px;border:1px solid #ddd;border-radius:4px;margin-bottom:8px;">';
+            html += '<button class="btn btn-approve" onclick="saveSection(' + section.id + ')" style="padding:5px 12px;font-size:12px;">💾 保存</button>';
+            html += '</div>';
+            html += '</div>';
+          });
+          html += '</div>';
+          document.getElementById('sectionsList').innerHTML = html;
+        })
+        .catch(function() { showToast('加载版块失败', 'error'); });
+    };
 
-        window.autoReviewAll = function() {
+    window.toggleSectionEdit = function(id) {
+      var forms = document.querySelectorAll('.section-edit-form');
+      forms.forEach(function(f) { f.style.display = 'none'; });
+      var form = document.getElementById('editSectionName_' + id);
+      if (form) {
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+      }
+    };
+
+    window.saveSection = function(id) {
+      var icon = document.getElementById('editSectionIcon_' + id).value;
+      var name = document.getElementById('editSectionName_' + id + 'Val').value;
+      var desc = document.getElementById('editSectionDesc_' + id).value;
+      var sort = document.getElementById('editSectionOrder_' + id).value;
+      if (!name.trim()) { showToast('名称不能为空', 'error'); return; }
+      adminApi('/api/sections/' + id, {
+        method: 'PUT',
+        body: { name: name.trim(), icon: icon, description: desc, sort_order: parseInt(sort) || 0 }
+      }).then(function() {
+        showToast('更新成功', 'success');
+        loadSectionsList();
+      }).catch(function() { showToast('更新失败', 'error'); });
+    };
+
+    window.deleteSection = function(id) {
+      var section = sectionsCache.find(function(s) { return s.id === id; });
+      if (!section) return;
+      if (!confirm('确定删除版块 "' + section.name + '" 吗？该版块下的帖子和标签将解除关联。')) return;
+      adminApi('/api/sections/' + id, { method: 'DELETE' })
+        .then(function() { showToast('已删除', 'success'); loadSectionsList(); })
+        .catch(function() { showToast('删除失败', 'error'); });
+    };
+
+    window.addNewSection = function() {
+      var name = document.getElementById('sectionNameInput').value.trim();
+      var icon = document.getElementById('sectionIconInput').value || '📁';
+      var desc = document.getElementById('sectionDescInput').value || '';
+      var sort = document.getElementById('sectionOrderInput').value || 0;
+      if (!name) { showToast('版块名称不能为空', 'error'); return; }
+      adminApi('/api/sections', {
+        method: 'POST',
+        body: { name: name, icon: icon, description: desc, sort_order: parseInt(sort) || 0 }
+      }).then(function() {
+        showToast('添加成功', 'success');
+        document.getElementById('sectionNameInput').value = '';
+        document.getElementById('sectionDescInput').value = '';
+        loadSectionsList();
+      }).catch(function() { showToast('添加失败', 'error'); });
+    };
+
+    window.autoReviewAll = function() {
       var pendingCount = postsCache.filter(function(p) { return p.status === 'pending'; }).length;
       if (pendingCount === 0) {
         showToast('没有待审核的帖子', 'error');

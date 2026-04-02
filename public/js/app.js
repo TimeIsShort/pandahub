@@ -216,18 +216,32 @@ async function loadTrending() {
 
 window.loadTrending = loadTrending;
 
+// Disable bottom nav pointer-events when overlays/dropdowns are open (mobile fix)
+function disableBottomNav() {
+  var bn = document.getElementById('bottom-nav');
+  if (bn) bn.style.pointerEvents = 'none';
+}
+function enableBottomNav() {
+  var bn = document.getElementById('bottom-nav');
+  if (bn) bn.style.pointerEvents = '';
+}
+
 function toggleTrendingDropdown() {
   var dropdown = document.getElementById('trending-dropdown');
   if (!dropdown) return;
   var isHidden = dropdown.style.display === 'none' || !dropdown.style.display;
   if (isHidden) {
+    // Close other dropdowns first
+    closeAllDropdowns();
     dropdown.style.display = 'block';
+    disableBottomNav();
     var list = document.getElementById('trending-list');
     if (list && !list.innerHTML.trim()) {
       loadTrending();
     }
   } else {
     dropdown.style.display = 'none';
+    enableBottomNav();
   }
 }
 
@@ -236,10 +250,13 @@ function toggleDailyTasksDropdown() {
   if (!dropdown) return;
   var isHidden = dropdown.style.display === 'none' || !dropdown.style.display;
   if (isHidden) {
+    closeAllDropdowns();
     dropdown.style.display = 'block';
+    disableBottomNav();
     loadDailyTasksDropdown();
   } else {
     dropdown.style.display = 'none';
+    enableBottomNav();
   }
 }
 
@@ -337,10 +354,13 @@ function toggleShopDropdown() {
   if (!dropdown) return;
   var isHidden = dropdown.style.display === 'none' || !dropdown.style.display;
   if (isHidden) {
+    closeAllDropdowns();
     dropdown.style.display = 'block';
+    disableBottomNav();
     loadShopItems();
   } else {
     dropdown.style.display = 'none';
+    enableBottomNav();
   }
 }
 
@@ -441,6 +461,16 @@ async function openRedemptionsModal() {
   }
 }
 
+// Close all toolbar dropdowns and re-enable bottom nav
+function closeAllDropdowns() {
+  var dropdowns = ['trending-dropdown', 'daily-tasks-dropdown', 'shop-dropdown', 'lottery-dropdown'];
+  dropdowns.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  enableBottomNav();
+}
+
 function closeRedemptionsModal() {
   var modal = document.getElementById('redemptions-modal');
   if (modal) modal.remove();
@@ -451,10 +481,13 @@ function toggleLotteryDropdown() {
   if (!dropdown) return;
   var isHidden = dropdown.style.display === 'none' || !dropdown.style.display;
   if (isHidden) {
+    closeAllDropdowns();
     dropdown.style.display = 'block';
+    disableBottomNav();
     loadLotteryStatus();
   } else {
     dropdown.style.display = 'none';
+    enableBottomNav();
   }
 }
 
@@ -519,25 +552,23 @@ async function playLottery() {
 }
 
 document.addEventListener('click', function(e) {
-  var dropdown = document.getElementById('trending-dropdown');
-  var btn = document.getElementById('btn-trending');
-  if (dropdown && btn && !dropdown.contains(e.target) && !btn.contains(e.target)) {
-    dropdown.style.display = 'none';
+  var anyDropdownOpen = false;
+  var dropdowns = ['trending-dropdown', 'daily-tasks-dropdown', 'shop-dropdown', 'lottery-dropdown'];
+  var buttons = ['btn-trending', 'btn-daily-tasks', 'btn-shop', 'btn-lottery'];
+
+  for (var i = 0; i < dropdowns.length; i++) {
+    var dropdown = document.getElementById(dropdowns[i]);
+    var btn = document.getElementById(buttons[i]);
+    if (dropdown && btn && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+      dropdown.style.display = 'none';
+    } else if (dropdown && dropdown.style.display !== 'none') {
+      anyDropdownOpen = true;
+    }
   }
-  var tasksDropdown = document.getElementById('daily-tasks-dropdown');
-  var tasksBtn = document.getElementById('btn-daily-tasks');
-  if (tasksDropdown && tasksBtn && !tasksDropdown.contains(e.target) && !tasksBtn.contains(e.target)) {
-    tasksDropdown.style.display = 'none';
-  }
-  var shopDropdown = document.getElementById('shop-dropdown');
-  var shopBtn = document.getElementById('btn-shop');
-  if (shopDropdown && shopBtn && !shopDropdown.contains(e.target) && !shopBtn.contains(e.target)) {
-    shopDropdown.style.display = 'none';
-  }
-  var lotDropdown = document.getElementById('lottery-dropdown');
-  var lotBtn = document.getElementById('btn-lottery');
-  if (lotDropdown && lotBtn && !lotDropdown.contains(e.target) && !lotBtn.contains(e.target)) {
-    lotDropdown.style.display = 'none';
+
+  // Re-enable bottom nav if all dropdowns are closed
+  if (!anyDropdownOpen) {
+    enableBottomNav();
   }
 });
 
@@ -1670,6 +1701,7 @@ function showLogin() {
   if (usernameInput) {
     setTimeout(() => usernameInput.focus(), 20);
   }
+  disableBottomNav();
 }
 
 // Unified login requirement handler - shows toast and opens login modal
@@ -1688,6 +1720,7 @@ function showRegister() {
 
 function closeModal() {
   document.getElementById('auth-modal').style.display = 'none';
+  enableBottomNav();
 }
 
 function switchToRegister() {
@@ -5019,6 +5052,7 @@ async function openNotifications() {
   const user = getUser();
   if (!user) return showLogin();
   document.getElementById('notif-modal').style.display = 'flex';
+  disableBottomNav();
   notifPage = 1;
   notifFilter = '';
   inboxTab = 'all';
@@ -5028,6 +5062,7 @@ async function openNotifications() {
 
 function closeNotifications() {
   document.getElementById('notif-modal').style.display = 'none';
+  enableBottomNav();
 }
 
 function switchInboxTab(tab) {
@@ -5935,6 +5970,7 @@ async function loadMsgConversations() {
 window.openMessages = async function() {
   if (!user) { requireLogin('查看私信'); return; }
   document.getElementById('msg-modal').style.display = 'flex';
+  disableBottomNav();
   document.getElementById('msg-detail-modal').style.display = 'none';
   await loadMsgConversations();
   await loadMsgUnreadCount();
@@ -5942,6 +5978,7 @@ window.openMessages = async function() {
 
 window.closeMessages = function() {
   document.getElementById('msg-modal').style.display = 'none';
+  enableBottomNav();
   currentMsgPartner = null;
 };
 

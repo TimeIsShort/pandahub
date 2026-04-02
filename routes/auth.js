@@ -463,7 +463,7 @@ router.post('/login', async (req, res) => {
 
 // Get current user
 router.get('/me', authMiddleware, (req, res) => {
-  const user = db.prepare('SELECT id, username, nickname, avatar, bio, role, created_at, points, checkin_streak, daily_interest_date FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT id, username, nickname, avatar, bio, role, created_at, points, checkin_streak, daily_interest_date, influence_score FROM users WHERE id = ?').get(req.user.id);
   if (!user) {
     return res.status(404).json({ error: '用户不存在' });
   }

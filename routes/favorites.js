@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
 const db = require('../models/database');
+const { addInfluence, removeInfluence } = require('../utils/influence');
 
 // Add favorite: POST /api/favorites { post_id }
 router.post('/', authMiddleware, (req, res) => {
@@ -15,6 +16,13 @@ router.post('/', authMiddleware, (req, res) => {
   if (existing) {
     return res.json({ favorited: true, message: '已经收藏过了' });
   }
+
+  // Get post author
+  const post = db.prepare('SELECT user_id FROM posts WHERE id = ?').get(postId);
+  if (post && post.user_id !== userId) {
+    addInfluence(post.user_id, 'post_favorite', 'post', postId);
+  }
+
   db.prepare('INSERT INTO favorites (user_id, post_id) VALUES (?, ?)').run(userId, postId);
   res.json({ favorited: true, message: '收藏成功' });
 });
@@ -24,6 +32,12 @@ router.delete('/:post_id', authMiddleware, (req, res) => {
   const userId = req.user.id;
   const postId = parseInt(req.params.post_id);
   if (!postId || isNaN(postId)) return res.status(400).json({ error: '无效的帖子ID' });
+
+  // Get post author before removing
+  const post = db.prepare('SELECT user_id FROM posts WHERE id = ?').get(postId);
+  if (post && post.user_id !== userId) {
+    removeInfluence(post.user_id, 'post_favorite', 'post', postId);
+  }
 
   db.prepare('DELETE FROM favorites WHERE user_id = ? AND post_id = ?').run(userId, postId);
   res.json({ favorited: false, message: '已取消收藏' });

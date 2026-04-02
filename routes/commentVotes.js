@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
+const { addInfluence, removeInfluence } = require('../utils/influence');
 
 const router = express.Router();
 
@@ -32,9 +33,11 @@ router.post('/:id/vote', authMiddleware, (req, res) => {
     if (existing) {
       // Remove vote (toggle off)
       db.prepare('DELETE FROM comment_votes WHERE comment_id = ? AND user_id = ?').run(commentId, userId);
+      removeInfluence(comment.user_id, 'comment_like', 'comment', commentId);
     } else {
       // Add vote
       db.prepare('INSERT INTO comment_votes (comment_id, user_id, vote_type) VALUES (?, ?, ?)').run(commentId, userId, vote_type);
+      addInfluence(comment.user_id, 'comment_like', 'comment', commentId);
     }
 
     // Count likes

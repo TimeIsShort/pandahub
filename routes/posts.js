@@ -10,6 +10,7 @@ const { incrementDailyPostCount, incrementDailyCommentCount } = require('./daily
 const { checkBadges } = require('./badges');
 const { checkMilestones } = require('../utils/milestones');
 const { generatePostSummary } = require('../utils/summarize');
+const { addInfluence, removeInfluence } = require('../utils/influence');
 
 const router = express.Router();
 
@@ -547,9 +548,14 @@ router.post('/:id/vote', authMiddleware, (req, res) => {
       return res.status(400).json({ error: '无效的投票类型' });
     }
 
-    const post = db.prepare('SELECT id FROM posts WHERE id = ?').get(req.params.id);
+    const post = db.prepare('SELECT id, user_id FROM posts WHERE id = ?').get(req.params.id);
     if (!post) {
       return res.status(404).json({ error: '帖子不存在' });
+    }
+
+    // Can't vote on own post
+    if (post.user_id === req.user.id) {
+      return res.status(400).json({ error: '不能给自己的帖子点赞' });
     }
 
     // Check existing vote
@@ -597,6 +603,18 @@ router.post('/:id/vote', authMiddleware, (req, res) => {
       }
       action = 'added';
       currentVote = vote_type;
+    }
+
+    // Influence score tracking
+    if (vote_type === 'like') {
+      if (action === 'added') {
+        addInfluence(post.user_id, 'post_like', 'post', req.params.id);
+      } else if (action === 'removed') {
+        removeInfluence(post.user_id, 'post_like', 'post', req.params.id);
+      } else if (action === 'changed') {
+        // changed from dislike to like: gain influence for like
+        addInfluence(post.user_id, 'post_like', 'post', req.params.id);
+      }
     }
 
     // Get updated counts

@@ -1296,6 +1296,9 @@ async function loadProfile(userId) {
     html += '    <div style="font-size:12px;color:#94a3b8;margin-top:4px;">@' + escapeHtml(user.username) + ' · 注册于 ' + formatDate(user.created_at) + '</div>';
     html += '    <div style="display:flex;gap:16px;margin-top:8px;font-size:13px;color:#64748b;">';
     html += '      <span><strong style="color:var(--text);">' + (user.points || 0) + '</strong> 积分</span>';
+    if (user.influence_score > 0) {
+      html += '      <span style="color:#ec4899;"><strong>' + user.influence_score + '</strong> 影响力</span>';
+    }
     html += '      <span style="cursor:pointer;" onclick="showFollowers(' + userId + ')"><strong style="color:var(--text);">' + (followRes.followers_count || 0) + '</strong> 粉丝</span>';
     html += '      <span style="cursor:pointer;" onclick="showFollowing(' + userId + ')"><strong style="color:var(--text);">' + (followRes.following_count || 0) + '</strong> 关注</span>';
     html += '    </div>';
@@ -4999,6 +5002,7 @@ async function loadProfile(userId) {
               <div style="font-size:18px;font-weight:800;color:#f97316;">🔥 ${res.user.checkin_streak || 0}</div>
               <div style="font-size:11px;color:#94a3b8;">连续签到</div>
             </div>
+            ${res.user.influence_score > 0 ? '<div style="width:1px;background:' + levelColor + '22;margin:8px 0;"></div><div style="flex:1;text-align:center;padding:8px 4px;"><div style="font-size:18px;font-weight:800;color:#ec4899;">💎 ' + (res.user.influence_score || 0) + '</div><div style="font-size:11px;color:#94a3b8;">影响力</div></div>' : ''}
             <div id="profile-followers-stat" style="width:1px;background:${levelColor}22;margin:8px 0;"></div>
             <div style="flex:1;text-align:center;padding:8px 4px;cursor:pointer;border-radius:8px;transition:background 0.2s;" onclick="showFollowList(${userId}, 'followers')" title="查看粉丝列表">
               <div style="font-size:18px;font-weight:800;color:#667eea;" id="profile-followers-count">-</div>

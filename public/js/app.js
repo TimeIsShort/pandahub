@@ -6573,30 +6573,77 @@ function setWeatherCity(city, name) {
   loadWeatherData();
 }
 
+// Weather cache (5-minute TTL)
+const WEATHER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+let weatherCache = {
+  data: null,
+  timestamp: 0
+};
+
 async function loadWeatherData() {
   const widget = document.getElementById('weather-widget');
   if (!widget) return;
   const city = getSavedCity();
+
+  // Check cache first
+  const now = Date.now();
+  if (weatherCache.data && weatherCache.timestamp && (now - weatherCache.timestamp) < WEATHER_CACHE_TTL) {
+    // Use cached data
+    renderWeatherWidget(weatherCache.data);
+    return;
+  }
+
   widget.innerHTML = `<span class="weather-loading">🌤️ 加载中...</span>`;
+
+  // Try to use stale cache if available (for offline/failure)
+  const staleData = weatherCache.data;
+
   try {
-    const response = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=%l|%c|%t|%h|%w&m`);
+    // AbortController for 5-second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(
+      `https://wttr.in/${encodeURIComponent(city)}?format=%l|%c|%t|%h|%w&m`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeoutId);
+
+    if (!response.ok) throw new Error('Weather API error');
+
     const text = await response.text();
     const parts = text.split('|');
-    if (parts.length < 4) throw new Error('Invalid');
+    if (parts.length < 4) throw new Error('Invalid response');
+
     const location = parts[0].trim();
     const condition = parts[1].trim();
     const temp = parts[2].trim();
     const humidity = parts[3].trim();
     const wind = parts[4] ? parts[4].trim() : '';
     const emoji = getWeatherEmoji(condition);
-    widget.innerHTML = `
-      <div class="weather-city">${emoji} ${location}</div>
-      <div class="weather-temp">${temp}</div>
-    `;
-    widget.title = `点击切换城市 | ${location} · ${condition} · ${temp} · ${humidity}${wind ? ' · ' + wind : ''}`;
+
+    const weatherData = { location, condition, temp, humidity, wind, emoji, city };
+    weatherCache = { data: weatherData, timestamp: now };
+
+    renderWeatherWidget(weatherData);
   } catch (e) {
-    widget.innerHTML = `<span class="weather-error">🌤️ 加载失败</span>`;
+    // Fallback: show stale cache if available, else error
+    if (staleData) {
+      renderWeatherWidget(staleData);
+    } else {
+      widget.innerHTML = `<span class="weather-error">🌤️ 天气暂不可用</span>`;
+    }
   }
+}
+
+function renderWeatherWidget(data) {
+  const widget = document.getElementById('weather-widget');
+  if (!widget || !data) return;
+  widget.innerHTML = `
+    <div class="weather-city">${data.emoji} ${data.location}</div>
+    <div class="weather-temp">${data.temp}</div>
+  `;
+  widget.title = `点击切换城市 | ${data.location} · ${data.condition} · ${data.temp} · ${data.humidity}${data.wind ? ' · ' + data.wind : ''}`;
 }
 
 function initWeather() {

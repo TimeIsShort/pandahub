@@ -145,6 +145,9 @@
             <button id="btn-shop" onclick="toggleShopDropdown()" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;flex-shrink:0;">
               🏪 商城
             </button>
+            <button id="btn-lottery" onclick="toggleLotteryDropdown()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;flex-shrink:0;">
+              🎰 抽奖
+            </button>
           </div>
         </div>
         <!-- Trending Dropdown -->
@@ -185,6 +188,25 @@
             <div style="margin-top:14px;padding-top:14px;border-top:1px dashed #e5e7eb;">
               <button onclick="showMyRedemptions()" style="width:100%;padding:8px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;color:#7c3aed;font-size:13px;font-weight:600;cursor:pointer;">📜 我的兑换记录</button>
             </div>
+          </div>
+        </div>
+        <!-- Lottery Dropdown -->
+        <div id="lottery-dropdown" style="display:none;position:relative;z-index:200;">
+          <div style="position:absolute;right:0;top:8px;width:320px;background:rgba(255,255,255,0.97);border:1px solid rgba(245,158,11,0.4);border-radius:14px;padding:16px;box-shadow:0 8px 32px rgba(245,158,11,0.25);backdrop-filter:blur(14px);max-height:500px;overflow-y:auto;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <div>
+                <h3 style="font-size:14px;color:#d97706;font-weight:700;margin:0;">🎰 积分抽奖</h3>
+                <div id="lottery-user-points" style="font-size:11px;color:#6b7280;margin-top:2px;"></div>
+              </div>
+              <button onclick="toggleLotteryDropdown()" style="background:none;border:none;font-size:18px;color:#94a3b8;cursor:pointer;line-height:1;padding:0 2px;">×</button>
+            </div>
+            <div id="lottery-wheel-area" style="text-align:center;margin-bottom:14px;">
+              <div id="lottery-cost" style="font-size:12px;color:#6b7280;margin-bottom:10px;">🎫 每次抽奖消耗 10 积分</div>
+              <div id="lottery-result-display" style="min-height:80px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#374151;"></div>
+              <button id="btn-play-lottery" onclick="playLottery()" style="margin-top:10px;width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;disabled:disabled;">🎰 立即抽奖</button>
+              <div id="lottery-cooldown" style="display:none;font-size:12px;color:#94a3b8;margin-top:8px;"></div>
+            </div>
+            <div style="font-size:12px;color:#6b7280;text-align:center;">今日已免费抽奖 · 明天再来</div>
           </div>
         </div>
         <!-- Post List -->

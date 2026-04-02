@@ -885,6 +885,60 @@ try {
     )
   `);
 } catch(e) {}
+
+// ============ Lottery System ============
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lottery_prizes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      icon TEXT DEFAULT '🎁',
+      prize_type TEXT NOT NULL,
+      prize_value TEXT,
+      weight INTEGER DEFAULT 1,
+      stock INTEGER,
+      sort_order INTEGER DEFAULT 0,
+      active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+} catch(e) {}
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lottery_records (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      prize_id INTEGER NOT NULL,
+      points_spent INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (prize_id) REFERENCES lottery_prizes(id)
+    )
+  `);
+} catch(e) {}
+
+// Seed default lottery prizes
+try {
+  const defaultPrizes = [
+    { name: '🎫 谢谢参与', description: '再接再厉', icon: '🎫', prize_type: 'none', prize_value: '0', weight: 30, stock: null },
+    { name: '🍀 幸运5积分', description: '获得5积分', icon: '🍀', prize_type: 'points', prize_value: '5', weight: 25, stock: null },
+    { name: '⭐ 幸运20积分', description: '获得20积分', icon: '⭐', prize_type: 'points', prize_value: '20', weight: 15, stock: null },
+    { name: '💎 幸运50积分', description: '获得50积分', icon: '💎', prize_type: 'points', prize_value: '50', weight: 8, stock: null },
+    { name: '🏅 幸运徽章', description: '获得抽奖徽章', icon: '🏅', prize_type: 'badge', prize_value: '10', weight: 5, stock: null },
+    { name: '🔥 幸运100积分', description: '获得100积分', icon: '🔥', prize_type: 'points', prize_value: '100', weight: 2, stock: null },
+  ];
+  const insertPrize = db.prepare(`
+    INSERT OR IGNORE INTO lottery_prizes (name, description, icon, prize_type, prize_value, weight, stock, active, sort_order)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+  `);
+  defaultPrizes.forEach((p, i) => {
+    insertPrize.run(p.name, p.description, p.icon, p.prize_type, p.prize_value, p.weight, p.stock, i);
+  });
+} catch(e) {}
+
+// ============ AI Chat History ============
 try {
   db.exec(`
     CREATE TABLE IF NOT EXISTS ai_chat_history (

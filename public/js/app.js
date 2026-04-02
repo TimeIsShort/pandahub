@@ -446,6 +446,78 @@ function closeRedemptionsModal() {
   if (modal) modal.remove();
 }
 
+function toggleLotteryDropdown() {
+  var dropdown = document.getElementById('lottery-dropdown');
+  if (!dropdown) return;
+  var isHidden = dropdown.style.display === 'none' || !dropdown.style.display;
+  if (isHidden) {
+    dropdown.style.display = 'block';
+    loadLotteryStatus();
+  } else {
+    dropdown.style.display = 'none';
+  }
+}
+
+async function loadLotteryStatus() {
+  var user = getUser();
+  var pointsEl = document.getElementById('lottery-user-points');
+  var costEl = document.getElementById('lottery-cost');
+  var btn = document.getElementById('btn-play-lottery');
+  var cooldown = document.getElementById('lottery-cooldown');
+  var resultEl = document.getElementById('lottery-result-display');
+  if (!user) {
+    if (pointsEl) pointsEl.textContent = '请先登录';
+    return;
+  }
+  if (pointsEl) pointsEl.textContent = '我的积分: ' + (user.points || 0);
+  if (costEl) costEl.textContent = '🎫 每次抽奖消耗 10 积分';
+  if (resultEl) resultEl.innerHTML = '';
+  try {
+    var res = await api('/lottery/status');
+    if (res.error) return;
+    var btn = document.getElementById('btn-play-lottery');
+    if (res.todayUsed) {
+      if (btn) { btn.disabled = true; btn.textContent = '🎉 今日已抽奖'; btn.style.opacity = '0.6'; }
+      if (cooldown) { cooldown.style.display = 'block'; cooldown.textContent = '明天再来'; }
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = '🎰 立即抽奖'; btn.style.opacity = '1'; }
+      if (cooldown) cooldown.style.display = 'none';
+    }
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function playLottery() {
+  var btn = document.getElementById('btn-play-lottery');
+  if (btn) { btn.disabled = true; btn.textContent = '抽奖中...'; }
+  var resultEl = document.getElementById('lottery-result-display');
+  if (resultEl) resultEl.innerHTML = '<div style="animation:pulse 1s infinite;font-size:24px;">🎰</div>';
+  try {
+    var res = await api('/lottery/play', { method: 'POST' });
+    if (res.error) {
+      showToast(res.error, 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '🎰 立即抽奖'; }
+      if (resultEl) resultEl.innerHTML = '';
+      return;
+    }
+    if (resultEl) {
+      resultEl.innerHTML = '<div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:12px;padding:16px;margin:8px 0;">' +
+        '<div style="font-size:32px;margin-bottom:8px;">' + (res.prize?.icon || '🎁') + '</div>' +
+        '<div style="font-size:14px;font-weight:700;color:#92400e;">' + res.prize?.name + '</div>' +
+        '<div style="font-size:12px;color:#b45309;margin-top:4px;">' + (res.result?.message || '') + '</div>' +
+        '<div style="font-size:12px;color:#b45309;">剩余积分: ' + res.remainingPoints + '</div></div>';
+    }
+    loadUserInfo();
+    loadLotteryStatus();
+    showToast('🎉 ' + (res.prize?.name || '抽奖完成'), 'success');
+  } catch(e) {
+    showToast('抽奖失败', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '🎰 立即抽奖'; }
+    if (resultEl) resultEl.innerHTML = '';
+  }
+}
+
 document.addEventListener('click', function(e) {
   var dropdown = document.getElementById('trending-dropdown');
   var btn = document.getElementById('btn-trending');
@@ -461,6 +533,11 @@ document.addEventListener('click', function(e) {
   var shopBtn = document.getElementById('btn-shop');
   if (shopDropdown && shopBtn && !shopDropdown.contains(e.target) && !shopBtn.contains(e.target)) {
     shopDropdown.style.display = 'none';
+  }
+  var lotDropdown = document.getElementById('lottery-dropdown');
+  var lotBtn = document.getElementById('btn-lottery');
+  if (lotDropdown && lotBtn && !lotDropdown.contains(e.target) && !lotBtn.contains(e.target)) {
+    lotDropdown.style.display = 'none';
   }
 });
 

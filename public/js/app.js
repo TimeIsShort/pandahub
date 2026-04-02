@@ -1204,6 +1204,25 @@ function setBottomNav(name) {
   });
 }
 
+// Update page SEO meta tags dynamically (for canonical/og:url consistency)
+function updateSeoMeta(opts) {
+  opts = opts || {};
+  var title = opts.title || '熊猫社区 PandaHub';
+  var desc = opts.description || '开放的技术交流社区，支持 AI 对话、积分等级、每日签到等功能';
+  var url = opts.url || 'https://pandahub.cloud';
+  document.title = title;
+  var metas = document.querySelectorAll('meta[name="description"]');
+  metas.forEach(function(m) { m.content = desc; });
+  var ogTitles = document.querySelectorAll('meta[property="og:title"]');
+  ogTitles.forEach(function(m) { m.content = title; });
+  var ogDescs = document.querySelectorAll('meta[property="og:description"]');
+  ogDescs.forEach(function(m) { m.content = desc; });
+  var ogUrls = document.querySelectorAll('meta[property="og:url"]');
+  ogUrls.forEach(function(m) { m.content = url; });
+  var canonicals = document.querySelectorAll('link[rel="canonical"]');
+  canonicals.forEach(function(c) { c.href = url; });
+}
+
 function goHome() {
   setBottomNav('home');
   checkEmailVerifiedBanner();
@@ -1213,6 +1232,7 @@ function goHome() {
   // Show panda FAB on home
   var fab = document.getElementById('panda-fab-container');
   if (fab) fab.style.display = '';
+  updateSeoMeta({ title: '熊猫社区 PandaHub', description: '开放的技术交流社区，支持 AI 对话、积分等级、每日签到等功能', url: 'https://pandahub.cloud' });
 }
 
 function goProfile() {
@@ -2568,10 +2588,6 @@ function goToPage(page) {
 
 async function viewPost(id) {
   const user = getUser();
-  if (!user) {
-    requireLogin('查看帖子详情');
-    return;
-  }
 
   const postId = Number(id);
   if (!Number.isInteger(postId) || postId <= 0) {
@@ -2648,8 +2664,30 @@ async function viewPost(id) {
       </div>
     `;
 
+    // Update SEO meta for post page
+    updateSeoMeta({
+      title: res.post.title + ' - 熊猫社区',
+      description: (res.post.content || '').replace(/<[^>]+>/g, '').substring(0, 120),
+      url: 'https://pandahub.cloud/#/post/' + postId
+    });
+
+    // Guest: show login prompt instead of comment form, but allow reading
     if (commentFormEl) {
-      commentFormEl.style.display = user ? 'block' : 'none';
+      if (user) {
+        commentFormEl.style.display = 'block';
+      } else {
+        commentFormEl.style.display = 'none';
+        // Insert guest prompt above comments
+        var commentsSection = document.getElementById('comments-section');
+        if (commentsSection) {
+          commentsSection.style.display = 'block';
+          var guestPrompt = document.createElement('div');
+          guestPrompt.id = 'guest-comment-prompt';
+          guestPrompt.style.cssText = 'text-align:center;padding:16px;background:#fef3c7;border-radius:10px;margin-bottom:16px;font-size:13px;';
+          guestPrompt.innerHTML = '<span style="color:#92400e;">登录后可以发表评论</span> <button onclick="showLogin()" style="background:#f59e0b;border:none;color:#fff;padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px;">登录</button>';
+          commentFormEl.parentNode.insertBefore(guestPrompt, commentFormEl);
+        }
+      }
     }
 
     const comments = Array.isArray(res.comments) ? res.comments : [];

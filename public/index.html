@@ -493,12 +493,19 @@
         </div>
       </div>
       <div class="notif-filter-tabs" id="notif-filter-tabs">
-        <button class="notif-filter-btn active" onclick="setNotifFilter('')">全部</button>
-        <button class="notif-filter-btn" onclick="setNotifFilter('new_comment')">💬</button>
-        <button class="notif-filter-btn" onclick="setNotifFilter('new_reply')">回复</button>
-        <button class="notif-filter-btn" onclick="setNotifFilter('post_approved')">🎉</button>
-        <button class="notif-filter-btn" onclick="setNotifFilter('post_rejected')">❌</button>
-        <button class="notif-filter-btn" onclick="setNotifFilter('mention')">@</button>
+        <button class="notif-filter-btn active" onclick="switchInboxTab('all')">📋 全部</button>
+        <button class="notif-filter-btn" onclick="switchInboxTab('notifications')">🔔 通知</button>
+        <button class="notif-filter-btn" onclick="switchInboxTab('messages')">💬 私信</button>
+        <button class="notif-filter-btn" onclick="setNotifFilter('')">筛选</button>
+      </div>
+      <div id="inbox-type-bar" style="display:flex;gap:6px;padding:8px 12px;background:#f8f9fa;border-bottom:1px solid #e5e7eb;font-size:11px;overflow-x:auto;white-space:nowrap;">
+        <button class="notif-filter-btn active" onclick="setNotifFilter('')" style="padding:3px 8px;font-size:11px;">全部</button>
+        <button class="notif-filter-btn" onclick="setNotifFilter('new_comment')" style="padding:3px 8px;font-size:11px;">💬</button>
+        <button class="notif-filter-btn" onclick="setNotifFilter('new_reply')" style="padding:3px 8px;font-size:11px;">回复</button>
+        <button class="notif-filter-btn" onclick="setNotifFilter('post_approved')" style="padding:3px 8px;font-size:11px;">🎉</button>
+        <button class="notif-filter-btn" onclick="setNotifFilter('post_rejected')" style="padding:3px 8px;font-size:11px;">❌</button>
+        <button class="notif-filter-btn" onclick="setNotifFilter('mention')" style="padding:3px 8px;font-size:11px;">@</button>
+        <button class="notif-filter-btn" onclick="setNotifFilter('system')" style="padding:3px 8px;font-size:11px;">🔔</button>
       </div>
       <div id="notif-list" class="notif-list" style="max-height:420px;overflow-y:auto;"></div>
       <div id="notif-pagination" class="notif-pagination" style="display:none;padding:10px;text-align:center;border-top:1px solid #f0f2ff;">

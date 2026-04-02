@@ -4836,10 +4836,14 @@ function renderContent(str) {
 // Notifications
 async function loadNotifCount() {
   try {
-    const res = await api('/notifications/unread-count');
-    const badge = document.getElementById('notif-badge');
-    if (res.count > 0) {
-      badge.textContent = res.count > 99 ? '99+' : res.count;
+    const [notifRes, msgRes] = await Promise.all([
+      api('/notifications/unread-count'),
+      api('/messages/unread-count')
+    ]);
+    var total = (notifRes.count || 0) + (msgRes.count || 0);
+    var badge = document.getElementById('notif-badge');
+    if (total > 0) {
+      badge.textContent = total > 99 ? '99+' : total;
       badge.style.display = 'inline';
     } else {
       badge.style.display = 'none';
@@ -4847,8 +4851,8 @@ async function loadNotifCount() {
     // Also update bottom nav badge
     var bnBadge = document.getElementById('bn-notif-badge');
     if (bnBadge) {
-      if (res.count > 0) {
-        bnBadge.textContent = res.count > 99 ? '99+' : res.count;
+      if (total > 0) {
+        bnBadge.textContent = total > 99 ? '99+' : total;
         bnBadge.style.display = 'flex';
       } else {
         bnBadge.style.display = 'none';
@@ -4863,6 +4867,7 @@ let notifPage = 1;
 let notifFilter = '';
 let notifTotal = 0;
 let notifLimit = 15;
+let inboxTab = 'all'; // 'all' | 'notifications' | 'messages'
 
 async function openNotifications() {
   setBottomNav('notif');
@@ -4871,10 +4876,8 @@ async function openNotifications() {
   document.getElementById('notif-modal').style.display = 'flex';
   notifPage = 1;
   notifFilter = '';
-  var filterBtns = document.querySelectorAll('.notif-filter-btn');
-  filterBtns.forEach(function(b) { b.classList.remove('active'); });
-  var allBtn = document.getElementById('notif-filter-tabs');
-  if (allBtn) allBtn.querySelector('.notif-filter-btn') && allBtn.querySelector('.notif-filter-btn').classList.add('active');
+  inboxTab = 'all';
+  updateInboxTabButtons();
   loadNotifications();
 }
 
@@ -4882,10 +4885,31 @@ function closeNotifications() {
   document.getElementById('notif-modal').style.display = 'none';
 }
 
+function switchInboxTab(tab) {
+  inboxTab = tab;
+  notifPage = 1;
+  updateInboxTabButtons();
+  loadNotifications();
+}
+
+function updateInboxTabButtons() {
+  var tabs = document.querySelectorAll('#notif-filter-tabs .notif-filter-btn');
+  tabs.forEach(function(b) { b.classList.remove('active'); });
+  var tabBtns = document.querySelectorAll('#notif-filter-tabs .notif-filter-btn');
+  tabBtns.forEach(function(b) {
+    var text = b.textContent || '';
+    if ((inboxTab === 'all' && text.includes('全部')) ||
+        (inboxTab === 'notifications' && text.includes('通知')) ||
+        (inboxTab === 'messages') && text.includes('私信')) {
+      b.classList.add('active');
+    }
+  });
+}
+
 function setNotifFilter(type) {
   notifFilter = type;
   notifPage = 1;
-  var filterBtns = document.querySelectorAll('.notif-filter-btn');
+  var filterBtns = document.querySelectorAll('#inbox-type-bar .notif-filter-btn');
   filterBtns.forEach(function(b) { b.classList.remove('active'); });
   if (event && event.target && event.target.classList) event.target.classList.add('active');
   loadNotifications();
@@ -4896,16 +4920,26 @@ async function loadNotifications() {
   if (container) container.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">加载中...</div>';
 
   try {
-    var url = '/notifications?page=' + notifPage + '&limit=' + notifLimit;
-    if (notifFilter) url += '&type=' + notifFilter;
-    const res = await api(url);
+    var res;
+    if (inboxTab === 'notifications' && !notifFilter) {
+      // Use old API for simple notification listing
+      var url = '/notifications?page=' + notifPage + '&limit=' + notifLimit;
+      res = await api(url);
+      res.items = res.notifications || [];
+    } else {
+      // Use unified inbox API
+      var url = '/notifications/inbox?tab=' + inboxTab + '&page=' + notifPage + '&limit=' + notifLimit;
+      if (notifFilter) url += '&type=' + notifFilter;
+      res = await api(url);
+    }
+
     const list = document.getElementById('notif-list');
     notifTotal = res.total || 0;
 
     document.getElementById('notif-unread-count').textContent = res.unreadCount > 0 ? res.unreadCount + '条未读' : '';
 
-    if (!res.notifications || res.notifications.length === 0) {
-      if (list) list.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;font-size:14px;">暂无通知</div>';
+    if (!res.items || res.items.length === 0) {
+      if (list) list.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;font-size:14px;">暂无消息</div>';
       document.getElementById('notif-pagination').style.display = 'none';
       return;
     }
@@ -4916,16 +4950,38 @@ async function loadNotifications() {
       post_approved: 'approved',
       post_rejected: 'rejected',
       mention: 'mention',
-      system: 'system'
+      system: 'system',
+      private_message: 'message'
     };
 
     if (list) {
-      list.innerHTML = res.notifications.map(function(n) {
+      list.innerHTML = res.items.map(function(n) {
         var tc = typeClassMap[n.type] || 'system';
-        return '<div class="notif-item ' + (n.is_read ? '' : 'unread') + '" onclick="handleNotifClick(' + n.id + ',' + (n.post_id || 'null') + ')">' +
-          '<div class="notif-title"><span class="notif-type-badge ' + tc + '">' + (n.typeLabel || '通知') + '</span>' + escapeHtml(n.title) + '</div>' +
-          '<div class="notif-content">' + escapeHtml(n.content || '') + '</div>' +
-          '<div class="notif-time">' + formatDate(n.created_at) + '</div></div>';
+        var isUnread = n.is_read === 0 || n.is_read === null;
+        var html = '';
+        if (n.item_type === 'private_message') {
+          // Private message item
+          var partner = n.sender_id === getUser().id ? n.receiver_nickname : n.sender_nickname;
+          var avatar = n.sender_id === getUser().id ? n.receiver_avatar : n.sender_avatar;
+          var avatarLetter = partner ? partner[0].toUpperCase() : '?';
+          var avatarHtml = avatar
+            ? '<img src="' + avatar + '" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+            : '<span>' + avatarLetter + '</span>';
+          html = '<div class="notif-item ' + (isUnread ? 'unread' : '') + '" onclick="openMessagesWith(' + (n.sender_id === getUser().id ? n.receiver_id : n.sender_id) + ')">' +
+            '<div style="display:flex;align-items:center;gap:10px;">' +
+            '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;overflow:hidden;">' + avatarHtml + '</div>' +
+            '<div style="flex:1;min-width:0;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">' +
+            '<span style="font-size:13px;font-weight:600;color:#374151;">' + escapeHtml(partner || '用户') + '</span>' +
+            '<span style="font-size:11px;color:#94a3b8;">' + formatDate(n.created_at) + '</span></div>' +
+            '<div style="font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(n.content || '') + '</div></div></div></div>';
+        } else {
+          html = '<div class="notif-item ' + (isUnread ? 'unread' : '') + '" onclick="handleNotifClick(' + (n.notif_id || n.id) + ',' + (n.post_id || 'null') + ')">' +
+            '<div class="notif-title"><span class="notif-type-badge ' + tc + '">' + (n.typeLabel || '通知') + '</span>' + escapeHtml(n.title || '') + '</div>' +
+            '<div class="notif-content">' + escapeHtml(n.content || '') + '</div>' +
+            '<div class="notif-time">' + formatDate(n.created_at) + '</div></div>';
+        }
+        return html;
       }).join('');
     }
 
@@ -4954,6 +5010,17 @@ async function loadNotificationsNext() {
   if (notifPage >= totalPages) return;
   notifPage++;
   loadNotifications();
+}
+
+async function markAllNotifRead() {
+  try {
+    await api('/notifications/read-all', { method: 'POST' });
+    showToast('已全部标记为已读', 'success');
+    loadNotifications();
+    loadNotifCount();
+  } catch (e) {
+    showToast('操作失败', 'error');
+  }
 }
 
 // ============ Follow System ============
@@ -5741,6 +5808,11 @@ window.openMsgDetailFromUser = async function(partnerId, partnerName) {
   await openMsgDetail(partnerId, partnerName || '用户');
 };
 
+window.openMessagesWith = async function(partnerId) {
+  closeNotifications();
+  await openMsgDetail(partnerId, '用户');
+};
+
 window.openMsgDetail = async function(partnerId, partnerName) {
   currentMsgPartner = partnerId;
   document.getElementById('msg-partner-name').textContent = '💬 与 ' + partnerName + ' 的对话';
@@ -5959,16 +6031,6 @@ async function handleNotifClick(notifId, postId) {
   if (postId) {
     closeNotifications();
     viewPost(postId);
-  }
-}
-
-async function markAllNotifRead() {
-  try {
-    await api('/notifications/read-all', { method: 'POST' });
-    loadNotifCount();
-    loadNotifications();
-  } catch (e) {
-    console.error(e);
   }
 }
 

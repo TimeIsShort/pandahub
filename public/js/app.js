@@ -1333,7 +1333,7 @@ function viewOtherProfile(userId) {
 // ============ Points Transfer ============"" 
 async function submitTransfer() {
   var user = getUser();
-  if (!user) { showToast('请先登录', 'error'); return; }
+  if (!user) { requireLogin('进行转账'); return; }
 
   var username = document.getElementById('transfer-username').value.trim();
   var amount = document.getElementById('transfer-amount').value.trim();
@@ -1670,6 +1670,12 @@ function showLogin() {
   if (usernameInput) {
     setTimeout(() => usernameInput.focus(), 20);
   }
+}
+
+// Unified login requirement handler - shows toast and opens login modal
+function requireLogin(action = '进行该操作') {
+  showToast('请先登录后再' + action, 'info', 2600);
+  setTimeout(() => showLogin(), 300);
 }
 
 function showRegister() {
@@ -2530,8 +2536,7 @@ function goToPage(page) {
 async function viewPost(id) {
   const user = getUser();
   if (!user) {
-    showToast('请先登录后查看帖子详情', 'info', 2600);
-    showLogin();
+    requireLogin('查看帖子详情');
     return;
   }
 
@@ -3036,7 +3041,7 @@ var REPORT_REASONS = [
 
 async function openReportModal(targetType, targetId, targetTitle) {
   var user = getUser();
-  if (!user) { showToast('请先登录', 'error'); return; }
+  if (!user) { requireLogin('进行举报'); return; }
 
   _currentReport = { targetType: targetType, targetId: targetId };
 
@@ -3167,8 +3172,7 @@ window.goNewPost = function() {
 async function votePost(id, voteType) {
   const user = getUser();
   if (!user) {
-    showToast('请先登录后进行投票', 'info', 2600);
-    showLogin();
+    requireLogin('进行投票');
     return;
   }
 
@@ -3213,8 +3217,7 @@ async function votePost(id, voteType) {
 async function togglePostReaction(postId, emoji) {
   const user = getUser();
   if (!user) {
-    showToast('请先登录', 'info');
-    showLogin();
+    requireLogin('进行反应');
     return;
   }
   try {
@@ -5169,7 +5172,7 @@ async function markAllNotifRead() {
 let followCache = {}; // userId -> { isFollowing, followers_count, following_count }
 
 async function toggleFollow(targetId) {
-  if (!user) { showToast('请先登录', 'error'); return; }
+  if (!user) { requireLogin('进行关注'); return; }
   var btn = document.getElementById('btn-follow');
   var currentState = followCache[targetId] && followCache[targetId].isFollowing;
 
@@ -5358,7 +5361,7 @@ window.loadFollowList = loadFollowList;
 
 // ============ Favorites / Bookmarks ============
 async function toggleFavorite(postId) {
-  if (!getUser()) { showToast('请先登录', 'error'); return; }
+  if (!getUser()) { requireLogin('进行收藏'); return; }
   var btn = document.getElementById('btn-favorite');
   var listBtn = document.getElementById('fav-btn-' + postId);
   var isFav = btn && btn.dataset.favorited === '1';
@@ -5542,7 +5545,7 @@ async function loadLeaderboard() {
 // ============ Comment Likes ============
 async function voteComment(commentId) {
   var user = getUser();
-  if (!user) { showToast('请先登录', 'error'); return; }
+  if (!user) { requireLogin('进行点赞'); return; }
   var btn = document.getElementById('clike-btn-' + commentId);
   var countEl = document.getElementById('clike-count-' + commentId);
   if (!btn) return;
@@ -5930,7 +5933,7 @@ async function loadMsgConversations() {
 }
 
 window.openMessages = async function() {
-  if (!user) { showToast('请先登录', 'error'); return; }
+  if (!user) { requireLogin('查看私信'); return; }
   document.getElementById('msg-modal').style.display = 'flex';
   document.getElementById('msg-detail-modal').style.display = 'none';
   await loadMsgConversations();

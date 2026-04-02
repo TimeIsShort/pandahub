@@ -1868,8 +1868,18 @@ main.container {
 }
 
 .comment-depth-1 > .comment-actions,
-.comment-depth-2 > .comment-actions {
+.comment-depth-2 > .comment-actions,
+.comment-depth-3 > .comment-actions {
   margin-left: 0;
+}
+
+.comment-depth-3 {
+  /* Deeper reply: subtle border */
+  margin-left: 14px;
+  border-left: 2px solid rgba(139, 92, 246, 0.3);
+  padding-left: 10px;
+  background: rgba(250, 252, 255, 0.5);
+  border-radius: 0 6px 6px 0;
 }
 
 /* Reply list (direct replies container) */

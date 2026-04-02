@@ -2500,7 +2500,11 @@ async function viewPost(id) {
 
     // Render a single comment item
     function renderCommentItem(comment, depth) {
-      var indentClass = depth === 0 ? 'comment-depth-root' : depth === 1 ? 'comment-depth-1' : 'comment-depth-2';
+      var indentClass = depth === 0 ? 'comment-depth-root' : depth === 1 ? 'comment-depth-1' : depth === 2 ? 'comment-depth-2' : 'comment-depth-3';
+      var maxDepthForNesting = 2; // deeper than this gets depth-3 style but still renders
+      var displayDepth = Math.min(depth, maxDepthForNesting);
+      if (depth > 0) indentClass = 'comment-depth-' + displayDepth;
+
       var replyLine = comment.reply_to_nickname || comment.reply_to_username
         ? '<span class="comment-reply-to">回复 <b>' + escapeHtml(comment.reply_to_nickname || comment.reply_to_username) + '</b></span>'
         : '';
@@ -2539,8 +2543,9 @@ async function viewPost(id) {
               '💬 查看 ' + deeperReplies.length + ' 条更多回复 ↓</button></div>';
             repliesHtml += '<div id="reply-expanded-' + comment.id + '" style="display:none;"></div>';
           }
-        } else if (depth === 1) {
-          // Depth 1: collect ALL deeper replies for collapse
+        } else {
+          // Depth 1+: render direct replies with next depth, collect ALL deeper for collapse
+          var directReplies = comment.replies;
           var allDeeper = [];
           function collectDeeper(c) {
             if (c.replies) {
@@ -2550,8 +2555,11 @@ async function viewPost(id) {
               });
             }
           }
-          collectDeeper(comment);
-          var directHtml = comment.replies.map(function(r) { return renderCommentItem(r, 2); }).join('');
+          directReplies.forEach(function(r) {
+            collectDeeper(r);
+          });
+          var nextDepth = depth + 1;
+          var directHtml = directReplies.map(function(r) { return renderCommentItem(r, nextDepth); }).join('');
           repliesHtml = '<div class="reply-list depth-1">' + directHtml + '</div>';
           if (allDeeper.length > 0) {
             repliesHtml += '<div class="reply-collapsed" id="reply-collapsed-' + comment.id + '">' +

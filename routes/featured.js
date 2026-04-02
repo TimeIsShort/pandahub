@@ -9,10 +9,11 @@ router.get('/', (req, res) => {
     const periodKey = getPeriodKey(type);
 
     const posts = db.prepare(`
-      SELECT p.id, p.title, p.created_at, p.views, p.like_count, p.comment_count,
+      SELECT p.id, p.title, p.created_at, p.views, p.like_count,
              u.username, u.nickname, u.avatar,
              t.name as tag_name, t.color as tag_color, t.icon as tag_icon,
-             f.created_at as featured_at
+             f.created_at as featured_at,
+             (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count
       FROM featured_posts f
       JOIN posts p ON f.post_id = p.id
       LEFT JOIN users u ON p.user_id = u.id

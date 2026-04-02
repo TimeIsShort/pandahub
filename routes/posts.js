@@ -90,7 +90,7 @@ router.get('/', optionalAuth, (req, res) => {
     `).get(...params);
 
     const posts = db.prepare(`
-      SELECT p.*, u.username, u.nickname, u.avatar, u.level_name, u.level_icon, u.level_color,
+      SELECT p.*, u.username, u.nickname, u.avatar,
              t.name as tag_name, t.color as tag_color, t.icon as tag_icon,
              s.name as section_name, s.icon as section_icon,
              (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,

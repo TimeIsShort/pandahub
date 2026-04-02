@@ -104,6 +104,10 @@
           </div>
         </section>
         <div class="toolbar" style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;overflow:hidden;">
+          <!-- Left: Section tabs (horizontally scrollable) -->
+          <div style="display:flex;gap:6px;overflow-x:auto;flex-shrink:0;scrollbar-width:none;-ms-overflow-style:none;max-width:180px;" id="sections-scroll-wrap">
+            <div id="sections-filter" style="display:flex;gap:6px;flex-wrap:nowrap;"></div>
+          </div>
           <!-- Left: Tag tabs (horizontally scrollable) -->
           <div style="display:flex;gap:6px;overflow-x:auto;flex-shrink:0;scrollbar-width:none;-ms-overflow-style:none;flex:1;min-width:0;" id="tags-scroll-wrap">
             <div class="tags-filter" id="tags-filter" style="flex-wrap:nowrap;min-width:0;"></div>
@@ -190,6 +194,10 @@
           <div class="form-group">
             <label>标题</label>
             <input type="text" id="post-title" placeholder="输入标题">
+          </div>
+          <div class="form-group">
+            <label>版块</label>
+            <select id="post-section" onchange="onSectionChange()"></select>
           </div>
           <div class="form-group">
             <label>标签</label>

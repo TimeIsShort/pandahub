@@ -1968,8 +1968,8 @@ async function loadTags() {
     const container = document.getElementById('tags-filter');
     container.innerHTML = `<span class="tag-chip ${!currentTagId ? 'active' : ''}" onclick="filterByTag(null)">全部</span>`;
     res.tags.forEach(tag => {
-      container.innerHTML += `<span class="tag-chip ${currentTagId == tag.id ? 'active' : ''}" 
-        style="${currentTagId == tag.id ? '' : `background:${tag.color}20;border-color:${tag.color}`}" 
+      container.innerHTML += `<span class="tag-chip ${currentTagId == tag.id ? 'active' : ''}"
+        style="${currentTagId == tag.id ? '' : `background:${tag.color}20;border-color:${tag.color}`}"
         onclick="filterByTag(${tag.id}, '${tag.color}')">${tag.name}</span>`;
     });
   } catch (e) {
@@ -1981,6 +1981,29 @@ function filterByTag(tagId, color) {
   currentTagId = tagId;
   currentPage = 1;
   loadTags();
+  loadPosts();
+}
+
+let currentSectionId = null;
+
+async function loadSections() {
+  try {
+    const res = await api('/sections');
+    const container = document.getElementById('sections-filter');
+    container.innerHTML = `<span class="tag-chip ${!currentSectionId ? 'active' : ''}" onclick="filterBySection(null)">🌐 全部</span>`;
+    res.sections.forEach(section => {
+      container.innerHTML += `<span class="tag-chip ${currentSectionId == section.id ? 'active' : ''}"
+        onclick="filterBySection(${section.id})">${section.icon} ${section.name}</span>`;
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function filterBySection(sectionId) {
+  currentSectionId = sectionId;
+  currentPage = 1;
+  loadSections();
   loadPosts();
 }
 
@@ -2064,6 +2087,7 @@ async function loadPosts() {
     params.set('sort', currentSort);
   }
   if (currentTagId) params.set('tag_id', currentTagId);
+  if (currentSectionId) params.set('section_id', currentSectionId);
   if (currentTimeRange) params.set('time_range', currentTimeRange);
   const search = document.getElementById('search-input')?.value.trim();
   if (search) params.set('search', search);
@@ -3193,15 +3217,47 @@ async function showNewPost() {
   var formTitle = document.querySelector('#view-new-post h2');
   if (formTitle) formTitle.textContent = '发布新帖子';
 
-  const res = await api('/tags');
-  document.getElementById('post-tag').innerHTML = '<option value="">无标签</option>' +
-    res.tags.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  // Load sections and tags
+  await loadPostSections();
 }
+
+async function loadPostSections() {
+  try {
+    const res = await api('/sections');
+    document.getElementById('post-section').innerHTML = '<option value="">无版块</option>' +
+      res.sections.map(s => `<option value="${s.id}">${s.icon} ${s.name}</option>`).join('');
+    // Load all tags initially
+    await loadPostTagsBySection(null);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function loadPostTagsBySection(sectionId) {
+  try {
+    const res = await api('/tags');
+    let tags = res.tags || [];
+    // Filter by section if selected
+    if (sectionId) {
+      tags = tags.filter(t => !t.section_id || t.section_id == sectionId);
+    }
+    document.getElementById('post-tag').innerHTML = '<option value="">无标签</option>' +
+      tags.map(t => `<option value="${t.id}">${t.icon || '🏷️'} ${t.name}</option>`).join('');
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+window.onSectionChange = function() {
+  const sectionId = document.getElementById('post-section').value;
+  loadPostTagsBySection(sectionId || null);
+};
 
 async function submitPost() {
   const title = document.getElementById('post-title').value.trim();
   const content = document.getElementById('post-content').value.trim();
   const tag_id = document.getElementById('post-tag').value;
+  const section_id = document.getElementById('post-section').value;
 
   if (!title || !content) {
     showToast('标题和内容不能为空', 'error');
@@ -3297,7 +3353,7 @@ async function submitPost() {
 
     const res = await api(apiUrl, {
       method: apiMethod,
-      body: JSON.stringify({ title, content: fullContent, tag_id: tag_id || null })
+      body: JSON.stringify({ title, content: fullContent, tag_id: tag_id || null, section_id: section_id || null })
     });
 
     // Reset
@@ -5945,6 +6001,7 @@ async function init() {
   initModalInteractions();
   currentUser = getUser();
   updateNav();
+  loadSections();
   loadTags();
   loadPosts();
   loadTrending();

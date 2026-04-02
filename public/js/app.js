@@ -2226,6 +2226,19 @@ async function sendRegCode() {
 
   const btn = document.getElementById('btn-reg-send-code');
   if (!btn) return;
+
+  // Helper: set button to error state with message
+  function setBtnError(msg) {
+    btn.disabled = false;
+    btn.textContent = msg;
+    btn.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)';
+    // Reset to normal after 3s
+    setTimeout(function() {
+      btn.style.background = '';
+      btn.textContent = '重新发送';
+    }, 3000);
+  }
+
   btn.disabled = true;
   btn.textContent = '发送中...';
 
@@ -2249,8 +2262,7 @@ async function sendRegCode() {
 
     // Server says CAPTCHA required — open it and retry with token
     if (data.captchaRequired) {
-      btn.disabled = false;
-      btn.textContent = '重新发送';
+      setBtnError('需验证');
       openCaptcha(async () => {
         btn.disabled = true;
         btn.textContent = '发送中...';
@@ -2258,9 +2270,8 @@ async function sendRegCode() {
         window._captchaToken = '';
         window._captchaPassed = false;
         if (!retryData.success) {
+          setBtnError('发送失败');
           showToast(retryData.error || '发送失败', 'error');
-          btn.disabled = false;
-          btn.textContent = '重新发送';
           return;
         }
         showToast('验证码已发送到邮箱', 'success');
@@ -2271,16 +2282,20 @@ async function sendRegCode() {
       return;
     }
 
-    if (!data.success) { showToast(data.error || '发送失败', 'error'); btn.disabled = false; btn.textContent = '重新发送'; return; }
+    if (!data.success) {
+      setBtnError('发送失败');
+      showToast(data.error || '发送失败', 'error');
+      return;
+    }
+
     showToast('验证码已发送到邮箱', 'success');
     regVerifyEmail = email;
     updateRegStep(2);
     startRegCountdown();
   } catch (e) {
     console.error('[Auth]', e);
+    setBtnError('网络错误');
     showToast('网络错误，请重试', 'error');
-    btn.disabled = false;
-    btn.textContent = '重新发送';
   }
 }
 
@@ -2290,6 +2305,9 @@ function startRegCountdown() {
   const btn = document.getElementById('btn-reg-send-code');
   el.textContent = '5分钟后可重发';
   if (regCodeTimer) clearInterval(regCodeTimer);
+  // Reset button style when countdown starts
+  btn.style.background = '';
+  btn.textContent = '发送中...';
   regCodeTimer = setInterval(() => {
     regCodeCountdown--;
     if (regCodeCountdown <= 0) {
@@ -2297,6 +2315,7 @@ function startRegCountdown() {
       el.textContent = '';
       btn.disabled = false;
       btn.textContent = '重新发送';
+      btn.style.background = '';
     } else if (regCodeCountdown >= 60) {
       el.textContent = Math.floor(regCodeCountdown / 60) + '分' + (regCodeCountdown % 60) + '秒后可重发';
     } else {

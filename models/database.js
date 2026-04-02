@@ -72,11 +72,24 @@ db.exec(`
     processed_by INTEGER
   );
 
+  CREATE TABLE IF NOT EXISTS sections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    icon TEXT DEFAULT '📁',
+    description TEXT,
+    cover_image TEXT,
+    sort_order INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT UNIQUE NOT NULL,
     color TEXT DEFAULT '#666',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    section_id INTEGER,
+    icon TEXT DEFAULT '🏷️',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE SET NULL
   );
 
   CREATE TABLE IF NOT EXISTS posts (
@@ -85,12 +98,14 @@ db.exec(`
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     tag_id INTEGER,
+    section_id INTEGER,
     views INTEGER DEFAULT 0,
     status TEXT DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (tag_id) REFERENCES tags(id)
+    FOREIGN KEY (tag_id) REFERENCES tags(id),
+    FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE SET NULL
   );
 
   CREATE TABLE IF NOT EXISTS comments (
@@ -192,7 +207,9 @@ ensureColumn('ai_chats', 'session_id', 'TEXT');
 ensureColumn('ai_chats', 'provider', 'TEXT');
 ensureColumn('ai_chats', 'model', 'TEXT');
 ensureColumn('posts', 'tag_id', 'INTEGER');
+ensureColumn('posts', 'section_id', 'INTEGER');
 ensureColumn('tags', 'icon', "TEXT DEFAULT '🏷️'");
+ensureColumn('tags', 'section_id', 'INTEGER');
 ensureColumn('posts', 'views', 'INTEGER DEFAULT 0');
 ensureColumn('posts', 'status', "TEXT DEFAULT 'pending'");
 ensureColumn('posts', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
@@ -205,6 +222,20 @@ ensureColumn('users', 'points', 'INTEGER DEFAULT 0');
 ensureColumn('users', 'checkin_streak', 'INTEGER DEFAULT 0');
 ensureColumn('users', 'email', 'TEXT');
 ensureColumn('users', 'email_verified', 'INTEGER DEFAULT 0');
+
+// Seed default sections
+const defaultSections = [
+  { name: '综合', icon: '🌐', description: '综合讨论区' },
+  { name: 'AI技术', icon: '🤖', description: 'AI 相关技术讨论' },
+  { name: '资源分享', icon: '📚', description: '优质资源分享' },
+  { name: '日常闲聊', icon: '💬', description: '轻松一刻' }
+];
+
+const insertSection = db.prepare('INSERT OR IGNORE INTO sections (name, icon, description, sort_order) VALUES (?, ?, ?, ?)');
+for (let i = 0; i < defaultSections.length; i++) {
+  const s = defaultSections[i];
+  insertSection.run(s.name, s.icon, s.description, i);
+}
 
 // Seed default tags
 const defaultTags = [

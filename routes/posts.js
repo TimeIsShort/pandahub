@@ -20,7 +20,7 @@ function canViewUnapprovedPost(user, post) {
 // Get all posts (with pagination and filtering) - only approved posts
 router.get('/', optionalAuth, (req, res) => {
   try {
-    const { tag_id, page = 1, limit = 20, search, sort = 'newest', time_range, following, featured, points_min, points_max } = req.query;
+    const { tag_id, section_id, page = 1, limit = 20, search, sort = 'newest', time_range, following, featured, points_min, points_max } = req.query;
     const offset = (page - 1) * limit;
 
     let where = "p.status = 'approved'";
@@ -59,6 +59,11 @@ router.get('/', optionalAuth, (req, res) => {
       params.push(tag_id);
     }
 
+    if (section_id) {
+      where += ' AND p.section_id = ?';
+      params.push(section_id);
+    }
+
     if (search) {
       where += ' AND (p.title LIKE ? OR p.content LIKE ?)';
       params.push(`%${search}%`, `%${search}%`);
@@ -85,12 +90,15 @@ router.get('/', optionalAuth, (req, res) => {
     `).get(...params);
 
     const posts = db.prepare(`
-      SELECT p.*, u.username, u.nickname, u.avatar, t.name as tag_name, t.color as tag_color,
+      SELECT p.*, u.username, u.nickname, u.avatar, u.level_name, u.level_icon, u.level_color,
+             t.name as tag_name, t.color as tag_color, t.icon as tag_icon,
+             s.name as section_name, s.icon as section_icon,
              (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
              COALESCE(p.like_count, 0) as like_count, COALESCE(p.dislike_count, 0) as dislike_count
       FROM posts p
       LEFT JOIN users u ON p.user_id = u.id
       LEFT JOIN tags t ON p.tag_id = t.id
+      LEFT JOIN sections s ON p.section_id = s.id
       WHERE ${where}
       ORDER BY ${orderBy}
       LIMIT ? OFFSET ?
@@ -193,7 +201,7 @@ router.get('/:id', optionalAuth, (req, res) => {
 // Create post
 router.post('/', authMiddleware, (req, res) => {
   try {
-    const { title, content, tag_id } = req.body;
+    const { title, content, tag_id, section_id } = req.body;
     if (!title || !content) {
       return res.status(400).json({ error: '标题和内容不能为空' });
     }
@@ -222,14 +230,17 @@ router.post('/', authMiddleware, (req, res) => {
     }
 
     const result = db.prepare(
-      'INSERT INTO posts (user_id, title, content, tag_id, status) VALUES (?, ?, ?, ?, ?)'
-    ).run(req.user.id, title, content, tag_id || null, 'pending');
+      'INSERT INTO posts (user_id, title, content, tag_id, section_id, status) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(req.user.id, title, content, tag_id || null, section_id || null, 'pending');
 
     const post = db.prepare(`
-      SELECT p.*, u.username, u.nickname, u.avatar, t.name as tag_name, t.color as tag_color
+      SELECT p.*, u.username, u.nickname, u.avatar, u.level_name, u.level_icon, u.level_color,
+             t.name as tag_name, t.color as tag_color, t.icon as tag_icon,
+             s.name as section_name, s.icon as section_icon
       FROM posts p
       LEFT JOIN users u ON p.user_id = u.id
       LEFT JOIN tags t ON p.tag_id = t.id
+      LEFT JOIN sections s ON p.section_id = s.id
       WHERE p.id = ?
     `).get(result.lastInsertRowid);
 

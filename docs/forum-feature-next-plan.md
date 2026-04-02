@@ -1,6 +1,6 @@
 # pandahub feature-next 功能规划
 
-> v1.5 功能开发分支 · 基于 master 的增量开发
+> v1.9 功能开发分支（最终版本） · 已合并至 master
 
 ---
 

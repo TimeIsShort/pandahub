@@ -468,10 +468,14 @@
         </div>
 
         <div class="ai-input-area">
+          <div id="ai-regen-bar" style="display:none;padding:6px 12px;background:#fef3c7;border-bottom:1px solid #fde68a;font-size:12px;color:#92400e;display:flex;align-items:center;justify-content:space-between;">
+            <span>🔄 重新生成回复中...</span>
+          </div>
           <div class="ai-input-row">
             <select id="ai-provider-select" class="ai-provider-select"></select>
             <select id="ai-model-select" class="ai-model-select"></select>
             <input type="text" id="ai-input" placeholder="输入问题..." onkeypress="if(event.key==='Enter')sendAIMessage()">
+            <button id="btn-regen-last" onclick="regenerateLastAI()" style="display:none;padding:7px 10px;background:#fef3c7;border:1.5px solid #f59e0b;color:#92400e;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;" title="重新生成">🔄</button>
             <button onclick="sendAIMessage()" id="ai-send-btn">发送</button>
           </div>
         </div>

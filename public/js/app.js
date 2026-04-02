@@ -16,6 +16,8 @@ const AVAILABLE_THEMES = ['mint', 'sunset', 'sky', 'cyber', 'aurora'];
 const AI_MODEL_STORAGE_KEY = 'forum_ai_model';
 const AI_PROVIDER_STORAGE_KEY = 'forum_ai_provider';
 let aiChatHistory = [];
+let lastUserMessageForRegen = null; // for regenerate feature
+let lastAISelections = {}; // for regenerate feature
 let aiSessions = [];
 let currentAISessionId = '';
 let pandaPlayCount = 0;
@@ -24,6 +26,51 @@ const PANDA_3D_MODEL_URL = '/assets/models/meshy-panda.glb?' + Date.now();
 const PANDA_3D_MODULE_URL = '/js/panda-3d-v6.js?v=20260328-14';
 let panda3DModulePromise = null;
 let panda3DInstance = null;
+
+// Markdown rendering (for AI chat)
+let markedInstance = null;
+let hljsInstance = null;
+async function getMarked() {
+  if (!markedInstance) {
+    const [{ marked }, hljs] = await Promise.all([
+      import('/node_modules/marked/lib/marked.esm.js'),
+      import('/node_modules/highlight.js/lib/index.js')
+    ]);
+    marked.setOptions({
+      breaks: true,
+      gfm: true,
+      highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          try { return hljs.highlight(code, { language: lang }).value; } catch(e) {}
+        }
+        return hljs.highlightAuto(code).value;
+      }
+    });
+    markedInstance = marked;
+    hljsInstance = hljs;
+  }
+  return markedInstance;
+}
+
+function renderMarkdown(content) {
+  if (!content) return '';
+  // For now, use basic regex-based markdown rendering (sync, no highlight)
+  return content
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="hljs language-$1">$2</code></pre>')
+    .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/^\- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:8px 0;" loading="lazy">')
+    .replace(/\n/g, '<br>');
+}
+
 const AI_PROVIDER_MODELS = {
   minimax: {
     label: 'MinMax',
@@ -537,10 +584,17 @@ function setButtonBusy(target, busyText = '处理中...') {
 }
 
 function renderAIBubble(role, content, messageId = '') {
-  const safeContent = escapeHtml(String(content || '')).replace(/\n/g, '<br>');
-  const klass = role === 'user' ? 'ai-msg ai-msg-user' : 'ai-msg ai-msg-assistant';
   const idAttr = messageId ? ` data-ai-msg-id="${messageId}"` : '';
-  return `<div class="${klass}"${idAttr}>${safeContent}</div>`;
+  let body;
+  if (role === 'assistant') {
+    // Render Markdown for AI responses
+    body = renderMarkdown(String(content || ''));
+  } else {
+    // Escape HTML for user messages
+    body = escapeHtml(String(content || '')).replace(/\n/g, '<br>');
+  }
+  const klass = role === 'user' ? 'ai-msg ai-msg-user' : 'ai-msg ai-msg-assistant';
+  return `<div class="${klass}"${idAttr}>${body}</div>`;
 }
 
 function renderAIWelcomeMessage() {
@@ -6174,6 +6228,10 @@ async function sendAIMessage() {
   }
   const sendingSessionId = currentAISessionId || createClientSessionId();
 
+  // Store for regenerate
+  lastUserMessageForRegen = { message, provider: selectedProvider, model: selectedModel, sessionId: sendingSessionId };
+  showRegenButton(true);
+
   aiSending = true;
   const resetSendBtn = setButtonBusy('ai-send-btn', '思考中...');
 
@@ -6215,6 +6273,57 @@ async function sendAIMessage() {
   } finally {
     aiSending = false;
     resetSendBtn();
+  }
+}
+
+function showRegenButton(show) {
+  var btn = document.getElementById('btn-regen-last');
+  if (btn) btn.style.display = show ? 'inline' : 'none';
+}
+
+async function regenerateLastAI() {
+  if (!lastUserMessageForRegen || aiSending) return;
+  var last = lastUserMessageForRegen;
+
+  // Remove last assistant message from history
+  if (aiChatHistory.length >= 2 && aiChatHistory[aiChatHistory.length - 1].role === 'assistant') {
+    aiChatHistory.pop();
+  }
+
+  // Show regenerating state
+  var bar = document.getElementById('ai-regen-bar');
+  if (bar) { bar.style.display = 'flex'; }
+
+  aiSending = true;
+  const resetSendBtn = setButtonBusy('ai-send-btn', '重新生成...');
+
+  try {
+    const res = await api('/ai/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        message: last.message,
+        model: last.model,
+        provider: last.provider,
+        session_id: last.sessionId
+      })
+    });
+
+    if (res.error) {
+      showToast(res.error, 'error', 2600);
+      return;
+    }
+
+    appendAIMessage('assistant', res.response);
+    if (bar) bar.style.display = 'none';
+
+    document.getElementById('ai-quota-display').textContent = res.unlimited ? '今日剩余: 不限' : `今日剩余: ${res.quota}/${res.total}`;
+
+  } catch (e) {
+    showToast('重新生成失败', 'error');
+    if (bar) bar.style.display = 'none';
+  } finally {
+    aiSending = false;
+    if (resetSendBtn) resetSendBtn();
   }
 }
 

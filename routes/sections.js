@@ -1,12 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models/database');
+const { getCache, setCache, clearCache } = require('../utils/cache');
 
 // GET /api/sections - 获取所有版块（带标签统计）
 router.get('/', (req, res) => {
   try {
+    const cacheKey = 'sections:all';
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.set('X-Cache', 'HIT');
+      return res.json(cached);
+    }
+
     const sections = db.prepare(`
-      SELECT 
+      SELECT
         s.*,
         COUNT(DISTINCT t.id) as tag_count,
         COUNT(DISTINCT p.id) as post_count
@@ -16,8 +24,11 @@ router.get('/', (req, res) => {
       GROUP BY s.id
       ORDER BY s.sort_order ASC
     `).all();
-    
-    res.json({ sections });
+
+    const result = { sections };
+    setCache(cacheKey, result, 2 * 60 * 1000);
+    res.set('X-Cache', 'MISS');
+    res.json(result);
   } catch (error) {
     console.error('获取版块失败:', error);
     res.status(500).json({ error: '获取版块失败' });
@@ -78,6 +89,7 @@ router.post('/', (req, res) => {
     `).run(name, icon || '📁', description || '', cover_image || '', sort_order || 0);
     
     const section = db.prepare('SELECT * FROM sections WHERE id = ?').get(result.lastInsertRowid);
+    clearCache('sections');
     res.json({ section });
   } catch (error) {
     console.error('创建版块失败:', error);
@@ -89,14 +101,14 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { name, icon, description, cover_image, sort_order } = req.body;
-    
+
     const existing = db.prepare('SELECT * FROM sections WHERE id = ?').get(req.params.id);
     if (!existing) {
       return res.status(404).json({ error: '版块不存在' });
     }
-    
+
     db.prepare(`
-      UPDATE sections 
+      UPDATE sections
       SET name = ?, icon = ?, description = ?, cover_image = ?, sort_order = ?
       WHERE id = ?
     `).run(
@@ -107,8 +119,9 @@ router.put('/:id', (req, res) => {
       sort_order ?? existing.sort_order,
       req.params.id
     );
-    
+
     const section = db.prepare('SELECT * FROM sections WHERE id = ?').get(req.params.id);
+    clearCache('sections');
     res.json({ section });
   } catch (error) {
     console.error('更新版块失败:', error);

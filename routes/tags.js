@@ -1,12 +1,20 @@
 const express = require('express');
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
+const { getCache, setCache, clearCache } = require('../utils/cache');
 
 const router = express.Router();
 
 // Get all tags (public)
 router.get('/', (req, res) => {
   try {
+    const cacheKey = 'tags:all';
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.set('X-Cache', 'HIT');
+      return res.json(cached);
+    }
+
     const tags = db.prepare(`
       SELECT t.*, COUNT(p.id) as post_count
       FROM tags t
@@ -14,7 +22,11 @@ router.get('/', (req, res) => {
       GROUP BY t.id
       ORDER BY t.created_at ASC
     `).all();
-    res.json({ tags });
+
+    const result = { tags };
+    setCache(cacheKey, result, 2 * 60 * 1000);
+    res.set('X-Cache', 'MISS');
+    res.json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '获取标签失败' });
@@ -33,6 +45,7 @@ router.post('/', authMiddleware, (req, res) => {
     if (existing) return res.status(400).json({ error: '标签已存在' });
     const result = db.prepare('INSERT INTO tags (name, color, icon, section_id) VALUES (?, ?, ?, ?)').run(name.trim(), colorVal, iconVal, section_id || null);
     const tag = db.prepare('SELECT * FROM tags WHERE id = ?').get(result.lastInsertRowid);
+    clearCache('tags');
     res.json({ success: true, tag });
   } catch (err) {
     console.error(err);
@@ -52,6 +65,7 @@ router.put('/:id', authMiddleware, (req, res) => {
     if (existing) return res.status(400).json({ error: '标签名已存在' });
     db.prepare('UPDATE tags SET name = ?, color = ?, icon = ?, section_id = ? WHERE id = ?').run(name.trim(), color || '#667eea', icon || '🏷️', section_id || null, req.params.id);
     const updated = db.prepare('SELECT * FROM tags WHERE id = ?').get(req.params.id);
+    clearCache('tags');
     res.json({ success: true, tag: updated });
   } catch (err) {
     console.error(err);
@@ -68,6 +82,7 @@ router.delete('/:id', authMiddleware, (req, res) => {
     // Unlink posts using this tag
     db.prepare('UPDATE posts SET tag_id = NULL WHERE tag_id = ?').run(req.params.id);
     db.prepare('DELETE FROM tags WHERE id = ?').run(req.params.id);
+    clearCache('tags');
     res.json({ success: true });
   } catch (err) {
     console.error(err);

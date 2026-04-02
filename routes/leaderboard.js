@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../models/database');
 const { getUserLevel } = require('../models/database');
+const { getCache, setCache } = require('../utils/cache');
 
 const router = express.Router();
 
@@ -11,6 +12,13 @@ router.get('/', (req, res) => {
     const page = Number(req.query.page) || 1;
     const pageSize = Number(req.query.page_size) || 20;
     const calcOffset = (page - 1) * pageSize;
+
+    const cacheKey = `leaderboard:page:${page}:size:${pageSize}`;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.set('X-Cache', 'HIT');
+      return res.json(cached);
+    }
 
     const users = db.prepare(`
       SELECT id, username, nickname, avatar, points, checkin_streak, created_at
@@ -31,7 +39,10 @@ router.get('/', (req, res) => {
     // Total count
     const total = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
 
-    res.json({ users, total, page, page_size: pageSize });
+    const result = { users, total, page, page_size: pageSize };
+    setCache(cacheKey, result, 5 * 60 * 1000); // 5 minutes
+    res.set('X-Cache', 'MISS');
+    res.json(result);
   } catch (err) {
     console.error('[Leaderboard]', err);
     res.status(500).json({ error: '获取排行榜失败' });
@@ -74,18 +85,21 @@ router.get('/me', (req, res) => {
   }
 });
 
-module.exports = router;
-
 // ============ Hot Posts Ranking ============
 // Hot score algorithm: based on views, likes, comments, and recency
 router.get('/hot-posts', (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit) || 10, 50);
     const hours = Number(req.query.hours) || 72;
-    const cutoff = new Date(Date.now() - hours * 3600000).toISOString();
 
-    // Score = (views * 0.1) + (likes * 5) + (comments * 3) + recency_bonus
-    // recency_bonus: newer posts get higher bonus (max ~10 for very recent, 0 for old)
+    const cacheKey = `hot-posts:${hours}:${limit}`;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.set('X-Cache', 'HIT');
+      return res.json(cached);
+    }
+
+    const cutoff = new Date(Date.now() - hours * 3600000).toISOString();
     const decayHours = Math.max(hours, 1);
     const posts = db.prepare(`
       SELECT
@@ -121,9 +135,24 @@ router.get('/hot-posts', (req, res) => {
       p.hot_score = Number(p.hot_score);
     });
 
-    res.json({ posts });
+    const result = { posts };
+    setCache(cacheKey, result, 60 * 1000); // 1 minute
+    res.set('X-Cache', 'MISS');
+    res.json(result);
   } catch (err) {
     console.error('[HotPosts]', err);
     res.status(500).json({ error: '获取热榜失败' });
   }
 });
+
+// Cache stats endpoint for monitoring
+router.get('/cache-stats', (req, res) => {
+  try {
+    const { getCacheStats } = require('../utils/cache');
+    res.json(getCacheStats());
+  } catch (err) {
+    res.status(500).json({ error: '获取缓存状态失败' });
+  }
+});
+
+module.exports = router;

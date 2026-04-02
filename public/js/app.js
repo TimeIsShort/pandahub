@@ -6671,19 +6671,27 @@ async function init() {
   initModalInteractions();
   currentUser = getUser();
   updateNav();
-  loadSections();
-  loadTags();
-  loadPosts();
-  loadTrending();
+
+  // Critical: load sections, tags, trending in parallel for faster first paint
+  await Promise.all([
+    loadSections(),
+    loadTags(),
+    loadTrending()
+  ]);
+  // Posts depend on sections/tags being ready
+  await loadPosts();
   initPostComposer();
   document.body.classList.add('home-view-active');
-  initPetalRain();
-  initPandaPlayground();
-  initWeather();
 
-  // Show panda FAB on home
-  var fab = document.getElementById('panda-fab-container');
-  if (fab) fab.style.display = '';
+  // Non-critical: defer to improve DCL
+  setTimeout(function() {
+    initPetalRain();
+    initPandaPlayground();
+    initWeather();
+    // Show panda FAB on home
+    var fab = document.getElementById('panda-fab-container');
+    if (fab) fab.style.display = '';
+  }, 0);
 
   // Register Service Worker for caching + push
   if ('serviceWorker' in navigator) {

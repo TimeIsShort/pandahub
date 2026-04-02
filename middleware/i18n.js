@@ -42,7 +42,7 @@ function t(key, lang) {
 
 function getAvailableLanguages() {
   return Object.keys(translations).map(code => {
-    const names = { zh: '简体中文', en: 'English' };
+    const names = { zh: '简体中文', en: 'English', 'zh-TW': '繁體中文' };
     return { code, name: names[code] || code };
   });
 }

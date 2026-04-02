@@ -1,0 +1,20 @@
+{
+  "name": "熊猫社区",
+  "short_name": "熊猫社区",
+  "description": "探索AI的无限可能",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "productivity"],
+  "lang": "zh-CN"
+}

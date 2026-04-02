@@ -1091,7 +1091,13 @@ function t(key) {
 function handleLangChange(lang) {
   loadI18n(lang);
   applyI18n();
-  showToast(lang === 'zh' ? '语言已切换为简体中文' : 'Language set to English', 'success');
+  document.documentElement.lang = lang === 'zh-TW' ? 'zh-TW' : lang;
+  const messages = {
+    'zh': '语言已切换为简体中文',
+    'zh-TW': '語言已切換為繁體中文',
+    'en': 'Language set to English'
+  };
+  showToast(messages[lang] || 'Language set', 'success');
 }
 
 function applyI18n() {

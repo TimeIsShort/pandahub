@@ -2509,10 +2509,13 @@ window.setSearchTime = setSearchTime;
 function renderPostsLoading() {
   const container = document.getElementById('post-list');
   if (!container) return;
-  container.innerHTML = [1, 2, 3].map(() => `
+  container.innerHTML = [1, 2, 3, 4, 5].map(() => `
     <div class="post-card post-loading-card">
+      <div class="skeleton-post-row" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div class="skeleton-circle" style="width:28px;height:28px;border-radius:50%;flex-shrink:0;"></div>
+        <div class="skeleton-line meta" style="margin-bottom:0;width:40%;"></div>
+      </div>
       <div class="skeleton-line title"></div>
-      <div class="skeleton-line meta"></div>
       <div class="skeleton-line body"></div>
       <div class="skeleton-line body short"></div>
     </div>
@@ -2629,10 +2632,39 @@ async function viewPost(id) {
   const commentsListEl = document.getElementById('comments-list');
   const commentFormEl = document.getElementById('comment-form');
   if (postDetailEl) {
-    postDetailEl.innerHTML = '<div class="empty-state-card">帖子加载中...</div>';
+    postDetailEl.innerHTML = `
+      <div class="post-card post-loading-card" style="margin-bottom:12px;">
+        <div class="skeleton-post-row" style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <div class="skeleton-circle" style="width:36px;height:36px;border-radius:50%;flex-shrink:0;"></div>
+          <div>
+            <div class="skeleton-line" style="width:80px;height:11px;margin-bottom:6px;"></div>
+            <div class="skeleton-line" style="width:50px;height:10px;"></div>
+          </div>
+        </div>
+        <div class="skeleton-line title" style="height:22px;width:80%;margin-bottom:18px;"></div>
+        <div class="skeleton-line body" style="height:12px;width:100%;margin-bottom:8px;"></div>
+        <div class="skeleton-line body" style="height:12px;width:95%;margin-bottom:8px;"></div>
+        <div class="skeleton-line body short" style="height:12px;width:60%;"></div>
+      </div>`;
   }
   if (commentsListEl) {
-    commentsListEl.innerHTML = '';
+    commentsListEl.innerHTML = `
+      <div class="post-loading-card" style="margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div class="skeleton-circle" style="width:28px;height:28px;border-radius:50%;flex-shrink:0;"></div>
+          <div class="skeleton-line" style="width:35%;height:10px;margin-bottom:0;"></div>
+        </div>
+        <div class="skeleton-line body" style="height:12px;width:90%;margin-bottom:6px;"></div>
+        <div class="skeleton-line body short" style="height:12px;width:50%;"></div>
+      </div>
+      <div class="post-loading-card" style="margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <div class="skeleton-circle" style="width:28px;height:28px;border-radius:50%;flex-shrink:0;"></div>
+          <div class="skeleton-line" style="width:30%;height:10px;margin-bottom:0;"></div>
+        </div>
+        <div class="skeleton-line body" style="height:12px;width:85%;margin-bottom:6px;"></div>
+        <div class="skeleton-line body short" style="height:12px;width:45%;"></div>
+      </div>`;
   }
   if (commentFormEl) {
     commentFormEl.style.display = 'none';

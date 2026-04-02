@@ -1335,6 +1335,13 @@ main.container {
   padding: 16px;
 }
 
+.skeleton-circle {
+  background: linear-gradient(90deg, #e9eff4 25%, #f4f8fb 37%, #e9eff4 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.2s ease infinite;
+  flex-shrink: 0;
+}
+
 .skeleton-line {
   height: 12px;
   border-radius: 999px;
@@ -1366,6 +1373,16 @@ main.container {
 @keyframes shimmer {
   0% { background-position: 100% 0; }
   100% { background-position: 0 0; }
+}
+
+/* Post card fade-in animation */
+.post-card {
+  animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .post-card,

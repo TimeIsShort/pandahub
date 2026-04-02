@@ -3455,6 +3455,66 @@ function initPostComposer() {
   resizePostContentEditor();
 }
 
+async function suggestPostTags() {
+  const title = document.getElementById('post-title')?.value.trim();
+  const content = document.getElementById('post-content')?.value.trim();
+  if (!title && !content) {
+    showToast('请先输入标题或内容', 'warn');
+    return;
+  }
+
+  const btn = document.getElementById('btn-ai-tag');
+  const container = document.getElementById('ai-tag-suggestions');
+  if (!btn || !container) return;
+
+  btn.disabled = true;
+  btn.textContent = '🤖 推荐中...';
+  container.style.display = 'none';
+  container.innerHTML = '';
+
+  try {
+    const res = await api('/tag-suggest', {
+      method: 'POST',
+      body: JSON.stringify({ title: title || '', content: content || '' })
+    });
+
+    const suggestions = res.suggestions || [];
+    if (suggestions.length === 0) {
+      showToast('未能识别标签，可手动选择', 'warn');
+      btn.textContent = '🏷️ AI推荐';
+      btn.disabled = false;
+      return;
+    }
+
+    container.innerHTML = '<span style="font-size:11px;color:#94a3b8;line-height:1.5;">推荐标签：</span>' +
+      suggestions.map(t =>
+        '<span class="tag-chip" style="cursor:pointer;font-size:12px;padding:3px 10px;" onclick="applyTagSuggestion(' + t.id + ', \'' + t.name.replace(/'/g, "\\'") + '\', \'' + (t.color || '#667eea') + '\')">' + t.name + '</span>'
+      ).join('');
+    container.style.display = 'flex';
+
+    showToast('找到 ' + suggestions.length + ' 个推荐标签，点击即可应用', 'success');
+  } catch(e) {
+    showToast('推荐失败，请手动选择', 'error');
+  } finally {
+    btn.textContent = '🏷️ AI推荐';
+    btn.disabled = false;
+  }
+}
+
+function applyTagSuggestion(tagId, tagName, tagColor) {
+  const select = document.getElementById('post-tag');
+  if (!select) return;
+  for (var i = 0; i < select.options.length; i++) {
+    if (String(select.options[i].value) === String(tagId)) {
+      select.selectedIndex = i;
+      break;
+    }
+  }
+  var container = document.getElementById('ai-tag-suggestions');
+  if (container) container.style.display = 'none';
+  showToast('已选择标签：' + tagName, 'success');
+}
+
 function initPetalRain() {
   if (petalRainInitialized) return;
 
@@ -3720,6 +3780,9 @@ async function showNewPost() {
   }
   showView('new-post');
   initPostComposer();
+  // Clear AI tag suggestions
+  var aiTagContainer = document.getElementById('ai-tag-suggestions');
+  if (aiTagContainer) aiTagContainer.style.display = 'none';
   // Reset image state
   selectedImages = [];
   uploadedImageUrls = [];

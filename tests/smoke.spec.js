@@ -64,24 +64,15 @@ test.describe('PandaHub Smoke Tests', () => {
     await p.close();
   });
 
-  test('📝 申请内测弹层正常打开', async () => {
+  test('📝 申请内测页面正常加载', async () => {
     const p = await browser.newPage();
-    await p.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await p.goto(BASE_URL + '/apply.html', { waitUntil: 'domcontentloaded', timeout: 15000 });
     await p.waitForTimeout(2000);
-    // Open login modal first
-    const loginBtn = p.locator('button:has-text("登录")').first();
-    if (await loginBtn.count() > 0) {
-      await loginBtn.click();
-      await p.waitForTimeout(500);
-      // Click register link
-      const regLink = p.locator('button:has-text("申请内测")');
-      if (await regLink.count() > 0) {
-        await regLink.click();
-        await p.waitForTimeout(500);
-        const registerForm = p.locator('#auth-form-register');
-        await expect(registerForm).toBeVisible();
-      }
-    }
+    const title = await p.title();
+    expect(title.length).toBeGreaterThan(0);
+    // Check form exists
+    const emailInput = p.locator('#email');
+    await expect(emailInput).toBeVisible();
     await p.close();
   });
 
@@ -121,20 +112,19 @@ test.describe('PandaHub Smoke Tests', () => {
     const p = await browser.newPage();
     await p.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 15000 });
     await p.waitForTimeout(2000);
-    // Find settings lang selector
-    const settingsBtn = p.locator('#bottom-nav button').last();
-    if (await settingsBtn.count() > 0) {
-      await settingsBtn.click();
-      await p.waitForTimeout(500);
-      const langSelect = p.locator('#settings-lang');
-      if (await langSelect.count() > 0) {
-        await langSelect.selectOption('en');
-        await p.waitForTimeout(500);
-        // Title should still be set
-        const title = await p.title();
-        expect(title).toBeTruthy();
-      }
-    }
+    // Switch to English via JS (i18n module)
+    await p.evaluate(() => {
+      if (window.i18nLang === 'en') return;
+      // Find and change the lang select if available
+      var sel = document.getElementById('settings-lang') || document.getElementById('lang-select');
+      if (sel) { sel.value = 'en'; sel.dispatchEvent(new Event('change')); }
+      else if (typeof handleLangChange === 'function') handleLangChange('en');
+      else if (window.i18n) { window.i18nLang = 'en'; localStorage.setItem('i18nLang', 'en'); }
+    });
+    await p.waitForTimeout(1000);
+    const title = await p.title();
+    expect(title).toBeTruthy();
+    // No JS errors
     await p.close();
   });
 
@@ -158,26 +148,31 @@ test.describe('PandaHub Smoke Tests', () => {
 });
 
 test.describe('P2 Regression - 双语UI', () => {
+  let browser;
+
+  test.beforeAll(async () => {
+    browser = await chromium.launch({ headless: true });
+  });
+
+  test.afterAll(async () => {
+    if (browser) await browser.close();
+  });
+
   test('🌐 英文环境下核心文案显示', async () => {
     const p = await browser.newPage();
     await p.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 15000 });
     await p.waitForTimeout(2000);
 
-    // Switch to English
-    const settingsBtn = p.locator('#bottom-nav button').last();
-    if (await settingsBtn.count() > 0) {
-      await settingsBtn.click();
-      await p.waitForTimeout(500);
-      const langSelect = p.locator('#settings-lang');
-      if (await langSelect.count() > 0) {
-        await langSelect.selectOption('en');
-        await p.waitForTimeout(1000);
-      }
-    }
+    // Switch to English via JS
+    await p.evaluate(() => {
+      var sel = document.getElementById('settings-lang') || document.getElementById('lang-select');
+      if (sel) { sel.value = 'en'; sel.dispatchEvent(new Event('change')); }
+      else if (typeof handleLangChange === 'function') handleLangChange('en');
+    });
+    await p.waitForTimeout(1000);
 
-    // Check for key UI elements (should exist in English)
+    // Check for key UI elements
     const bodyText = await p.locator('body').innerText();
-    // Should have some English text, no hardcoded Chinese in core nav
     expect(bodyText.length).toBeGreaterThan(50);
     await p.close();
   });

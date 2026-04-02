@@ -142,6 +142,9 @@
             <button id="btn-daily-tasks" onclick="toggleDailyTasksDropdown()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;flex-shrink:0;">
               🎯 任务
             </button>
+            <button id="btn-shop" onclick="toggleShopDropdown()" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;padding:7px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;flex-shrink:0;">
+              🏪 商城
+            </button>
           </div>
         </div>
         <!-- Trending Dropdown -->
@@ -166,6 +169,22 @@
             </div>
             <div id="daily-tasks-list-dropdown"></div>
             <div id="daily-tasks-claim-dropdown" style="margin-top:14px;"></div>
+          </div>
+        </div>
+        <!-- Shop Dropdown -->
+        <div id="shop-dropdown" style="display:none;position:relative;z-index:200;">
+          <div style="position:absolute;right:0;top:8px;width:360px;background:rgba(255,255,255,0.97);border:1px solid rgba(139,92,246,0.4);border-radius:14px;padding:16px;box-shadow:0 8px 32px rgba(139,92,246,0.25);backdrop-filter:blur(14px);max-height:500px;overflow-y:auto;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <div>
+                <h3 style="font-size:14px;color:#7c3aed;font-weight:700;margin:0;">🏪 积分商城</h3>
+                <div id="shop-user-points" style="font-size:11px;color:#6b7280;margin-top:2px;"></div>
+              </div>
+              <button onclick="toggleShopDropdown()" style="background:none;border:none;font-size:18px;color:#94a3b8;cursor:pointer;line-height:1;padding:0 2px;">×</button>
+            </div>
+            <div id="shop-items-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+            <div style="margin-top:14px;padding-top:14px;border-top:1px dashed #e5e7eb;">
+              <button onclick="showMyRedemptions()" style="width:100%;padding:8px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;color:#7c3aed;font-size:13px;font-weight:600;cursor:pointer;">📜 我的兑换记录</button>
+            </div>
           </div>
         </div>
         <!-- Post List -->

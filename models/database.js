@@ -767,6 +767,57 @@ DEFAULT_BADGES.forEach(b => {
   } catch(e) {}
 });
 
+// ============ Shop System ============
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS shop_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      icon TEXT DEFAULT '🎁',
+      image_url TEXT,
+      price INTEGER NOT NULL DEFAULT 0,
+      stock INTEGER,
+      item_type TEXT DEFAULT 'title',
+      effect_value TEXT,
+      sort_order INTEGER DEFAULT 0,
+      active INTEGER DEFAULT 1,
+      created_by INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+} catch(e) {}
+
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS shop_redemptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      item_id INTEGER NOT NULL,
+      points_spent INTEGER NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+} catch(e) {}
+
+// Seed default shop items
+try {
+  const defaultItems = [
+    { name: '🌟 尊贵头衔', description: '解锁尊贵头衔显示效果', icon: '🌟', price: 100, stock: null, item_type: 'title', effect_value: '🌟 尊贵会员', sort_order: 1 },
+    { name: '🔥 热门标签', description: '帖子显示热门标签', icon: '🔥', price: 200, stock: null, item_type: 'avatar_frame', effect_value: 'hot', sort_order: 2 },
+    { name: '💎 闪耀头像框', description: '头像周围闪烁效果', icon: '💎', price: 300, stock: null, item_type: 'avatar_frame', effect_value: 'sparkle', sort_order: 3 },
+    { name: '🎖️ 荣誉勋章', description: '个人主页显示荣誉勋章', icon: '🎖️', price: 150, stock: null, item_type: 'badge', effect_value: 'honor_medal', sort_order: 4 },
+  ];
+  const insertItem = db.prepare(`
+    INSERT OR IGNORE INTO shop_items (name, description, icon, price, stock, item_type, effect_value, sort_order, active, created_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 1)
+  `);
+  for (const item of defaultItems) {
+    insertItem.run(item.name, item.description, item.icon, item.price, item.stock, item.item_type, item.effect_value, item.sort_order);
+  }
+} catch(e) {}
+
 // ============ AI Chat History ============
 try {
   db.exec(`

@@ -285,12 +285,135 @@ async function claimDailyTasksDropdown() {
   }
 }
 
+function toggleShopDropdown() {
+  var dropdown = document.getElementById('shop-dropdown');
+  if (!dropdown) return;
+  var isHidden = dropdown.style.display === 'none' || !dropdown.style.display;
+  if (isHidden) {
+    dropdown.style.display = 'block';
+    loadShopItems();
+  } else {
+    dropdown.style.display = 'none';
+  }
+}
+
+async function loadShopItems() {
+  var listEl = document.getElementById('shop-items-list');
+  var pointsEl = document.getElementById('shop-user-points');
+  if (!listEl) return;
+  try {
+    var user = getUser();
+    if (pointsEl) {
+      pointsEl.textContent = '我的积分: ' + (user?.points || 0);
+    }
+    var res = await api('/shop/items');
+    if (res.error || !res.items) {
+      listEl.innerHTML = '<div style="color:#94a3b8;text-align:center;font-size:13px;padding:20px;">加载失败</div>';
+      return;
+    }
+    var items = res.items || [];
+    if (items.length === 0) {
+      listEl.innerHTML = '<div style="color:#94a3b8;text-align:center;font-size:13px;padding:20px;">暂无商品</div>';
+      return;
+    }
+    listEl.innerHTML = items.map(function(item) {
+      var canAfford = user && user.points >= item.price;
+      var btnStyle = canAfford
+        ? 'background:linear-gradient(135deg,#8b5cf6,#7c3aed);border:none;color:#fff;'
+        : 'background:#f3f4f6;border:1px solid #ddd;color:#999;';
+      var btnText = canAfford ? '兑换' : '积分不足';
+      return '<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;">' +
+        '<div style="font-size:28px;width:48px;height:48px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;">' + item.icon + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+        '<div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:4px;">' + item.name + '</div>' +
+        '<div style="font-size:11px;color:#6b7280;margin-bottom:6px;">' + item.description + '</div>' +
+        '<div style="font-size:12px;color:#8b5cf6;font-weight:600;">💰 ' + item.price + ' 积分' + (item.stock !== null ? ' | 库存:' + item.stock : '') + '</div></div>' +
+        '<button onclick="redeemItem(' + item.id + ')" style="padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;' + btnStyle + '" ' + (canAfford ? '' : 'disabled') + '>' + btnText + '</button></div>';
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = '<div style="color:#94a3b8;text-align:center;font-size:13px;padding:20px;">加载失败</div>';
+  }
+}
+
+async function redeemItem(itemId) {
+  try {
+    var res = await api('/shop/redeem', {
+      method: 'POST',
+      body: JSON.stringify({ item_id: itemId })
+    });
+    if (res.error) {
+      showToast(res.error, 'error');
+      return;
+    }
+    showToast(res.message || '兑换成功！', 'success');
+    loadUserInfo();
+    loadShopItems();
+  } catch(e) {
+    showToast('兑换失败', 'error');
+  }
+}
+
+function showMyRedemptions() {
+  openRedemptionsModal();
+}
+
+async function openRedemptionsModal() {
+  try {
+    var res = await api('/shop/my-redemptions');
+    if (res.error) { showToast('加载失败', 'error'); return; }
+    var history = res.history || [];
+    var html = '<div style="padding:20px;">';
+    if (history.length === 0) {
+      html += '<div style="text-align:center;color:#999;font-size:13px;padding:40px;">暂无兑换记录</div>';
+    } else {
+      history.forEach(function(r) {
+        var date = new Date(r.created_at).toLocaleDateString('zh-CN');
+        html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f3f4f6;">' +
+          '<span style="font-size:24px;">' + r.item_icon + '</span>' +
+          '<div style="flex:1;">' +
+          '<div style="font-size:13px;font-weight:600;color:#374151;">' + r.item_name + '</div>' +
+          '<div style="font-size:11px;color:#6b7280;">' + date + '</div></div>' +
+          '<div style="font-size:12px;color:#8b5cf6;font-weight:600;">-' + r.points_spent + '</div></div>';
+      });
+    }
+    html += '</div>';
+    var modal = document.createElement('div');
+    modal.id = 'redemptions-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
+    modal.innerHTML = '<div style="background:#fff;border-radius:16px;width:380px;max-height:500px;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e5e7eb;">' +
+      '<h3 style="margin:0;font-size:15px;color:#374151;">📜 我的兑换记录</h3>' +
+      '<button onclick="closeRedemptionsModal()" style="background:none;border:none;font-size:20px;color:#999;cursor:pointer;">×</button></div>' +
+      html + '</div>';
+    document.body.appendChild(modal);
+    modal.onclick = function(e) {
+      if (e.target === modal) closeRedemptionsModal();
+    };
+  } catch(e) {
+    showToast('加载失败', 'error');
+  }
+}
+
+function closeRedemptionsModal() {
+  var modal = document.getElementById('redemptions-modal');
+  if (modal) modal.remove();
+}
+
 document.addEventListener('click', function(e) {
   var dropdown = document.getElementById('trending-dropdown');
   var btn = document.getElementById('btn-trending');
-  if (!dropdown || !btn) return;
-  if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+  if (dropdown && btn && !dropdown.contains(e.target) && !btn.contains(e.target)) {
     dropdown.style.display = 'none';
+  }
+  var tasksDropdown = document.getElementById('daily-tasks-dropdown');
+  var tasksBtn = document.getElementById('btn-daily-tasks');
+  if (tasksDropdown && tasksBtn && !tasksDropdown.contains(e.target) && !tasksBtn.contains(e.target)) {
+    tasksDropdown.style.display = 'none';
+  }
+  var shopDropdown = document.getElementById('shop-dropdown');
+  var shopBtn = document.getElementById('btn-shop');
+  if (shopDropdown && shopBtn && !shopDropdown.contains(e.target) && !shopBtn.contains(e.target)) {
+    shopDropdown.style.display = 'none';
   }
 });
 

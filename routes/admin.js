@@ -258,9 +258,31 @@ router.post('/posts/:id/feature', authMiddleware, (req, res) => {
     if (!post) return res.status(404).json({ error: '帖子不存在' });
     const newVal = post.is_featured ? 0 : 1;
     db.prepare('UPDATE posts SET is_featured = ? WHERE id = ?').run(newVal, req.params.id);
+
+    if (newVal) {
+      // Add to featured_posts
+      const year = new Date().getFullYear();
+      const now = new Date();
+      const startOfYear = new Date(year, 0, 1);
+      const days = Math.floor((now - startOfYear) / 86400000);
+      const week = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+      const periodKey = `${year}-W${String(week).padStart(2, '0')}`;
+      db.prepare('INSERT OR IGNORE INTO featured_posts (post_id, period_type, period_key) VALUES (?, ?, ?)').run(req.params.id, 'weekly', periodKey);
+    } else {
+      // Remove from featured_posts
+      const year = new Date().getFullYear();
+      const now = new Date();
+      const startOfYear = new Date(year, 0, 1);
+      const days = Math.floor((now - startOfYear) / 86400000);
+      const week = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+      const periodKey = `${year}-W${String(week).padStart(2, '0')}`;
+      db.prepare('DELETE FROM featured_posts WHERE post_id = ? AND period_type = ? AND period_key = ?').run(req.params.id, 'weekly', periodKey);
+    }
+
     logAction({ adminId: req.user.id, action: newVal ? 'feature_post' : 'unfeature_post', targetType: 'post', targetId: Number(req.params.id), details: (newVal ? '加精' : '取消加精') + ': ' + post.title });
     res.json({ success: true, is_featured: newVal, message: newVal ? '已加精' : '已取消加精' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: '操作失败' });
   }
 });

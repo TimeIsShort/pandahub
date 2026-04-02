@@ -1242,6 +1242,7 @@ function goHome() {
   checkEmailVerifiedBanner();
   showView('home');
   loadPosts();
+  loadFeaturedPosts();
   loadTrending();
   // Show panda FAB on home
   var fab = document.getElementById('panda-fab-container');
@@ -2455,6 +2456,55 @@ async function loadSections() {
     });
   } catch (e) {
     console.error(e);
+  }
+}
+
+function filterBySection(sectionId) {
+  currentSectionId = sectionId;
+  currentPage = 1;
+  loadSections();
+  loadPosts();
+}
+
+async function loadFeaturedPosts() {
+  const section = document.getElementById('featured-section');
+  if (!section) return;
+  try {
+    const res = await api('/featured');
+    if (!res.posts || res.posts.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = 'block';
+    const html = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 4px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:15px;">⭐</span>
+          <span style="font-size:14px;font-weight:700;color:#1e293b;">本周精华</span>
+          <span style="font-size:11px;color:#94a3b8;">${res.period}</span>
+        </div>
+        <span style="font-size:11px;color:#94a3b8;">${res.posts.length}篇</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${res.posts.map(p => `
+          <div class="post-card" onclick="viewPost(${p.id})" style="cursor:pointer;padding:14px 16px;border-left:3px solid #ec4899;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              ${p.tag ? `<span style="background:${p.tag.color}20;color:${p.tag.color};font-size:11px;padding:2px 8px;border-radius:8px;">${p.tag.icon || ''} ${escapeHtml(p.tag.name)}</span>` : ''}
+              <span style="font-size:11px;color:#94a3b8;">${p.author?.nickname || p.author?.username || ''}</span>
+              <span style="font-size:11px;color:#94a3b8;">🕐 ${formatDate(p.created_at)}</span>
+            </div>
+            <div style="font-size:14px;font-weight:600;color:#1e293b;margin-bottom:4px;">${escapeHtml(p.title)}</div>
+            <div style="display:flex;gap:12px;font-size:11px;color:#94a3b8;">
+              <span>👍 ${p.like_count || 0}</span>
+              <span>💬 ${p.comment_count || 0}</span>
+              <span>👁 ${p.views || 0}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>`;
+    section.innerHTML = html;
+  } catch (e) {
+    section.style.display = 'none';
   }
 }
 

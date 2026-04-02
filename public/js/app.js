@@ -5520,27 +5520,47 @@ function switchLeaderboardTab(type) {
 function updateLeaderboardTabUI() {
   var weeklyBtn = document.getElementById('lb-tab-weekly');
   var monthlyBtn = document.getElementById('lb-tab-monthly');
-  if (currentLeaderboardType === 'weekly') {
-    weeklyBtn.style.background = '#ede9fe';
-    weeklyBtn.style.color = '#7c3aed';
-    weeklyBtn.style.border = 'none';
-    monthlyBtn.style.background = '#fff';
-    monthlyBtn.style.color = '#64748b';
-    monthlyBtn.style.border = '1.5px solid #e2e8f0';
-  } else {
-    monthlyBtn.style.background = '#ede9fe';
-    monthlyBtn.style.color = '#7c3aed';
-    monthlyBtn.style.border = 'none';
-    weeklyBtn.style.background = '#fff';
-    weeklyBtn.style.color = '#64748b';
-    weeklyBtn.style.border = '1.5px solid #e2e8f0';
-  }
+  var influenceBtn = document.getElementById('lb-tab-influence');
+  var allBtns = [weeklyBtn, monthlyBtn, influenceBtn];
+  var activeType = currentLeaderboardType;
+  var activeColor = { bg: '#ede9fe', color: '#7c3aed', border: 'none' };
+  var inactiveColor = { bg: '#fff', color: '#64748b', border: '1.5px solid #e2e8f0' };
+  allBtns.forEach(function(btn) { if (btn) { btn.style.background = inactiveColor.bg; btn.style.color = inactiveColor.color; btn.style.border = inactiveColor.border; } });
+  if (activeType === 'weekly' && weeklyBtn) { weeklyBtn.style.background = activeColor.bg; weeklyBtn.style.color = activeColor.color; weeklyBtn.style.border = activeColor.border; }
+  else if (activeType === 'monthly' && monthlyBtn) { monthlyBtn.style.background = activeColor.bg; monthlyBtn.style.color = activeColor.color; monthlyBtn.style.border = activeColor.border; }
+  else if (influenceBtn) { influenceBtn.style.background = activeColor.bg; influenceBtn.style.color = activeColor.color; influenceBtn.style.border = activeColor.border; }
 }
 
 async function loadLeaderboard(type) {
   var content = document.getElementById('leaderboard-content');
   content.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">加载中...</div>';
   try {
+    if (type === 'influence') {
+      var res = await api('/influence-leaderboard');
+      var entries = res.rankings || [];
+      if (entries.length === 0) {
+        content.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">暂无数据</div>';
+        return;
+      }
+      var html = '<div style="font-size:12px;color:#94a3b8;margin-bottom:10px;text-align:center;">累计影响力总分 · 共' + res.total + '人</div>';
+      for (var i = 0; i < entries.length; i++) {
+        var e = entries[i];
+        var rankStyle = e.rank === 1 ? '#fbbf24' : e.rank === 2 ? '#d1d5db' : e.rank === 3 ? '#cd7c4a' : '#e2e8f0';
+        var rankEmoji = e.rank === 1 ? '🥇' : e.rank === 2 ? '🥈' : e.rank === 3 ? '🥉' : '';
+        var bgStyle = e.rank <= 3 ? 'background:#fefce8;border:1px solid #fde68a;' : 'background:#f8fafc;border:1px solid #e2e8f0;';
+        html += '<div style="display:flex;align-items:center;padding:10px 12px;border-radius:10px;margin-bottom:6px;' + bgStyle + '">';
+        html += '<div style="width:28px;height:28px;border-radius:50%;background:' + rankStyle + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;margin-right:10px;">' + (rankEmoji || e.rank) + '</div>';
+        html += '<div style="width:32px;height:32px;border-radius:50%;background:' + (e.level_color || '#667eea') + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;margin-right:10px;">' + ((e.nickname || e.username || '?')[0] || '?').toUpperCase() + '</div>';
+        html += '<div style="flex:1;min-width:0;">';
+        html += '<div style="font-size:13px;font-weight:600;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (e.nickname || e.username) + '</div>';
+        html += '<div style="font-size:11px;color:#94a3b8;margin-top:1px;">' + (e.level_icon || '') + ' ' + (e.level || '') + '</div>';
+        html += '</div>';
+        html += '<div style="text-align:right;"><div style="font-size:14px;font-weight:700;color:#ec4899;">💎 ' + e.influence_score + '</div><div style="font-size:10px;color:#94a3b8;">影响力</div></div>';
+        html += '</div>';
+      }
+      content.innerHTML = html;
+      return;
+    }
     var res = await api('/activity-leaderboard?type=' + type);
     var entries = res.entries || [];
     if (entries.length === 0) {

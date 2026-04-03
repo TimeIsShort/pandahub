@@ -4,7 +4,7 @@ const db = require('../models/database');
 const router = express.Router();
 
 // Canonical site URL (non-www, single source of truth)
-const SITE_URL = process.env.SITE_URL || 'https://pandahub.cloud';
+const SITE_URL = process.env.SITE_URL || 'https://your-domain.com';
 
 router.get('/', (req, res) => {
   try {

@@ -1,4 +1,5 @@
 const express = require('express');
+const SITE_URL = process.env.SITE_URL || 'https://your-domain.com';
 const router = express.Router();
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
@@ -126,7 +127,7 @@ async function buildDigestEmail({ nickname, isTest }) {
           <span style="background:#667eea;color:#fff;font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;">${i + 1}</span>
           ${p.tag_name ? `<span style="background:${p.tag_color};color:#fff;font-size:11px;padding:2px 7px;border-radius:5px;">${p.tag_name}</span>` : ''}
         </div>
-        <a href="https://pandahub.cloud/post/${p.id}" style="font-size:15px;font-weight:600;color:#1a202c;text-decoration:none;display:block;margin-bottom:4px;">${escapeHtml(p.title)}</a>
+        <a href="https://your-domain.com/post/${p.id}" style="font-size:15px;font-weight:600;color:#1a202c;text-decoration:none;display:block;margin-bottom:4px;">${escapeHtml(p.title)}</a>
         ${p.ai_summary ? `<div style="font-size:13px;color:#64748b;margin-bottom:6px;">🤖 ${escapeHtml(p.ai_summary)}</div>` : ''}
         <div style="font-size:12px;color:#94a3b8;">👤 ${p.nickname || p.username} · 👍 ${p.like_count} · 💬 ${p.comment_count}</div>
       </div>
@@ -176,7 +177,7 @@ async function buildDigestEmail({ nickname, isTest }) {
   </div>
 
   <div style="text-align:center;padding:20px;">
-    <a href="https://pandahub.cloud" style="display:inline-block;background:#0f766e;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:15px;font-weight:600;">打开熊猫社区 →</a>
+    <a href="https://your-domain.com" style="display:inline-block;background:#0f766e;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-size:15px;font-weight:600;">打开熊猫社区 →</a>
   </div>
 </div>
 </body>

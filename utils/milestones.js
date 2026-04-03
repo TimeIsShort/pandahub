@@ -4,6 +4,7 @@
  */
 
 const db = require('../models/database');
+const SITE_URL = process.env.SITE_URL || 'https://your-domain.com';
 
 /**
  * Check and record milestones after a community action
@@ -128,7 +129,7 @@ async function sendMilestoneNotification(milestone, type) {
           '<p style="font-size:15px;color:#64748b;text-align:center;margin:12px 0;">' + escapeHtml(milestone.description || '') + '</p>' +
           '<div style="background:#fef9c3;border-radius:8px;padding:16px;margin:20px 0;text-align:center;font-size:14px;color:#92400e;">' +
           '感谢每一位社区成员的贡献！🌟</div>' +
-          '<a href="https://pandahub.cloud" style="display:block;text-align:center;background:#667eea;color:#fff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;margin-top:16px;">前往社区 →</a></div>',
+          '<a href="https://your-domain.com" style="display:block;text-align:center;background:#667eea;color:#fff;text-decoration:none;padding:14px 24px;border-radius:8px;font-size:15px;margin-top:16px;">前往社区 →</a></div>',
       });
     }
   } catch (e) {

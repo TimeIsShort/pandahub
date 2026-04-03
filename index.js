@@ -189,9 +189,15 @@ app.use('/api/reactions', reactionRoutes);
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// SPA fallback
+// SPA fallback - inject SITE_URL into index.html for og:tags
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  const filePath = path.join(__dirname, 'public', 'index.html');
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) return res.status(500).send('Server error');
+    const siteUrl = process.env.SITE_URL || 'https://your-domain.com';
+    const html = data.replace(/https:\/\/pandahub\.cloud/g, siteUrl);
+    res.type('html').send(html);
+  });
 });
 
 // Error handler

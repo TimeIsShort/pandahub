@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const SITE_URL = process.env.SITE_URL || 'https://your-domain.com';
 
 function getTransporter() {
   return nodemailer.createTransport({

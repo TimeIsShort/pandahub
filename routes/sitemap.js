@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('../models/database');
 
 const router = express.Router();
-const BASE_URL = 'https://pandahub.cloud';
+const BASE_URL = process.env.SITE_URL || 'https://pandahub.cloud';
 
 router.get('/', (req, res) => {
   try {

@@ -355,7 +355,7 @@
     }
     var h = '';
     if (id === 'hmac') h += field('secret', '密钥', 'password', '输入密钥');
-    if (id === 'query_builder') h += field('baseUrl', '基础 URL（可选）', 'text', 'https://pandahub.cloud/search');
+    if (id === 'query_builder') h += field('baseUrl', '基础 URL（可选）', 'text', 'https://your-domain.com/search');
     if (id === 'regex') { h += field('pattern', '正则表达式', 'text', '(AI|熊猫)\\w*'); h += field('flags', '标志位', 'text', 'gim'); }
     if (id === 'uuid') return h;
     var rows = (id === 'json' || id === 'json_yaml' || id === 'json_csv' || id === 'text_clean' || id === 'regex') ? 9 : 7;
@@ -432,11 +432,11 @@
       url: 'name=熊猫&city=Hangzhou\nhttps%3A%2F%2Fpandahub.cloud%2Ftoolbox%3Ftool%3Djson',
       base64: '熊猫社区 toolbox V2', html: '<span title="panda">🐼 & AI</span>', unicode: '熊猫社区 🐼', md5: 'pandahub.cloud', sha256: 'pandahub.cloud', hmac: 'POST /api/posts?tag=AI',
       json: '{\n  "name":"panda",\n  "tags":["AI","Forum"]\n}', json_yaml: 'name: panda\nfeatures:\n  - convert', json_csv: '[{"city":"hangzhou","temp":21}]',
-      timestamp: String(Math.floor(Date.now() / 1000)), radix: '0x2A', color: '#0f766e', url_parser: 'https://pandahub.cloud/toolbox?tool=json&from=forum',
+      timestamp: String(Math.floor(Date.now() / 1000)), radix: '0x2A', color: '#0f766e', url_parser: 'https://your-domain.com/toolbox?tool=json&from=forum',
       query_builder: 'q=熊猫 社区\npage=1', regex: '熊猫社区欢迎你。AI日报每天更新。', text_case: 'panda toolbox page v2', text_clean: 'orange\napple\napple\nbanana\n', jwt: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjMiLCJuYW1lIjoiUGFuZGEiLCJleHAiOjE4MDAwMDAwMDB9.xxx'
     };
     if (state.active === 'hmac') f.secret = 'panda-secret';
-    if (state.active === 'query_builder') f.baseUrl = 'https://pandahub.cloud/search';
+    if (state.active === 'query_builder') f.baseUrl = 'https://your-domain.com/search';
     if (state.active === 'regex') { f.pattern = '(AI|熊猫)[^\\s,，。]*'; f.flags = 'gi'; }
     if (state.active !== 'uuid') f.input = m[state.active] || '';
     s.status = ''; s.statusType = ''; s.output = ''; s.outputHtml = ''; s.meta = '';

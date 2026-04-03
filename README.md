@@ -486,15 +486,16 @@ npm run dev
 | 变量 | 说明 | 示例 |
 |------|------|------|
 | PORT | 服务端口 | 3000 |
+| SITE_URL | 站点主域名（替换所有硬编码 URL） | https://your-domain.com |
 | JWT_SECRET | JWT 密钥 | 随机字符串 |
 | SMTP_HOST | SMTP 服务器 | smtp.ethereal.email |
 | SMTP_PORT | SMTP 端口 | 587 |
 | SMTP_USER | SMTP 用户 | your@email.com |
 | SMTP_PASS | SMTP 密码 | yourpassword |
-| SMTP_FROM | 发件人 | noreply@pandahub.cloud |
+| SMTP_FROM | 发件人 | noreply@your-domain.com |
 | VAPID_PUBLIC_KEY | Web Push 公钥 | （生成） |
 | VAPID_PRIVATE_KEY | Web Push 私钥 | （生成） |
-| VAPID_SUBJECT | Web Push Subject | mailto:admin@pandahub.cloud |
+| VAPID_SUBJECT | Web Push Subject | mailto:admin@your-domain.com |
 | KIMI_API_KEY | Kimi API（AI审核） | sk-xxx |
 
 ---
@@ -503,7 +504,7 @@ npm run dev
 
 | 角色 | 用户名 | 密码 |
 |------|--------|------|
-| 管理员 | admin | admin123 |
+| 管理员 | admin | admin123（首次部署后修改） |
 
 ---
 

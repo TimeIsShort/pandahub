@@ -10,6 +10,7 @@ const { incrementDailyPostCount, incrementDailyCommentCount } = require('./daily
 const { checkBadges } = require('./badges');
 const { syncChallengeProgress } = require('./challenges');
 const { checkMilestones } = require('../utils/milestones');
+const { postCooldown, commentCooldown } = require('../middleware/cooldown');
 const { generatePostSummary } = require('../utils/summarize');
 const { addInfluence, removeInfluence } = require('../utils/influence');
 
@@ -203,7 +204,7 @@ router.get('/:id', optionalAuth, (req, res) => {
 });
 
 // Create post
-router.post('/', authMiddleware, (req, res) => {
+router.post('/', authMiddleware, postCooldown, (req, res) => {
   try {
     const { title, content, tag_id, section_id } = req.body;
     if (!title || !content) {
@@ -364,7 +365,7 @@ router.delete('/:id', authMiddleware, (req, res) => {
 });
 
 // Add comment
-router.post('/:id/comments', authMiddleware, async (req, res) => {
+router.post('/:id/comments', authMiddleware, commentCooldown, async (req, res) => {
   try {
     const { content, parent_id, reply_to_user_id } = req.body;
     if (!content) {

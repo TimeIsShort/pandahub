@@ -74,6 +74,8 @@ const dailyTaskRoutes = require('./routes/dailyTasks');
 const badgeRoutes = require('./routes/badges');
 const challengeRoutes = require('./routes/challenges');
 const aiChatRoutes = require('./routes/aiChat');
+const { rateLimit, authRateLimit } = require('./middleware/rateLimit');
+const { postCooldown, commentCooldown } = require('./middleware/cooldown');
 const inviteCodesRoutes = require('./routes/inviteCodes');
 const reactionRoutes = require('./routes/reactions');
 
@@ -118,6 +120,8 @@ app.get('/toolbox', (req, res) => {
 });
 
 // API Routes
+// Global rate limiter for all /api routes
+app.use('/api', rateLimit({ limit: 120, windowMs: 60 * 1000, message: '请求过于频繁，请稍后再试' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentVoteRoutes);

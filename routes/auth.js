@@ -7,6 +7,8 @@ const { getUserLevel, getLevelBenefits } = require('../models/database');
 const { logAction } = require('../middleware/moderationLog');
 const { logUserAction } = require('../middleware/actionLogger');
 const { checkMilestones } = require('../utils/milestones');
+const { registerGuardMiddleware } = require('../middleware/registerGuard');
+const { authRateLimit } = require('../middleware/rateLimit');
 
 const router = express.Router();
 
@@ -85,7 +87,7 @@ function verifyCaptchaToken(token, slideX) {
 }
 
 // Register
-router.post('/register', async (req, res) => {
+router.post('/register', registerGuardMiddleware, async (req, res) => {
   try {
     const { username, password, nickname, email, invite_code, __hp, __ts, captchaToken } = req.body;
     const ip = getClientIp(req);
@@ -174,7 +176,7 @@ router.post('/register', async (req, res) => {
 });
 
 // Send registration verification code
-router.post('/send-register-code', async (req, res) => {
+router.post('/send-register-code', registerGuardMiddleware, async (req, res) => {
   try {
     const { email, username, password, invite_code, __hp, __ts, captchaToken } = req.body;
     const ip = getClientIp(req);
@@ -371,7 +373,7 @@ router.post('/verify-register', async (req, res) => {
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', authRateLimit({ limit: 10, windowMs: 60 * 1000, key: 'login' }), async (req, res) => {
   try {
     const { username, password } = req.body;
     const ip = getClientIp(req);

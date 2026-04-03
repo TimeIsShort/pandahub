@@ -74,6 +74,7 @@ const dailyTaskRoutes = require('./routes/dailyTasks');
 const badgeRoutes = require('./routes/badges');
 const challengeRoutes = require('./routes/challenges');
 const wordFilterRoutes = require('./routes/wordFilter');
+const emailDigestRoutes = require('./routes/emailDigest');
 const aiChatRoutes = require('./routes/aiChat');
 const { rateLimit, authRateLimit } = require('./middleware/rateLimit');
 const { postCooldown, commentCooldown } = require('./middleware/cooldown');
@@ -175,6 +176,7 @@ app.use('/api/daily-tasks', dailyTaskRoutes);
 app.use('/api/badges', badgeRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/word-filter', wordFilterRoutes);
+app.use('/api/email-digest', emailDigestRoutes);
 app.use('/api/ai-chat', aiChatRoutes);
 app.use('/api/invites', inviteCodesRoutes);
 app.use('/api/reactions', reactionRoutes);
@@ -195,7 +197,11 @@ app.use((err, req, res, next) => {
 
 try { require('./services/reminderScheduler').startReminderScheduler(); } catch(e) { console.warn('[Reminder] Scheduler start failed:', e.message); }
 try { require('./services/leaderboardScheduler').startLeaderboardScheduler(); } catch(e) { console.warn('[Leaderboard] Scheduler start failed:', e.message); }
+try { require('./services/emailDigestScheduler').startDigestScheduler(); } catch(e) { console.warn('[EmailDigest] Scheduler start failed:', e.message); }
 
-app.listen(PORT, '0.0.0.0', () => {
+const http = require('http');
+const server = http.createServer(app);
+try { require('./server/websocket').init(server); } catch(e) { console.warn('[WS] Init failed:', e.message); }
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`论坛已启动: http://0.0.0.0:${PORT}`);
 });

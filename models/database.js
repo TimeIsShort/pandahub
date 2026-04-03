@@ -100,6 +100,7 @@ db.exec(`
     tag_id INTEGER,
     section_id INTEGER,
     views INTEGER DEFAULT 0,
+    ai_summary TEXT,
     status TEXT DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -211,6 +212,7 @@ ensureColumn('posts', 'section_id', 'INTEGER');
 ensureColumn('tags', 'icon', "TEXT DEFAULT '🏷️'");
 ensureColumn('tags', 'section_id', 'INTEGER');
 ensureColumn('posts', 'views', 'INTEGER DEFAULT 0');
+ensureColumn('posts', 'ai_summary', 'TEXT');
 ensureColumn('posts', 'status', "TEXT DEFAULT 'pending'");
 ensureColumn('posts', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
 ensureColumn('posts', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');

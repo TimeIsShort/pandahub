@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
 const { sendPushToUser } = require('../utils/pushHelper');
+const { broadcastToUser } = require('../server/websocket');
 
 const router = express.Router();
 
@@ -112,6 +113,18 @@ router.post('/', authMiddleware, async (req, res) => {
       body: (sender.nickname || sender.username) + '：' + content.trim().substring(0, 50),
       url: '/#/messages',
       tag: 'private-message'
+    });
+
+    // WebSocket real-time notification
+    broadcastToUser(Number(receiver_id), {
+      type: 'notification',
+      subtype: 'new_message',
+      title: '💬 新私信',
+      body: (sender.nickname || sender.username) + '：' + content.trim().substring(0, 80),
+      senderId,
+      senderName: sender.nickname || sender.username,
+      url: '/#/messages',
+      timestamp: Date.now()
     });
 
     res.json({ message });

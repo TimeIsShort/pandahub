@@ -609,6 +609,8 @@ function setAuth(token, user) {
   if (lbBtn) lbBtn.style.display = 'inline-flex';
   var chBtn = document.getElementById('nav-challenges-btn');
   if (chBtn) chBtn.style.display = 'inline-flex';
+  var bdBtn = document.getElementById('nav-badges-btn');
+  if (bdBtn) bdBtn.style.display = 'inline-flex';
 }
 
 function clearAuth() {
@@ -621,6 +623,8 @@ function clearAuth() {
   if (lbBtn) lbBtn.style.display = 'none';
   var chBtn = document.getElementById('nav-challenges-btn');
   if (chBtn) chBtn.style.display = 'none';
+  var bdBtn = document.getElementById('nav-badges-btn');
+  if (bdBtn) bdBtn.style.display = 'none';
 }
 
 function api(endpoint, options = {}) {
@@ -2661,7 +2665,7 @@ async function loadPosts() {
           ${post.tag_name ? `<span class="post-tag" style="background:${post.tag_color}">${escapeHtml(post.tag_name)}</span>` : ''}
         </div>
         <div class="post-title">${escapeHtml(post.title)}</div>
-        <div class="post-excerpt">${post.summary ? '<span class="ai-summary-tag" style="color:var(--primary);font-size:11px;margin-right:4px;">🤖</span>' + escapeHtml(post.summary) : escapeHtml(stripMarkdown(post.content).substring(0, 80)) + (post.content && post.content.length > 160 ? '…' : '')}</div>
+        <div class="post-excerpt">${post.ai_summary ? '<span class="ai-summary-tag" style="color:var(--primary);font-size:11px;margin-right:4px;">🤖</span>' + escapeHtml(post.ai_summary) : escapeHtml(stripMarkdown(post.content).substring(0, 80)) + (post.content && post.content.length > 160 ? '…' : '')}</div>
         <div class="post-bottom-meta">
           <div class="post-author-info">
             <span class="avatar-small">${post.avatar ? `<img src="${post.avatar}" alt="avatar">` : (post.nickname || post.username)[0].toUpperCase()}</span>
@@ -5535,6 +5539,7 @@ async function loadProfileBadges(userId) {
     }
 
     html += '</div>';
+    html += '<div style="margin-top:12px;text-align:center;"><a href="/badges/wall/' + userId + '" target="_blank" style="font-size:12px;color:var(--primary);text-decoration:none;font-weight:600;">🏅 查看完整勋章墙 →</a></div>';
     el.innerHTML = html;
   } catch (e) {
     el.innerHTML = '';
@@ -5885,6 +5890,13 @@ window.openChallenges = async function() {
 window.closeChallenges = function() {
   document.getElementById('challenges-modal').style.display = 'none';
   enableBottomNav();
+};
+
+window.openBadgesWall = function(userId) {
+  var user = getUser();
+  var targetId = userId || (user ? user.id : null);
+  if (!targetId) { showToast('请先登录', 'info'); showLogin(); return; }
+  window.open('/badges/wall/' + targetId, '_blank');
 };
 
 async function loadChallenges() {
@@ -7829,6 +7841,85 @@ function initWeather() {
   });
 }
 
+// ─── WebSocket Real-time Notifications ───────────────────────────────────────
+var ws = null;
+var wsReconnectTimer = null;
+var wsRetryDelay = 2000;
+var wsConnected = false;
+
+function connectWebSocket() {
+  if (!('WebSocket' in window)) return;
+  var user = getUser();
+  if (!user || !user.token) return;
+  if (ws && ws.readyState === WebSocket.OPEN) return;
+
+  try {
+    var protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(protocol + '//' + location.host + '/ws');
+
+    ws.onopen = function() {
+      console.log('[WS] Connected');
+      wsConnected = true;
+      wsRetryDelay = 2000;
+      // Authenticate
+      ws.send(JSON.stringify({ type: 'auth', token: user.token }));
+      // Update connection indicator if any
+      var wsStatus = document.getElementById('ws-conn-status');
+      if (wsStatus) wsStatus.textContent = '🟢';
+    };
+
+    ws.onmessage = function(event) {
+      try {
+        var msg = JSON.parse(event.data);
+        handleWsMessage(msg);
+      } catch(e) {}
+    };
+
+    ws.onclose = function() {
+      wsConnected = false;
+      ws = null;
+      // Auto reconnect with backoff
+      clearTimeout(wsReconnectTimer);
+      wsReconnectTimer = setTimeout(function() {
+        wsRetryDelay = Math.min(wsRetryDelay * 1.5, 30000);
+        connectWebSocket();
+      }, wsRetryDelay);
+    };
+
+    ws.onerror = function(err) {
+      ws.close();
+    };
+  } catch(e) {}
+}
+
+function handleWsMessage(msg) {
+  if (msg.type === 'auth_ok') {
+    console.log('[WS] Authenticated as user', msg.userId);
+    return;
+  }
+  if (msg.type === 'notification') {
+    handleRealtimeNotification(msg);
+  }
+}
+
+function handleRealtimeNotification(msg) {
+  var toastType = 'info';
+  if (msg.subtype === 'new_message') toastType = 'message';
+  else if (msg.subtype === 'new_comment' || msg.subtype === 'new_reply') toastType = 'comment';
+  else if (msg.subtype === 'followed_post_reply') toastType = 'follow';
+  showToast(msg.title + ' ' + (msg.body || ''), toastType, 5000);
+
+  // Update notification badge if visible
+  if (typeof updateNotificationBadge === 'function') updateNotificationBadge();
+  // Play notification sound
+  try { var audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2AgIqFf3Z4gYaMh35+foWNjYuFgIB+goeLi4iFg4GEiYyNi4mGg4KDiIqLi4uIhoSDhoiKi4uKiIaDhIeJi4yMioiGhIWGiImKioiGhIWGh4iJiYmIh4aGh4iIiImIiIiIhoeIiIiJiIiHhoeIiIiJiYiGh4iIiImJiYiGh4iIiImJiYiGh4iIiImJiYiGh4iIiImJiYiGh4iIiImJiYiGh4iIiImJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aHiIiJiYiGh4aH'); audio.volume = 0.3; audio.play().catch(function(){}); } catch(e) {}
+}
+
+function disconnectWebSocket() {
+  clearTimeout(wsReconnectTimer);
+  if (ws) { ws.close(); ws = null; }
+}
+
 function initPWA() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker.register('/sw.js').then(function(reg) {
@@ -7848,6 +7939,7 @@ async function init() {
   currentUser = getUser();
   updateNav();
   initPWA();
+  connectWebSocket();
 
   // Load milestone progress if logged in
   if (currentUser) {

@@ -6,6 +6,7 @@ const { logAction } = require('../middleware/moderationLog');
 const { logUserAction } = require('../middleware/actionLogger');
 const { updatePostFTS, getUserLevel, POINT_COST } = require('../models/database');
 const { sendPushToUser, notifyUserNewComment, notifyUserNewReply, processMentions } = require('../utils/pushHelper');
+const { broadcastToUser } = require('../server/websocket');
 const { incrementDailyPostCount, incrementDailyCommentCount } = require('./dailyTasks');
 const { checkBadges } = require('./badges');
 const { syncChallengeProgress } = require('./challenges');
@@ -252,6 +253,13 @@ router.post('/', authMiddleware, postCooldown, (req, res) => {
     // Sync to FTS index
     updatePostFTS(post.id);
 
+    // Generate AI summary (fire-and-forget, don't await)
+    generatePostSummary(title, content).then(summary => {
+      if (summary && summary.length > 5) {
+        db.prepare('UPDATE posts SET ai_summary = ? WHERE id = ?').run(summary, result.lastInsertRowid);
+      }
+    }).catch(() => {});
+
     // Update daily post count for task system
     incrementDailyPostCount(req.user.id);
     checkBadges(req.user.id);
@@ -299,7 +307,7 @@ router.put('/:id', authMiddleware, (req, res) => {
     if (newContent && newTitle) {
       generatePostSummary(newTitle, newContent).then(summary => {
         if (summary && summary.length > 5) {
-          db.prepare('UPDATE posts SET summary = ? WHERE id = ?').run(summary, req.params.id);
+          db.prepare('UPDATE posts SET ai_summary = ? WHERE id = ?').run(summary, req.params.id);
         }
       }).catch(() => {});
     }
@@ -442,6 +450,13 @@ router.post('/:id/comments', authMiddleware, commentCooldown, async (req, res) =
         url: '/post/' + req.params.id,
         tag: 'new-comment'
       });
+      broadcastToUser(post.user_id, {
+        type: 'notification', subtype: 'new_comment',
+        title: '💬 有新评论',
+        body: (comment.nickname || comment.username) + ' 评论了你的帖子「' + post.title + '」',
+        postId: Number(req.params.id), commentId: comment.id,
+        url: '/post/' + req.params.id, timestamp: Date.now()
+      });
       // Email notification (async, don't await)
       notifyUserNewComment(post.user_id, post.title, comment.nickname || comment.username, '/post/' + req.params.id);
     }
@@ -457,6 +472,13 @@ router.post('/:id/comments', authMiddleware, commentCooldown, async (req, res) =
         body: '有人回复了你的评论，快去看看吧',
         url: '/post/' + req.params.id,
         tag: 'new-reply'
+      });
+      broadcastToUser(reply_to_user_id, {
+        type: 'notification', subtype: 'new_reply',
+        title: '💬 有新回复',
+        body: (comment.nickname || comment.username) + ' 回复了你的评论',
+        postId: Number(req.params.id), commentId: comment.id,
+        url: '/post/' + req.params.id, timestamp: Date.now()
       });
       // Email notification (async, don't await)
       notifyUserNewReply(reply_to_user_id, post.title, comment.nickname || comment.username, '/post/' + req.params.id);
@@ -490,6 +512,13 @@ router.post('/:id/comments', authMiddleware, commentCooldown, async (req, res) =
         body: (comment.nickname || comment.username) + ' 回复了你关注的帖子「' + post.title + '」',
         url: '/post/' + req.params.id,
         tag: 'post-reply-' + req.params.id
+      });
+      broadcastToUser(follower.user_id, {
+        type: 'notification', subtype: 'followed_post_reply',
+        title: '📬 关注帖子有新动态',
+        body: (comment.nickname || comment.username) + ' 回复了你关注的帖子「' + post.title + '」',
+        postId: Number(req.params.id), commentId: comment.id,
+        url: '/post/' + req.params.id, timestamp: Date.now()
       });
     }
 

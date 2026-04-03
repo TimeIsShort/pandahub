@@ -735,6 +735,15 @@
             <h3>🕐 活跃时段热力图（近30天）</h3>
             <div id="heatmap-container" style="overflow-x:auto;padding-top:8px;"></div>
           </div>
+          <div class="chart-container" style="margin-top:16px;background:#fff;border-radius:12px;padding:16px;">
+            <h3>📧 邮件聚合</h3>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+              <button class="btn btn-primary" onclick="testDigestEmail()">📤 发送测试邮件到我</button>
+              <button class="btn btn-secondary" onclick="loadDigestStats()">🔄 刷新本周数据</button>
+              <button class="btn btn-reject" onclick="broadcastDigest()">📡 广播给活跃用户（管理员）</button>
+            </div>
+            <div id="digest-stats" style="margin-top:12px;font-size:13px;color:#64748b;"></div>
+          </div>
         </div>
       </div>
       <div id="tabTags" class="hidden">
@@ -2562,6 +2571,42 @@
       } catch (e) {
         console.error('Charts load error', e);
       }
+    }
+
+    async function loadDigestStats() {
+      var el = document.getElementById('digest-stats');
+      if (!el) return;
+      el.textContent = '加载中...';
+      try {
+        var res = await fetch('/api/email-digest/stats', { headers: { 'Authorization': 'Bearer ' + token } });
+        var data = await res.json();
+        el.innerHTML = '📊 本周：' + data.newPosts + ' 篇新帖子，' + data.newUsers + ' 位新用户，' + data.newComments + ' 条评论';
+      } catch(e) { el.textContent = '加载失败'; }
+    }
+
+    async function testDigestEmail() {
+      var el = document.getElementById('digest-stats');
+      if (!el) return;
+      el.textContent = '发送中...';
+      try {
+        var res = await fetch('/api/email-digest/send', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+        var data = await res.json();
+        el.textContent = data.message || '发送完成';
+        showToast(data.message || '已发送', 'success');
+      } catch(e) { el.textContent = '发送失败'; showToast('发送失败', 'error'); }
+    }
+
+    async function broadcastDigest() {
+      if (!confirm('确定要给所有活跃用户发送本周邮件聚合？')) return;
+      var el = document.getElementById('digest-stats');
+      if (!el) return;
+      el.textContent = '发送中...（可能需要几分钟）';
+      try {
+        var res = await fetch('/api/email-digest/broadcast', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ limit: 100 }) });
+        var data = await res.json();
+        el.textContent = data.message || '发送完成';
+        showToast(data.message || '广播完成', 'success');
+      } catch(e) { el.textContent = '发送失败'; showToast('广播失败', 'error'); }
     }
 
     if (token) showAdminView();

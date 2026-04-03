@@ -660,6 +660,9 @@ function formatDate(date) {
 function showToast(message, type = 'info', duration = 2200) {
   if (!message) return;
 
+  const icons = { success: '✨', error: '😅', info: '💡' };
+  const icon = icons[type] || '';
+
   let toast = document.getElementById('app-toast');
   if (!toast) {
     toast = document.createElement('div');
@@ -669,7 +672,7 @@ function showToast(message, type = 'info', duration = 2200) {
   }
 
   toast.className = `app-toast ${type}`;
-  toast.textContent = message;
+  toast.innerHTML = (icon ? '<span>' + icon + '</span> ' : '') + message;
   // Reflow so repeated messages still play the entry animation
   void toast.offsetWidth;
   toast.classList.add('show');

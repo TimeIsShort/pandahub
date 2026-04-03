@@ -1252,7 +1252,7 @@ function updateSeoMeta(opts) {
   opts = opts || {};
   var title = opts.title || '熊猫社区 PandaHub';
   var desc = opts.description || '开放的技术交流社区，支持 AI 对话、积分等级、每日签到等功能';
-  var url = opts.url || 'https://pandahub.cloud';
+  var url = opts.url || (typeof location !== 'undefined' ? location.origin : 'https://pandahub.cloud');
   document.title = title;
   var metas = document.querySelectorAll('meta[name="description"]');
   metas.forEach(function(m) { m.content = desc; });
@@ -1576,7 +1576,7 @@ async function loadRSSContent() {
     var parser = new DOMParser();
     var xml = parser.parseFromString(xmlText, 'text/xml');
     var items = xml.querySelectorAll('item');
-    var siteUrl = xml.querySelector('link') ? xml.querySelector('link').textContent : 'https://pandahub.cloud';
+    var siteUrl = xml.querySelector('link') ? xml.querySelector('link').textContent : (window.SITE_URL || 'https://pandahub.cloud');
 
     if (!items.length) {
       el.innerHTML = '<div style="color:var(--text-muted);text-align:center;">暂无内容</div>';
@@ -2827,7 +2827,7 @@ async function viewPost(id) {
     updateSeoMeta({
       title: res.post.title + ' - 熊猫社区',
       description: (res.post.content || '').replace(/<[^>]+>/g, '').substring(0, 120),
-      url: 'https://pandahub.cloud/#/post/' + postId
+      url: (window.SITE_URL || 'https://pandahub.cloud') + '/#/post/' + postId
     });
 
     // Guest: show login prompt instead of comment form, but allow reading
@@ -6016,7 +6016,7 @@ async function loadInviteData() {
         html += '<div style="font-size:12px;color:' + statusColor + ';font-weight:600;">' + statusText + '</div>';
         html += '</div>';
         if (!expired && !used) {
-          var link = 'https://pandahub.cloud/register?code=' + c.code;
+          var link = (window.SITE_URL || 'https://pandahub.cloud') + '/register?code=' + c.code;
           html += '<div style="display:flex;gap:6px;margin-top:-2px;margin-bottom:8px;">';
           html += '<input id="inv-link-' + i + '" value="' + link + '" readonly style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid #e2e8f0;font-size:12px;color:#64748b;background:#f1f5f9;">';
           html += '<button onclick="copyInviteLink(\'' + link + '\')" style="padding:6px 12px;border-radius:6px;border:none;background:#667eea;color:#fff;font-size:12px;cursor:pointer;font-weight:600;">复制</button>';

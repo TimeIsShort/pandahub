@@ -15,7 +15,7 @@ function getTransporter() {
     port: process.env.SMTP_PORT || 587,
     secure: false,
     auth: {
-      user: process.env.SMTP_USER || '1224899945@qq.com',
+      user: process.env.SMTP_USER || 'your-email@example.com',
       pass: process.env.SMTP_PASS || '',
     },
   });
@@ -65,7 +65,7 @@ router.post('/send-code', async (req, res) => {
     try {
       const transporter = getTransporter();
       await transporter.sendMail({
-        from: `"熊猫社区" <${process.env.SMTP_USER || '1224899945@qq.com'}>`,
+        from: `"熊猫社区" <${process.env.SMTP_FROM || process.env.SMTP_USER || 'your-email@example.com'}>`,
         to: email,
         subject: '【熊猫社区】内测申请验证码',
         html: `

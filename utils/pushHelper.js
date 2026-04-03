@@ -7,7 +7,7 @@ function initPush() {
   try {
     const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || '';
     const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
-    const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@pandahub.cloud';
+    const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@yourdomain.com';
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
       console.warn('[Push] VAPID 未配置，跳过推送');
       return;

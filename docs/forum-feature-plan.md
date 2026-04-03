@@ -109,7 +109,7 @@
 - ✅ `/auth/send-register-code` 发送 6 位验证码（有效期 10 分钟）
 - ✅ `/auth/verify-register` 验证成功后账号自动激活 (`approved=1`)，无需管理员审核
 - ✅ AI 对话拦截未验证邮箱用户（返回 403 + `need_email_verify: true`）
-- ✅ SMTP 已配置（QQ邮箱：1224899945@qq.com，SMTP_HOST=smtp.qq.com）
+- ✅ SMTP 已配置（QQ邮箱：your-email@example.com，SMTP_HOST=smtp.qq.com）
 - ✅ 内测申请页 (`/apply`) 增加邮箱验证码流程（`/apply/send-code` + `/apply` 提交时验证）
 - ✅ 内测申请页面 UI 全新美化（三步进度指示器、渐变按钮、动效、响应式）
 

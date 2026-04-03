@@ -19,7 +19,7 @@ function init(server) {
         const msg = JSON.parse(raw);
         if (msg.type === 'auth') {
           try {
-            const decoded = jwt.verify(msg.token, process.env.JWT_SECRET || 'pandahub-secret-key');
+            const decoded = jwt.verify(msg.token, process.env.JWT_SECRET || '');
             userId = decoded.userId;
             ws.userId = userId;
             if (!clients.has(userId)) clients.set(userId, new Set());

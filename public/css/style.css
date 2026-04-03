@@ -569,19 +569,26 @@ main.container {
 }
 
 [id^="view-"] {
-  animation: view-fade 0.45s ease;
+  animation: view-fade 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes view-fade {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(14px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
+
+/* Post card stagger: cards animate in with delay */
+#view-home .post-card:nth-child(1) { animation-delay: 0ms; }
+#view-home .post-card:nth-child(2) { animation-delay: 50ms; }
+#view-home .post-card:nth-child(3) { animation-delay: 100ms; }
+#view-home .post-card:nth-child(4) { animation-delay: 150ms; }
+#view-home .post-card:nth-child(5) { animation-delay: 200ms; }
 
 .home-hero {
   background:
@@ -750,7 +757,7 @@ main.container {
   gap: 10px;
   margin-bottom: 16px;
   padding: 12px;
-  border: 1px solid #c3d8e1;
+  border: 1px solid var(--border);
   border-radius: 18px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.93), rgba(243, 250, 252, 0.84));
@@ -2617,7 +2624,7 @@ body.keyboard-open .view-post-sticky-header {
 
 .modal-content {
   background: var(--surface-solid);
-  border: 1px solid #d6e5ea;
+  border: 1px solid var(--border);
   border-radius: 18px;
   box-shadow: var(--shadow-lg);
   padding: 24px;
@@ -2633,7 +2640,7 @@ body.keyboard-open .view-post-sticky-header {
 
 .auth-modal-content h2 {
   margin-bottom: 12px;
-  color: #1f3a4c;
+  color: var(--text);
   font-size: 24px;
   letter-spacing: 0.2px;
 }
@@ -2647,39 +2654,39 @@ body.keyboard-open .view-post-sticky-header {
   font-size: 12px;
 }
 .reg-step {
-  color: #a8b3d4;
+  color: var(--text-muted);
   font-weight: 600;
   transition: color .2s;
 }
-.reg-step.active { color: #5d6dff; font-weight: 700; }
-.reg-step.done { color: #10b981; }
-.reg-step-sep { color: #d0d7e8; }
+.reg-step.active { color: var(--primary); font-weight: 700; }
+.reg-step.done { color: var(--primary); }
+.reg-step-sep { color: var(--border); }
 
 .btn-send-code-mini {
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 700;
   border-radius: 8px;
-  border: 1.5px solid #c5d0ff;
-  background: linear-gradient(135deg, #eef0ff, #f5f3ff);
-  color: #5d6dff;
+  border: 1.5px solid var(--border);
+  background: var(--primary-soft);
+  color: var(--primary);
   cursor: pointer;
   transition: all .2s;
   white-space: nowrap;
   font-family: inherit;
 }
 .btn-send-code-mini:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5d6dff, #7e5ad6);
+  background: var(--primary);
   color: #fff;
   border-color: transparent;
-  box-shadow: 0 3px 10px rgba(93,109,255,.3);
+  box-shadow: 0 3px 10px rgba(15,118,110,.3);
 }
 .btn-send-code-mini:disabled { opacity: .6; cursor: not-allowed; }
 
 #auth-form-register input {
-  background: #fafbff;
-  border-color: #d5ddff;
-  color: #1e2d5a;
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
   font-size: 14px;
   border-radius: 10px;
   padding: 10px 13px;
@@ -2688,11 +2695,11 @@ body.keyboard-open .view-post-sticky-header {
 }
 #auth-form-register input:focus {
   outline: none;
-  border-color: #8294ff;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(93,109,255,.12);
+  border-color: var(--primary);
+  background: var(--surface-solid);
+  box-shadow: 0 0 0 3px rgba(15,118,110,.15);
 }
-#auth-form-register input::placeholder { color: #a8b3d4; }
+#auth-form-register input::placeholder { color: var(--text-muted); }
 
 .auth-modal-content .btn-link {
   margin-left: auto;
@@ -4455,20 +4462,20 @@ select:focus-visible {
   white-space: nowrap;
 }
 .btn-follow:hover:not(:disabled) {
-  box-shadow: 0 4px 14px rgba(93,109,255,.35);
+  box-shadow: 0 4px 14px rgba(15,118,110,.25);
   transform: translateY(-1px);
 }
 
 /* ========== Markdown Editor Toolbar ========== */
 .md-editor-wrap {
-  border: 1.5px solid #d5ddff;
+  border: 1.5px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
   transition: border-color .2s, box-shadow .2s;
   background: #fafbff;
 }
 .md-editor-wrap:focus-within {
-  border-color: #8294ff;
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(93,109,255,.12);
   background: #fff;
 }
@@ -4499,7 +4506,7 @@ select:focus-visible {
   color: #fff;
   border-color: transparent;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(93,109,255,.3);
+  box-shadow: 0 2px 8px rgba(15,118,110,.2);
 }
 #content {
   border: none !important;

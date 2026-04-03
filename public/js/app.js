@@ -192,12 +192,12 @@ var _trendingCache = null;
 async function loadTrending() {
   var el = document.getElementById('trending-list');
   if (!el) return;
-  el.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">加载中...</div>';
+  el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:12px;">加载中...</div>';
   try {
     var res = await api('/leaderboard/hot-posts?limit=5&hours=168');
     var posts = (res && res.posts) ? res.posts : [];
     if (posts.length === 0) {
-      el.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">暂无热议内容</div>';
+      el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:12px;">暂无热议内容</div>';
       return;
     }
     el.innerHTML = posts.map(function(p) {
@@ -207,10 +207,10 @@ async function loadTrending() {
       var score = p.hot_score || 0;
       return '<div onclick="goPost(' + p.id + ')" style="display:flex;gap:8px;align-items:flex-start;padding:8px 4px;border-radius:10px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background=\'#fff8f0\'" onmouseout="this.style.background=\'\'">' +
         '<span style="font-size:16px;flex-shrink:0;">🔥</span>' +
-        '<div style="flex:1;min-width:0;"><div style="font-size:12px;color:#1e3a5f;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(title) + '</div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">' + escapeHtml(name) + ' · 💬' + commentCount + ' · ' + score + '热度</div></div></div>';
+        '<div style="flex:1;min-width:0;"><div style="font-size:12px;color:#1e3a5f;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(title) + '</div><div style="font-size:11px;var(--text-muted);margin-top:2px;">' + escapeHtml(name) + ' · 💬' + commentCount + ' · ' + score + '热度</div></div></div>';
     }).join('');
   } catch(e) {
-    if (el) el.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:12px;">加载失败</div>';
+    if (el) el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:12px;">加载失败</div>';
   }
 }
 
@@ -267,7 +267,7 @@ async function loadDailyTasksDropdown() {
   if (!listEl) return;
   try {
     var res = await api('/daily-tasks/status');
-    if (res.error) { listEl.innerHTML = '<div style="color:#94a3b8;text-align:center;font-size:13px;">加载失败</div>'; return; }
+    if (res.error) { listEl.innerHTML = '<div style="color:var(--text-muted);text-align:center;font-size:13px;">加载失败</div>'; return; }
 
     var tasks = res.tasks || [];
     var doneCount = tasks.filter(function(t) { return t.done; }).length;
@@ -323,10 +323,10 @@ async function loadDailyTasksDropdown() {
         '🎉 全部完成！领取 ' + res.totalReward + ' 积分</button>';
     } else {
       claimEl.innerHTML = bonusHtml +
-        '<div style="text-align:center;font-size:13px;color:#94a3b8;">完成全部任务领取 <span style="color:#f59e0b;font-weight:600;">+' + res.totalReward + '</span> 积分</div>';
+        '<div style="text-align:center;font-size:13px;var(--text-muted);">完成全部任务领取 <span style="color:#f59e0b;font-weight:600;">+' + res.totalReward + '</span> 积分</div>';
     }
   } catch(e) {
-    listEl.innerHTML = '<div style="color:#94a3b8;text-align:center;font-size:13px;">加载失败</div>';
+    listEl.innerHTML = '<div style="color:var(--text-muted);text-align:center;font-size:13px;">加载失败</div>';
   }
 }
 
@@ -375,12 +375,12 @@ async function loadShopItems() {
     }
     var res = await api('/shop/items');
     if (res.error || !res.items) {
-      listEl.innerHTML = '<div style="color:#94a3b8;text-align:center;font-size:13px;padding:20px;">加载失败</div>';
+      listEl.innerHTML = '<div style="color:var(--text-muted);text-align:center;font-size:13px;padding:20px;">加载失败</div>';
       return;
     }
     var items = res.items || [];
     if (items.length === 0) {
-      listEl.innerHTML = '<div style="color:#94a3b8;text-align:center;font-size:13px;padding:20px;">暂无商品</div>';
+      listEl.innerHTML = '<div style="color:var(--text-muted);text-align:center;font-size:13px;padding:20px;">暂无商品</div>';
       return;
     }
     listEl.innerHTML = items.map(function(item) {
@@ -398,7 +398,7 @@ async function loadShopItems() {
         '<button onclick="redeemItem(' + item.id + ')" style="padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;' + btnStyle + '" ' + (canAfford ? '' : 'disabled') + '>' + btnText + '</button></div>';
     }).join('');
   } catch(e) {
-    listEl.innerHTML = '<div style="color:#94a3b8;text-align:center;font-size:13px;padding:20px;">加载失败</div>';
+    listEl.innerHTML = '<div style="color:var(--text-muted);text-align:center;font-size:13px;padding:20px;">加载失败</div>';
   }
 }
 
@@ -1347,10 +1347,10 @@ async function loadProfile(userId) {
       postsEl.innerHTML = postsRes.posts.map(function(p) {
         return '<div class="post-card" onclick="viewPost(' + p.id + ')" style="cursor:pointer;">' +
           '<div class="post-title">' + escapeHtml(p.title) + '</div>' +
-          '<div style="font-size:12px;color:#94a3b8;margin-top:4px;">👍 ' + (p.like_count||0) + ' 💬 ' + (p.comment_count||0) + ' · ' + formatDate(p.created_at) + '</div></div>';
+          '<div style="font-size:12px;var(--text-muted);margin-top:4px;">👍 ' + (p.like_count||0) + ' 💬 ' + (p.comment_count||0) + ' · ' + formatDate(p.created_at) + '</div></div>';
       }).join('');
     } else if (postsEl) {
-      postsEl.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;font-size:13px;">暂无帖子</div>';
+      postsEl.innerHTML = '<div style="text-align:center;padding:20px;var(--text-muted);font-size:13px;">暂无帖子</div>';
     }
 
     window._currentProfileUserId = userId;
@@ -1403,16 +1403,16 @@ async function showFollowModal(userId, type) {
   html += '<div style="background:#fff;border-radius:16px;width:100%;max-width:400px;max-height:500px;overflow-y:auto;padding:20px;">';
   html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">';
   html += '<h3 style="margin:0;font-size:16px;color:var(--text);">' + title + '</h3>';
-  html += '<button onclick="document.getElementById(\'follow-modal\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8;padding:4px;">×</button>';
+  html += '<button onclick="document.getElementById(\'follow-modal\').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;var(--text-muted);padding:4px;">×</button>';
   html += '</div>';
   if (users.length === 0) {
-    html += '<div style="text-align:center;padding:20px;color:#94a3b8;">暂无' + title + '</div>';
+    html += '<div style="text-align:center;padding:20px;var(--text-muted);">暂无' + title + '</div>';
   } else {
     html += '<div style="display:flex;flex-direction:column;gap:10px;">';
     users.forEach(function(u) {
       html += '<div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;background:#f8fafc;" onclick="viewOtherProfile(' + u.id + ')">';
       html += '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;overflow:hidden;flex-shrink:0;">' + (u.avatar ? '<img src="' + u.avatar + '" style="width:100%;height:100%;object-fit:cover;">' : (u.nickname||u.username)[0].toUpperCase()) + '</div>';
-      html += '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--text);">' + escapeHtml(u.nickname || u.username) + '</div><div style="font-size:11px;color:#94a3b8;">' + (u.points||0) + ' 积分</div></div>';
+      html += '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--text);">' + escapeHtml(u.nickname || u.username) + '</div><div style="font-size:11px;var(--text-muted);">' + (u.points||0) + ' 积分</div></div>';
       html += '</div>';
     });
     html += '</div>';
@@ -1482,7 +1482,7 @@ async function loadTransferRecords() {
     var html = '<div style="margin-top:12px;">';
     html += '<div style="display:flex;gap:0;background:#f0f2ff;border-radius:10px;padding:3px;margin-bottom:10px;">';
     html += '<button id="tab-sent-btn" class="checkin-sub-tab active" onclick="switchTransferTab(\'sent\')" style="flex:1;padding:6px;border:none;border-radius:7px;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:#667eea;">📤 我转出的</button>';
-    html += '<button id="tab-received-btn" class="checkin-sub-tab" onclick="switchTransferTab(\'received\')" style="flex:1;padding:6px;border:none;border-radius:7px;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:#94a3b8;">📥 我收到的</button>';
+    html += '<button id="tab-received-btn" class="checkin-sub-tab" onclick="switchTransferTab(\'received\')" style="flex:1;padding:6px;border:none;border-radius:7px;background:transparent;font-size:12px;font-weight:600;cursor:pointer;var(--text-muted);">📥 我收到的</button>';
     html += '</div>';
     html += '<div id="transfer-sent-list"></div>';
     html += '<div id="transfer-received-list" style="display:none;"></div>';
@@ -1500,7 +1500,7 @@ async function loadTransferRecords() {
 function renderTransferList(type, records) {
   var el = document.getElementById('transfer-' + type + '-list');
   if (!records || records.length === 0) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;font-size:13px;">暂无记录</div>';
+    el.innerHTML = '<div style="text-align:center;padding:20px;var(--text-muted);font-size:13px;">暂无记录</div>';
     return;
   }
   el.innerHTML = records.map(function(r) {
@@ -1514,7 +1514,7 @@ function renderTransferList(type, records) {
     var color = type === 'sent' ? '#ef4444' : '#10b981';
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f4f8;">' +
       avatar +
-      '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:#1e3a5f;">' + escapeHtml(otherName) + '</div><div style="font-size:11px;color:#94a3b8;">' + formatDate(r.created_at) + (r.note ? ' · ' + escapeHtml(r.note) : '') + '</div></div>' +
+      '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:#1e3a5f;">' + escapeHtml(otherName) + '</div><div style="font-size:11px;var(--text-muted);">' + formatDate(r.created_at) + (r.note ? ' · ' + escapeHtml(r.note) : '') + '</div></div>' +
       '<div style="font-size:14px;font-weight:800;color:' + color + ';">' + sign + r.amount + '</div>' +
       '</div>';
   }).join('');
@@ -1565,7 +1565,7 @@ function showRSSPage() {
 async function loadRSSContent() {
   var el = document.getElementById('rss-content');
   if (!el) return;
-  el.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;">加载中...</div>';
+  el.innerHTML = '<div style="text-align:center;padding:20px;var(--text-muted);">加载中...</div>';
   try {
     var feedRes = await fetch('/feed.xml');
     var xmlText = await feedRes.text();
@@ -1575,7 +1575,7 @@ async function loadRSSContent() {
     var siteUrl = xml.querySelector('link') ? xml.querySelector('link').textContent : 'https://pandahub.cloud';
 
     if (!items.length) {
-      el.innerHTML = '<div style="color:#94a3b8;text-align:center;">暂无内容</div>';
+      el.innerHTML = '<div style="color:var(--text-muted);text-align:center;">暂无内容</div>';
       return;
     }
 
@@ -1585,7 +1585,7 @@ async function loadRSSContent() {
       '<div style="display:flex;gap:8px;align-items:center;background:#fff;padding:8px 12px;border-radius:8px;border:1px solid #e5e7eb;">' +
       '<code id="rss-feed-url" style="flex:1;font-size:12px;color:#667eea;word-break:break-all;">' + siteUrl + '/feed.xml</code>' +
       '<button onclick="copyRSSUrl()" style="padding:4px 12px;background:#667eea;border:none;border-radius:6px;color:#fff;font-size:12px;cursor:pointer;white-space:nowrap;">复制</button></div>' +
-      '<div style="font-size:12px;color:#94a3b8;margin-top:8px;">支持的阅读器：Reeder、Feedly、Inoreader、NetNewsWire 等</div>' +
+      '<div style="font-size:12px;var(--text-muted);margin-top:8px;">支持的阅读器：Reeder、Feedly、Inoreader、NetNewsWire 等</div>' +
       '</div>' +
       '<h3 style="font-size:14px;color:#374151;margin-bottom:10px;">📰 最新帖子</h3>';
 
@@ -1596,7 +1596,7 @@ async function loadRSSContent() {
       var pubDate = item.querySelector('pubDate') ? new Date(item.querySelector('pubDate').textContent).toLocaleDateString('zh-CN') : '';
       html += '<div style="margin-bottom:12px;padding:12px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;" onclick="window.open(\' + link + \', \'_blank\')">' +
         '<div style="font-size:13px;font-weight:600;color:#1e3a5f;margin-bottom:4px;">' + escapeHtml(title) + '</div>' +
-        (pubDate ? '<div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">📅 ' + pubDate + '</div>' : '') +
+        (pubDate ? '<div style="font-size:11px;var(--text-muted);margin-bottom:4px;">📅 ' + pubDate + '</div>' : '') +
         (desc ? '<div style="font-size:12px;color:#627582;line-height:1.5;">' + escapeHtml(desc.substring(0, 100)) + '...</div>' : '') +
         '</div>';
     });
@@ -1604,7 +1604,7 @@ async function loadRSSContent() {
     html += '<div style="text-align:center;margin-top:16px;"><a href="/feed.xml" target="_blank" style="font-size:13px;color:#667eea;text-decoration:none;">🔗 在新窗口查看 XML 源</a></div>';
     el.innerHTML = html;
   } catch(e) {
-    el.innerHTML = '<div style="color:#94a3b8;text-align:center;">加载失败，请刷新重试</div>';
+    el.innerHTML = '<div style="color:var(--text-muted);text-align:center;">加载失败，请刷新重试</div>';
   }
 }
 
@@ -1634,7 +1634,7 @@ function loadActionLogs(page) {
 function renderActionLogs(data) {
   const el = document.getElementById('action-logs-list');
   if (!actionLogsCache.length) {
-    el.innerHTML = '<div style="padding:30px;text-align:center;color:#888;font-size:14px;">暂无操作记录</div>';
+    el.innerHTML = '<div style="padding:30px;text-align:center;var(--text-muted);font-size:14px;">暂无操作记录</div>';
     document.getElementById('action-logs-pagination').innerHTML = '';
     return;
   }
@@ -1673,7 +1673,7 @@ function renderActionLogs(data) {
     html += '<span style="font-weight:600;font-size:13px;color:#334155;">' + actionName + '</span>';
     if (log.details) html += '<div style="font-size:12px;color:#64748b;margin-top:2px;">' + escapeHtml(log.details) + '</div>';
     html += '</div>';
-    html += '<div style="font-size:11px;color:#94a3b8;white-space:nowrap;margin-left:12px;">' + time + '</div>';
+    html += '<div style="font-size:11px;var(--text-muted);white-space:nowrap;margin-left:12px;">' + time + '</div>';
     html += '</div>';
   }
   html += '</div>';
@@ -2512,20 +2512,20 @@ async function loadFeaturedPosts() {
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:15px;">⭐</span>
           <span style="font-size:14px;font-weight:700;color:#1e293b;">本周精华</span>
-          <span style="font-size:11px;color:#94a3b8;">${res.period}</span>
+          <span style="font-size:11px;var(--text-muted);">${res.period}</span>
         </div>
-        <span style="font-size:11px;color:#94a3b8;">${res.posts.length}篇</span>
+        <span style="font-size:11px;var(--text-muted);">${res.posts.length}篇</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         ${res.posts.map(p => `
           <div class="post-card" onclick="viewPost(${p.id})" style="cursor:pointer;padding:14px 16px;border-left:3px solid #ec4899;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
               ${p.tag ? `<span style="background:${p.tag.color}20;color:${p.tag.color};font-size:11px;padding:2px 8px;border-radius:8px;">${p.tag.icon || ''} ${escapeHtml(p.tag.name)}</span>` : ''}
-              <span style="font-size:11px;color:#94a3b8;">${p.author?.nickname || p.author?.username || ''}</span>
-              <span style="font-size:11px;color:#94a3b8;">🕐 ${formatDate(p.created_at)}</span>
+              <span style="font-size:11px;var(--text-muted);">${p.author?.nickname || p.author?.username || ''}</span>
+              <span style="font-size:11px;var(--text-muted);">🕐 ${formatDate(p.created_at)}</span>
             </div>
             <div style="font-size:14px;font-weight:600;color:#1e293b;margin-bottom:4px;">${escapeHtml(p.title)}</div>
-            <div style="display:flex;gap:12px;font-size:11px;color:#94a3b8;">
+            <div style="display:flex;gap:12px;font-size:11px;var(--text-muted);">
               <span>👍 ${p.like_count || 0}</span>
               <span>💬 ${p.comment_count || 0}</span>
               <span>👁 ${p.views || 0}</span>
@@ -2669,10 +2669,10 @@ async function loadPosts() {
             <span style="font-size:11px;color:#a8bfc9;">🕐 ${formatDate(post.created_at)}</span>
           </div>
           <div class="post-stats-row">
-            <span title="赞" style="font-size:11px;color:#94a3b8;">👍 ${post.like_count || 0}</span>
-            <span title="评论" style="font-size:11px;color:#94a3b8;">💬 ${post.comment_count || 0}</span>
-            <span title="浏览" style="font-size:11px;color:#94a3b8;">👁 ${post.views || 0}</span>
-            <span onclick="event.stopPropagation();toggleFavorite(${post.id})" id="fav-btn-${post.id}" title="收藏" style="font-size:11px;color:#94a3b8;cursor:pointer;">☆ 收藏</span>
+            <span title="赞" style="font-size:11px;var(--text-muted);">👍 ${post.like_count || 0}</span>
+            <span title="评论" style="font-size:11px;var(--text-muted);">💬 ${post.comment_count || 0}</span>
+            <span title="浏览" style="font-size:11px;var(--text-muted);">👁 ${post.views || 0}</span>
+            <span onclick="event.stopPropagation();toggleFavorite(${post.id})" id="fav-btn-${post.id}" title="收藏" style="font-size:11px;var(--text-muted);cursor:pointer;">☆ 收藏</span>
           </div>
         </div>
       </div>
@@ -2812,7 +2812,7 @@ async function viewPost(id) {
           <button id="btn-follow-post" onclick="togglePostFollow(${res.post.id})">＋ 关注帖子</button>
           <button onclick="sharePost(${res.post.id}, '${escapeHtml(res.post.title)}', {likes: ${res.post.like_count || 0}, comments: ${res.post.comment_count || 0}, views: ${res.post.views || 0}})">🔗 分享</button>
           <button onclick="quoteToAI(${res.post.id}, '${escapeHtml(res.post.title.replace(/'/g, "\\'"))}')">🤖 引用到AI</button>
-          ${user && user.id !== res.post.user_id ? `<button onclick="openReportModal('post', ${res.post.id}, '${escapeHtml(res.post.title.replace(/'/g, "\\'"))}')" style="color:#94a3b8;">🚩 举报</button>` : ''}
+          ${user && user.id !== res.post.user_id ? `<button onclick="openReportModal('post', ${res.post.id}, '${escapeHtml(res.post.title.replace(/'/g, "\\'"))}')" style="color:var(--text-muted);">🚩 举报</button>` : ''}
           ${res.user && res.user.id === res.post.user_id || (user && user.role === 'admin') ? `<button onclick="editPost(${res.post.id})" style="color:#5d6dff">✏️ 编辑</button>` : ''}
           ${res.user && res.user.id === res.post.user_id || (user && user.role === 'admin') ? `<button onclick="deletePost(${res.post.id})" style="color:#ef4444">🗑 删除</button>` : ''}
         </div>` : ''}
@@ -2889,14 +2889,14 @@ async function viewPost(id) {
         : (comment.nickname || comment.username)[0].toUpperCase();
 
       var actionsHtml = '<div class="comment-actions">' +
-        '<button class="comment-action-btn comment-like-btn" id="clike-btn-' + comment.id + '" onclick="voteComment(' + comment.id + ')" title="赞一个" style="color:#94a3b8;">' +
+        '<button class="comment-action-btn comment-like-btn" id="clike-btn-' + comment.id + '" onclick="voteComment(' + comment.id + ')" title="赞一个" style="color:var(--text-muted);">' +
         '👍 <span id="clike-count-' + comment.id + '">' + (comment.like_count || 0) + '</span></button>' +
-        '<button class="comment-action-btn comment-react-btn" id="creact-btn-' + comment.id + '" onclick="toggleReactionPicker(' + comment.id + ', event)" title="表情反应" style="color:#94a3b8;position:relative;">' +
+        '<button class="comment-action-btn comment-react-btn" id="creact-btn-' + comment.id + '" onclick="toggleReactionPicker(' + comment.id + ', event)" title="表情反应" style="color:var(--text-muted);position:relative;">' +
         '<span id="creact-display-' + comment.id + '"></span>' +
         '<span id="creact-btn-text-' + comment.id + '">😃</span>' +
         '</button>' +
         '<div id="creact-picker-' + comment.id + '" class="reaction-picker-popup" style="display:none;position:absolute;bottom:30px;left:0;background:#fff;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:6px 8px;z-index:999;gap:4px;display:none;flex-wrap:wrap;width:160px;align-items:center;" onclick="event.stopPropagation()"></div>' +
-        (user && user.id !== comment.user_id ? '<button class="comment-action-btn" onclick="openReportModal(\'comment\', ' + comment.id + ')" style="color:#94a3b8;">🚩 举报</button>' : '') +
+        (user && user.id !== comment.user_id ? '<button class="comment-action-btn" onclick="openReportModal(\'comment\', ' + comment.id + ')" style="color:var(--text-muted);">🚩 举报</button>' : '') +
         (user ? '<button class="comment-action-btn" onclick="startReply(' + comment.id + ', ' + comment.user_id + ', \'' + escapeHtml(comment.nickname || comment.username) + '\')">回复</button>' : '') +
         '</div>';
 
@@ -2966,7 +2966,7 @@ async function viewPost(id) {
     if (commentsListEl) {
       commentsListEl.innerHTML = renderedComments
         ? renderedComments
-        : '<div style="color:#888;padding:20px;text-align:center;">暂无评论</div>';
+        : '<div style="color:var(--text-muted);padding:20px;text-align:center;">暂无评论</div>';
     }
     loadCommentVoteStatus();
 
@@ -3023,14 +3023,14 @@ function handleCommentInput(el) {
 async function searchMentionUsers(query, list) {
   if (!query) {
     // Show recent users or popular users
-    list.innerHTML = '<div style="padding:10px 12px;color:#94a3b8;font-size:12px;">输入用户名搜索...</div>';
+    list.innerHTML = '<div style="padding:10px 12px;var(--text-muted);font-size:12px;">输入用户名搜索...</div>';
     return;
   }
   try {
     var res = await api('/users/search?q=' + encodeURIComponent(query) + '&limit=5');
     var users = res.users || [];
     if (users.length === 0) {
-      list.innerHTML = '<div style="padding:10px 12px;color:#94a3b8;font-size:12px;">未找到用户</div>';
+      list.innerHTML = '<div style="padding:10px 12px;var(--text-muted);font-size:12px;">未找到用户</div>';
       return;
     }
     list.innerHTML = users.map(function(u) {
@@ -3038,7 +3038,7 @@ async function searchMentionUsers(query, list) {
       return '<div onclick="insertMention(\'' + (u.username) + '\', \'' + name.replace(/'/g, "\\'") + '\')" style="padding:8px 12px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f0f4f8;" onmouseover="this.style.background=\'#f0f2ff\'" onmouseout="this.style.background=\'\'">' +
         '<span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;">' + name[0].toUpperCase() + '</span>' +
         '<span style="color:#1e3a5f;font-weight:600;">' + name + '</span>' +
-        '<span style="color:#94a3b8;font-size:11px;margin-left:auto;">@' + u.username + '</span></div>';
+        '<span style="color:var(--text-muted);font-size:11px;margin-left:auto;">@' + u.username + '</span></div>';
     }).join('');
   } catch (e) {
     list.innerHTML = '<div style="padding:10px 12px;color:#ef4444;font-size:12px;">搜索失败</div>';
@@ -3341,14 +3341,14 @@ window.sharePost = function(id, title, stats) {
   modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:20px;max-width:440px;width:100%;">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">' +
     '<span style="font-size:16px;font-weight:700;color:var(--text);">分享海报</span>' +
-    '<button id="close-share-modal" style="background:none;border:none;font-size:22px;cursor:pointer;color:#94a3b8;line-height:1;">×</button>' +
+    '<button id="close-share-modal" style="background:none;border:none;font-size:22px;cursor:pointer;var(--text-muted);line-height:1;">×</button>' +
     '</div>' +
     '<img src="' + dataUrl + '" style="width:100%;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);display:block;" alt="分享海报">' +
     '<div style="display:flex;gap:10px;margin-top:14px;">' +
     '<button id="download-poster-btn" class="btn-primary" style="flex:1;">📥 下载海报</button>' +
     '<button id="copy-url-btn" class="btn-secondary" style="flex:1;">🔗 复制链接</button>' +
     '</div>' +
-    '<p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:10px;">海报已生成，图片可保存或直接分享</p>' +
+    '<p style="font-size:12px;var(--text-muted);text-align:center;margin-top:10px;">海报已生成，图片可保存或直接分享</p>' +
     '</div>';
   document.body.appendChild(modal);
 
@@ -3698,7 +3698,7 @@ async function suggestPostTags() {
       return;
     }
 
-    container.innerHTML = '<span style="font-size:11px;color:#94a3b8;line-height:1.5;">推荐标签：</span>' +
+    container.innerHTML = '<span style="font-size:11px;var(--text-muted);line-height:1.5;">推荐标签：</span>' +
       suggestions.map(t =>
         '<span class="tag-chip" style="cursor:pointer;font-size:12px;padding:3px 10px;" onclick="applyTagSuggestion(' + t.id + ', \'' + t.name.replace(/'/g, "\\'") + '\', \'' + (t.color || '#667eea') + '\')">' + t.name + '</span>'
       ).join('');
@@ -4327,7 +4327,7 @@ async function loadCheckinStatus() {
   } catch (e) {
     console.error(e);
     const container = document.getElementById('checkin-sign-panel');
-    if (container) container.innerHTML = '<div style="color:#888;">签到加载失败</div>';
+    if (container) container.innerHTML = '<div style="color:var(--text-muted);">签到加载失败</div>';
   }
 }
 
@@ -4370,10 +4370,10 @@ async function loadReminderSettings() {
       '</label>' +
       '</div></div>' +
       '<div id="reminder-days-row" style="margin-bottom:8px;font-size:12px;color:#64748b;' + (res.reminder_enabled ? '' : 'opacity:0.4;pointer-events:none;') + '">' +
-      '<div style="margin-bottom:5px;font-size:11px;color:#94a3b8;">推送日期：</div>' +
+      '<div style="margin-bottom:5px;font-size:11px;var(--text-muted);">推送日期：</div>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + daysHtml + '</div>' +
       '</div>' +
-      '<div id="push-status" style="font-size:11px;color:#94a3b8;margin-top:6px;">' +
+      '<div id="push-status" style="font-size:11px;var(--text-muted);margin-top:6px;">' +
       (isSubscribed ? '✅ 浏览器通知已开启' : '⚠️ 请先允许浏览器通知推送权限') +
       '</div>' +
       '</div>';
@@ -4522,7 +4522,7 @@ async function loadDailyTasks() {
       var barColor = t.done ? '#10b981' : '#d1d5db';
       return '<div style="margin-bottom:12px;">' +
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:#374151;margin-bottom:5px;">' +
-        '<span>' + t.name + ' <span style="font-size:11px;color:#94a3b8;">(' + t.current + '/' + t.target + ')</span></span>' +
+        '<span>' + t.name + ' <span style="font-size:11px;var(--text-muted);">(' + t.current + '/' + t.target + ')</span></span>' +
         '<span style="color:#f59e0b;font-weight:600;">+' + t.reward + '积分</span></div>' +
         '<div style="height:6px;background:#f3f4f6;border-radius:3px;overflow:hidden;">' +
         '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:3px;transition:width .4s;"></div></div></div>';
@@ -4532,10 +4532,10 @@ async function loadDailyTasks() {
     if (res.allDone && doneCount === tasks.length) {
       claimEl.innerHTML = '<button id="btn-claim-tasks" onclick="claimDailyTasks()" style="width:100%;padding:12px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;animation:pulse 2s infinite;">🎉 全部完成！点击领取 ' + res.totalReward + ' 积分</button>';
     } else {
-      claimEl.innerHTML = '<div style="text-align:center;font-size:13px;color:#94a3b8;">完成全部任务可领取 <span style="color:#f59e0b;font-weight:600;">+' + res.totalReward + '</span> 积分</div>';
+      claimEl.innerHTML = '<div style="text-align:center;font-size:13px;var(--text-muted);">完成全部任务可领取 <span style="color:#f59e0b;font-weight:600;">+' + res.totalReward + '</span> 积分</div>';
     }
   } catch(e) {
-    el.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;">加载失败</div>';
+    el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;text-align:center;">加载失败</div>';
   }
 }
 
@@ -4579,12 +4579,12 @@ function switchCheckinTab(tab) {
 async function loadCheckinHistory() {
   var el = document.getElementById('checkin-history-body');
   if (!el) return;
-  el.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;">加载中...</div>';
+  el.innerHTML = '<div style="text-align:center;padding:20px;var(--text-muted);">加载中...</div>';
   try {
     var res = await api('/checkin/history?limit=60');
     var records = res.history || [];
     if (records.length === 0) {
-      el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">暂无签到记录，开始你的第一次签到吧～</div>';
+      el.innerHTML = '<div style="text-align:center;padding:32px;var(--text-muted);">暂无签到记录，开始你的第一次签到吧～</div>';
       return;
     }
     var dateMap = {};
@@ -4612,11 +4612,11 @@ async function loadCheckinHistory() {
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#f8fafc;border-radius:8px;font-size:13px;">' +
         '<span style="color:#1e3a5f;">' + r.checkin_date + '</span>' +
         '<span style="color:#10b981;font-weight:700;">+' + r.points_earned + '积分</span>' +
-        '<span style="color:#94a3b8;font-size:12px;">🔥' + r.streak_before + '天</span></div>';
+        '<span style="color:var(--text-muted);font-size:12px;">🔥' + r.streak_before + '天</span></div>';
     }).join('');
     el.innerHTML = '<div style="margin-bottom:12px;font-size:13px;color:#667eea;font-weight:700;">' + monthName + '</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px;">' + cells.join('') + '</div>' +
-      '<div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">最近签到记录：</div>' +
+      '<div style="font-size:12px;var(--text-muted);margin-bottom:8px;">最近签到记录：</div>' +
       '<div style="display:flex;flex-direction:column;gap:6px;">' + recentHtml + '</div>';
   } catch (e) {
     el.innerHTML = '<div style="text-align:center;padding:20px;color:#ef4444;">加载失败</div>';
@@ -4921,7 +4921,7 @@ async function loadEmailBind() {
 
     // If error (not logged in / token expired), show login
     if (res.error) {
-      area.innerHTML = '<div style="color:#94a3b8;font-size:13px;">请先 <a href="#" onclick="showLogin();return false;">登录</a> 后绑定邮箱</div>';
+      area.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">请先 <a href="#" onclick="showLogin();return false;">登录</a> 后绑定邮箱</div>';
       return;
     }
 
@@ -4949,7 +4949,7 @@ async function loadEmailBind() {
               <input type="text" id="email-code-input" placeholder="输入6位验证码" maxlength="6">
               <button id="btn-bind-email" class="btn-primary" onclick="verifyEmailCode()">绑定邮箱</button>
             </div>
-            <div id="email-code-timer" style="font-size:12px;color:#888;margin-top:4px;"></div>
+            <div id="email-code-timer" style="font-size:12px;var(--text-muted);margin-top:4px;"></div>
           </div>
           <div id="email-bind-msg" style="font-size:13px;margin-top:6px;"></div>
         </div>
@@ -4957,7 +4957,7 @@ async function loadEmailBind() {
     }
   } catch (e) {
     console.error('[loadEmailBind]', e);
-    area.innerHTML = '<div style="color:#888;">加载失败</div>';
+    area.innerHTML = '<div style="color:var(--text-muted);">加载失败</div>';
   }
 }
 
@@ -5057,7 +5057,7 @@ function showEmailChange() {
           <input type="text" id="email-code-input" placeholder="输入6位验证码" maxlength="6">
           <button id="btn-bind-email" class="btn-primary" onclick="verifyEmailCode()">绑定邮箱</button>
         </div>
-        <div id="email-code-timer" style="font-size:12px;color:#888;margin-top:4px;"></div>
+        <div id="email-code-timer" style="font-size:12px;var(--text-muted);margin-top:4px;"></div>
       </div>
       <div id="email-bind-msg" style="font-size:13px;margin-top:6px;"></div>
     </div>
@@ -5259,32 +5259,32 @@ async function loadProfile(userId) {
           <div class="profile-stats-row" style="display:flex;gap:0;margin-top:16px;background:rgba(255,255,255,0.7);border-radius:12px;padding:4px;border:1px solid ${levelColor}22;">
             <div style="flex:1;text-align:center;padding:8px 4px;">
               <div style="font-size:18px;font-weight:800;color:#1e3a5f;">${res.user.points}</div>
-              <div style="font-size:11px;color:#94a3b8;">积分</div>
+              <div style="font-size:11px;var(--text-muted);">积分</div>
             </div>
             <div style="width:1px;background:${levelColor}22;margin:8px 0;"></div>
             <div style="flex:1;text-align:center;padding:8px 4px;">
               <div style="font-size:18px;font-weight:800;color:#1e3a5f;">${res.posts.length}</div>
-              <div style="font-size:11px;color:#94a3b8;">帖子</div>
+              <div style="font-size:11px;var(--text-muted);">帖子</div>
             </div>
             <div style="width:1px;background:${levelColor}22;margin:8px 0;"></div>
             <div style="flex:1;text-align:center;padding:8px 4px;">
               <div style="font-size:18px;font-weight:800;color:#f97316;">🔥 ${res.user.checkin_streak || 0}</div>
-              <div style="font-size:11px;color:#94a3b8;">连续签到</div>
+              <div style="font-size:11px;var(--text-muted);">连续签到</div>
             </div>
-            ${res.user.influence_score > 0 ? '<div style="width:1px;background:' + levelColor + '22;margin:8px 0;"></div><div style="flex:1;text-align:center;padding:8px 4px;"><div style="font-size:18px;font-weight:800;color:#ec4899;">💎 ' + (res.user.influence_score || 0) + '</div><div style="font-size:11px;color:#94a3b8;">影响力</div></div>' : ''}
+            ${res.user.influence_score > 0 ? '<div style="width:1px;background:' + levelColor + '22;margin:8px 0;"></div><div style="flex:1;text-align:center;padding:8px 4px;"><div style="font-size:18px;font-weight:800;color:#ec4899;">💎 ' + (res.user.influence_score || 0) + '</div><div style="font-size:11px;var(--text-muted);">影响力</div></div>' : ''}
             <div id="profile-followers-stat" style="width:1px;background:${levelColor}22;margin:8px 0;"></div>
             <div style="flex:1;text-align:center;padding:8px 4px;cursor:pointer;border-radius:8px;transition:background 0.2s;" onclick="showFollowList(${userId}, 'followers')" title="查看粉丝列表">
               <div style="font-size:18px;font-weight:800;color:#667eea;" id="profile-followers-count">-</div>
-              <div style="font-size:11px;color:#94a3b8;">粉丝</div>
+              <div style="font-size:11px;var(--text-muted);">粉丝</div>
             </div>
             <div style="width:1px;background:${levelColor}22;margin:8px 0;"></div>
             <div style="flex:1;text-align:center;padding:8px 4px;cursor:pointer;border-radius:8px;transition:background 0.2s;" onclick="showFollowList(${userId}, 'following')" title="查看关注列表">
               <div style="font-size:18px;font-weight:800;color:#10b981;" id="following-count">-</div>
-              <div style="font-size:11px;color:#94a3b8;">关注</div>
+              <div style="font-size:11px;var(--text-muted);">关注</div>
             </div>
           </div>
           ${!isSelf ? `<div style="margin-top:14px;"><button id="btn-follow" class="btn-follow" onclick="toggleFollow(${userId})" style="min-width:120px;">+ 关注</button><button class="btn-follow" style="margin-left:8px;background:linear-gradient(135deg,#5d6dff22,#7e5ad622);border:1.5px solid #d5ddff;color:#667eea;" onclick="startChat(${userId})">💬 发私信</button></div>` : ''}
-          ${isSelf ? `<div style="margin-top:14px;font-size:12px;color:#94a3b8;">🕐 加入于 ${formatDate(res.user.created_at)}</div>` : ''}
+          ${isSelf ? `<div style="margin-top:14px;font-size:12px;var(--text-muted);">🕐 加入于 ${formatDate(res.user.created_at)}</div>` : ''}
         </div>
         <div id="profile-badges-area" style="margin-top:12px;"></div>
         ${isSelf ? `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
@@ -5294,44 +5294,44 @@ async function loadProfile(userId) {
         ${isSelf ? `
         <div class="profile-tabs" style="display:flex;gap:0;background:#f0f2ff;border-radius:12px;padding:4px;margin-bottom:16px;">
           <button id="tab-posts-btn" class="profile-tab-btn active" onclick="switchProfileTab('posts')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#667eea;">📝 帖子</button>
-          <button id="tab-activity-btn" class="profile-tab-btn" onclick="switchProfileTab('activity')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#94a3b8;">🔥 活跃</button>
-          <button id="tab-fav-btn" class="profile-tab-btn" onclick="switchProfileTab('favorites')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;font-size:14px;font-weight:600;cursor:pointer;color:#94a3b8;">⭐ 收藏</button>
+          <button id="tab-activity-btn" class="profile-tab-btn" onclick="switchProfileTab('activity')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;font-size:14px;font-weight:600;cursor:pointer;var(--text-muted);">🔥 活跃</button>
+          <button id="tab-fav-btn" class="profile-tab-btn" onclick="switchProfileTab('favorites')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;font-size:14px;font-weight:600;cursor:pointer;var(--text-muted);">⭐ 收藏</button>
         </div>
         <div id="profile-tab-posts">
-          <h3 style="font-size:16px;color:#667eea;font-weight:700;margin-bottom:12px;">📝 他的帖子 <span style="font-size:13px;color:#94a3b8;font-weight:400;">(${res.posts.length})</span></h3>
+          <h3 style="font-size:16px;color:#667eea;font-weight:700;margin-bottom:12px;">📝 他的帖子 <span style="font-size:13px;var(--text-muted);font-weight:400;">(${res.posts.length})</span></h3>
           <div class="post-list">
             ${res.posts.length ? res.posts.map(p => `
               <div class="post-card" onclick="viewPost(${p.id})" style="cursor:pointer;padding:14px 16px;border-bottom:1px solid #f0f4f8;">
                 <div style="font-size:15px;font-weight:700;color:#1e3a5f;margin-bottom:8px;">${escapeHtml(p.title)}</div>
-                <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#94a3b8;flex-wrap:wrap;">
+                <div style="display:flex;gap:8px;align-items:center;font-size:12px;var(--text-muted);flex-wrap:wrap;">
                   ${p.tag_name ? `<span style="background:${p.tag_color}33;color:${p.tag_color};padding:2px 8px;border-radius:10px;font-weight:600;">${escapeHtml(p.tag_name)}</span>` : ''}
                   <span>💬 ${p.comment_count}</span>
                   <span>🕐 ${formatDate(p.created_at)}</span>
                 </div>
               </div>
-            `).join('') : '<div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">暂无帖子</div>'}
+            `).join('') : '<div style="text-align:center;padding:32px;var(--text-muted);font-size:14px;">暂无帖子</div>'}
           </div>
         </div>
         <div id="profile-tab-activity" style="display:none;">
-          <div id="activity-heatmap"><div style="text-align:center;padding:32px;color:#94a3b8;">加载中...</div></div>
+          <div id="activity-heatmap"><div style="text-align:center;padding:32px;var(--text-muted);">加载中...</div></div>
         </div>
         <div id="profile-tab-favorites" style="display:none;">
           <h3 style="font-size:16px;color:#667eea;font-weight:700;margin-bottom:12px;">⭐ 我的收藏</h3>
-          <div id="favorites-list"><div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">加载中...</div></div>
+          <div id="favorites-list"><div style="text-align:center;padding:32px;var(--text-muted);font-size:14px;">加载中...</div></div>
         </div>
         ` : `
-        <h3 style="font-size:16px;color:#667eea;font-weight:700;margin-bottom:12px;">📝 他的帖子 <span style="font-size:13px;color:#94a3b8;font-weight:400;">(${res.posts.length})</span></h3>
+        <h3 style="font-size:16px;color:#667eea;font-weight:700;margin-bottom:12px;">📝 他的帖子 <span style="font-size:13px;var(--text-muted);font-weight:400;">(${res.posts.length})</span></h3>
         <div class="post-list">
           ${res.posts.length ? res.posts.map(p => `
             <div class="post-card" onclick="viewPost(${p.id})" style="cursor:pointer;padding:14px 16px;border-bottom:1px solid #f0f4f8;">
               <div style="font-size:15px;font-weight:700;color:#1e3a5f;margin-bottom:8px;">${escapeHtml(p.title)}</div>
-              <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#94a3b8;flex-wrap:wrap;">
+              <div style="display:flex;gap:8px;align-items:center;font-size:12px;var(--text-muted);flex-wrap:wrap;">
                 ${p.tag_name ? `<span style="background:${p.tag_color}33;color:${p.tag_color};padding:2px 8px;border-radius:10px;font-weight:600;">${escapeHtml(p.tag_name)}</span>` : ''}
                 <span>💬 ${p.comment_count}</span>
                 <span>🕐 ${formatDate(p.created_at)}</span>
               </div>
             </div>
-          `).join('') : '<div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">暂无帖子</div>'}
+          `).join('') : '<div style="text-align:center;padding:32px;var(--text-muted);font-size:14px;">暂无帖子</div>'}
         </div>
         `}
       </div>
@@ -5692,7 +5692,7 @@ async function openMilestones() {
     var achieved = ms.filter(function(m) { return m.achieved; });
     var pending = ms.filter(function(m) { return !m.achieved; });
 
-    var html = '<div style="font-size:12px;font-weight:700;color:#94a3b8;padding:4px 0 8px;">🎉 已达成 (' + achieved.length + ')</div>';
+    var html = '<div style="font-size:12px;font-weight:700;var(--text-muted);padding:4px 0 8px;">🎉 已达成 (' + achieved.length + ')</div>';
     for (var i = 0; i < achieved.length; i++) {
       var m = achieved[i];
       html += '<div style="display:flex;align-items:center;padding:10px 12px;background:#f0fdf4;border-radius:10px;margin-bottom:6px;border:1px solid #bbf7d0;">';
@@ -5702,7 +5702,7 @@ async function openMilestones() {
       html += '<span style="font-size:18px;">✅</span></div>';
     }
 
-    html += '<div style="font-size:12px;font-weight:700;color:#94a3b8;padding:12px 0 8px;">🎯 进行中</div>';
+    html += '<div style="font-size:12px;font-weight:700;var(--text-muted);padding:12px 0 8px;">🎯 进行中</div>';
     for (var j = 0; j < pending.length; j++) {
       var p = pending[j];
       var val = stats[p.milestone_type] || 0;
@@ -5712,13 +5712,13 @@ async function openMilestones() {
       html += '<div style="display:flex;align-items:center;margin-bottom:6px;">';
       html += '<span style="font-size:20px;margin-right:8px;">' + p.icon + '</span>';
       html += '<div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#475569;">' + p.title + '</div>';
-      html += '<div style="font-size:11px;color:#94a3b8;margin-top:1px;">' + p.description + '</div></div>';
-      html += '<span style="font-size:11px;color:#94a3b8;">' + val + '/' + p.threshold + '</span></div>';
+      html += '<div style="font-size:11px;var(--text-muted);margin-top:1px;">' + p.description + '</div></div>';
+      html += '<span style="font-size:11px;var(--text-muted);">' + val + '/' + p.threshold + '</span></div>';
       html += '<div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:3px;transition:width .3s;"></div></div></div>';
     }
     list.innerHTML = html;
   } catch(e) {
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">加载失败，请重试</div>';
+    list.innerHTML = '<div style="text-align:center;padding:40px;var(--text-muted);">加载失败，请重试</div>';
   }
 }
 
@@ -5835,7 +5835,7 @@ function closeInviteModal() {
 
 async function loadInviteData() {
   var body = document.getElementById('invite-modal-body');
-  body.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">加载中...</div>';
+  body.innerHTML = '<div style="text-align:center;padding:40px;var(--text-muted);">加载中...</div>';
   try {
     var res = await api('/invites/my');
     var codes = res.codes || [];
@@ -5865,7 +5865,7 @@ async function loadInviteData() {
         html += '<div style="display:flex;align-items:center;padding:10px 12px;background:#f8fafc;border-radius:8px;margin-bottom:6px;border:1px solid #e2e8f0;">';
         html += '<div style="flex:1;">';
         html += '<div style="font-size:16px;font-weight:700;font-family:monospace;letter-spacing:2px;color:#1e293b;">' + c.code + '</div>';
-        html += '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">奖励' + c.reward_points + '积分 | 有效期至' + (c.expires_at ? c.expires_at.slice(0,10) : '永久') + '</div>';
+        html += '<div style="font-size:11px;var(--text-muted);margin-top:2px;">奖励' + c.reward_points + '积分 | 有效期至' + (c.expires_at ? c.expires_at.slice(0,10) : '永久') + '</div>';
         html += '</div>';
         html += '<div style="font-size:12px;color:' + statusColor + ';font-weight:600;">' + statusText + '</div>';
         html += '</div>';
@@ -5891,7 +5891,7 @@ async function loadInviteData() {
         html += '</div>';
       }
     } else {
-      html += '<div style="text-align:center;padding:20px;color:#94a3b8;font-size:13px;">暂无邀请记录</div>';
+      html += '<div style="text-align:center;padding:20px;var(--text-muted);font-size:13px;">暂无邀请记录</div>';
     }
 
     body.innerHTML = html;
@@ -5951,16 +5951,16 @@ function updateLeaderboardTabUI() {
 
 async function loadLeaderboard(type) {
   var content = document.getElementById('leaderboard-content');
-  content.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">加载中...</div>';
+  content.innerHTML = '<div style="text-align:center;padding:40px;var(--text-muted);">加载中...</div>';
   try {
     if (type === 'influence') {
       var res = await api('/influence-leaderboard');
       var entries = res.rankings || [];
       if (entries.length === 0) {
-        content.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">暂无数据</div>';
+        content.innerHTML = '<div style="text-align:center;padding:40px;var(--text-muted);">暂无数据</div>';
         return;
       }
-      var html = '<div style="font-size:12px;color:#94a3b8;margin-bottom:10px;text-align:center;">累计影响力总分 · 共' + res.total + '人</div>';
+      var html = '<div style="font-size:12px;var(--text-muted);margin-bottom:10px;text-align:center;">累计影响力总分 · 共' + res.total + '人</div>';
       for (var i = 0; i < entries.length; i++) {
         var e = entries[i];
         var rankStyle = e.rank === 1 ? '#fbbf24' : e.rank === 2 ? '#d1d5db' : e.rank === 3 ? '#cd7c4a' : '#e2e8f0';
@@ -5971,9 +5971,9 @@ async function loadLeaderboard(type) {
         html += '<div style="width:32px;height:32px;border-radius:50%;background:' + (e.level_color || '#667eea') + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;margin-right:10px;">' + ((e.nickname || e.username || '?')[0] || '?').toUpperCase() + '</div>';
         html += '<div style="flex:1;min-width:0;">';
         html += '<div style="font-size:13px;font-weight:600;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (e.nickname || e.username) + '</div>';
-        html += '<div style="font-size:11px;color:#94a3b8;margin-top:1px;">' + (e.level_icon || '') + ' ' + (e.level || '') + '</div>';
+        html += '<div style="font-size:11px;var(--text-muted);margin-top:1px;">' + (e.level_icon || '') + ' ' + (e.level || '') + '</div>';
         html += '</div>';
-        html += '<div style="text-align:right;"><div style="font-size:14px;font-weight:700;color:#ec4899;">💎 ' + e.influence_score + '</div><div style="font-size:10px;color:#94a3b8;">影响力</div></div>';
+        html += '<div style="text-align:right;"><div style="font-size:14px;font-weight:700;color:#ec4899;">💎 ' + e.influence_score + '</div><div style="font-size:10px;var(--text-muted);">影响力</div></div>';
         html += '</div>';
       }
       content.innerHTML = html;
@@ -5982,11 +5982,11 @@ async function loadLeaderboard(type) {
     var res = await api('/activity-leaderboard?type=' + type);
     var entries = res.entries || [];
     if (entries.length === 0) {
-      content.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;">暂无数据</div>';
+      content.innerHTML = '<div style="text-align:center;padding:40px;var(--text-muted);">暂无数据</div>';
       return;
     }
     var periodLabel = res.period || '';
-    var html = '<div style="font-size:12px;color:#94a3b8;margin-bottom:10px;text-align:center;">统计周期: ' + periodLabel + '</div>';
+    var html = '<div style="font-size:12px;var(--text-muted);margin-bottom:10px;text-align:center;">统计周期: ' + periodLabel + '</div>';
     for (var i = 0; i < entries.length; i++) {
       var e = entries[i];
       var rankStyle = e.rank === 1 ? '#fbbf24' : e.rank === 2 ? '#d1d5db' : e.rank === 3 ? '#cd7c4a' : '#e2e8f0';
@@ -5997,9 +5997,9 @@ async function loadLeaderboard(type) {
       html += '<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;margin-right:10px;">' + ((e.nickname || e.username || '?')[0] || '?').toUpperCase() + '</div>';
       html += '<div style="flex:1;min-width:0;">';
       html += '<div style="font-size:13px;font-weight:600;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (e.nickname || e.username) + '</div>';
-      html += '<div style="font-size:11px;color:#94a3b8;margin-top:1px;">📝' + (e.posts || 0) + ' 💬' + (e.comments || 0) + '</div>';
+      html += '<div style="font-size:11px;var(--text-muted);margin-top:1px;">📝' + (e.posts || 0) + ' 💬' + (e.comments || 0) + '</div>';
       html += '</div>';
-      html += '<div style="text-align:right;"><div style="font-size:14px;font-weight:700;color:#7c3aed;">' + e.score + '</div><div style="font-size:10px;color:#94a3b8;">积分</div></div>';
+      html += '<div style="text-align:right;"><div style="font-size:14px;font-weight:700;color:#7c3aed;">' + e.score + '</div><div style="font-size:10px;var(--text-muted);">积分</div></div>';
       html += '</div>';
     }
     content.innerHTML = html;
@@ -6093,7 +6093,7 @@ function setNotifFilter(type) {
 
 async function loadNotifications() {
   const container = document.getElementById('notif-list');
-  if (container) container.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">加载中...</div>';
+  if (container) container.innerHTML = '<div style="text-align:center;padding:32px;var(--text-muted);">加载中...</div>';
 
   try {
     var res;
@@ -6115,7 +6115,7 @@ async function loadNotifications() {
     document.getElementById('notif-unread-count').textContent = res.unreadCount > 0 ? res.unreadCount + '条未读' : '';
 
     if (!res.items || res.items.length === 0) {
-      if (list) list.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;font-size:14px;">暂无消息</div>';
+      if (list) list.innerHTML = '<div style="text-align:center;padding:40px;var(--text-muted);font-size:14px;">暂无消息</div>';
       document.getElementById('notif-pagination').style.display = 'none';
       return;
     }
@@ -6149,7 +6149,7 @@ async function loadNotifications() {
             '<div style="flex:1;min-width:0;">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">' +
             '<span style="font-size:13px;font-weight:600;color:#374151;">' + escapeHtml(partner || '用户') + '</span>' +
-            '<span style="font-size:11px;color:#94a3b8;">' + formatDate(n.created_at) + '</span></div>' +
+            '<span style="font-size:11px;var(--text-muted);">' + formatDate(n.created_at) + '</span></div>' +
             '<div style="font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(n.content || '') + '</div></div></div></div>';
         } else {
           html = '<div class="notif-item ' + (isUnread ? 'unread' : '') + '" onclick="handleNotifClick(' + (n.notif_id || n.id) + ',' + (n.post_id || 'null') + ')">' +
@@ -6304,7 +6304,7 @@ async function showFollowList(userId, type) {
   var content = document.getElementById('follow-list-content');
   if (!modal) return;
   title.textContent = type === 'followers' ? '👥 粉丝列表' : '👥 关注列表';
-  content.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">加载中...</div>';
+  content.innerHTML = '<div style="text-align:center;padding:32px;var(--text-muted);">加载中...</div>';
   modal.style.display = 'flex';
   loadFollowList(userId, type);
 }
@@ -6320,7 +6320,7 @@ async function loadFollowList(userId, type) {
       return;
     }
     if (res.users.length === 0) {
-      content.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">' + (type === 'followers' ? '还没有粉丝' : '还没有关注') + '</div>';
+      content.innerHTML = '<div style="text-align:center;padding:32px;var(--text-muted);">' + (type === 'followers' ? '还没有粉丝' : '还没有关注') + '</div>';
       return;
     }
     var currentUser = getUser();
@@ -6334,10 +6334,10 @@ async function loadFollowList(userId, type) {
         : (u.nickname || u.username)[0].toUpperCase();
       return '<div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid #f0f4f8;' + (u.avatar ? '' : 'background:linear-gradient(140deg,' + levelColor + ',' + levelColor + 'bb);width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;') + '">' +
         '<div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(140deg,' + levelColor + ',' + levelColor + 'cc);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0;">' + avatarContent + '</div>' +
-        '<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><b style="color:#1e3a5f;font-size:14px;">' + escapeHtml(u.nickname || u.username) + '</b><span style="background:' + levelColor + '22;color:' + levelColor + ';font-size:11px;font-weight:700;padding:1px 6px;border-radius:10px;">' + levelIcon + ' ' + escapeHtml(level.name) + '</span></div><div style="font-size:12px;color:#94a3b8;">积分 ' + (u.points || 0) + '</div></div>' +
+        '<div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><b style="color:#1e3a5f;font-size:14px;">' + escapeHtml(u.nickname || u.username) + '</b><span style="background:' + levelColor + '22;color:' + levelColor + ';font-size:11px;font-weight:700;padding:1px 6px;border-radius:10px;">' + levelIcon + ' ' + escapeHtml(level.name) + '</span></div><div style="font-size:12px;var(--text-muted);">积分 ' + (u.points || 0) + '</div></div>' +
         (!isSelf && currentUser ? '<button class="btn-follow" id="fl-btn-' + u.id + '" onclick="toggleFollow(' + u.id + ', true)" style="min-width:72px;padding:6px 12px;font-size:12px;">+ 关注</button>' : '') +
         (!isSelf && currentUser ? '<button onclick="startChat(' + u.id + ')" style="margin-left:6px;background:linear-gradient(135deg,#5d6dff22,#7e5ad622);border:1.5px solid #d5ddff;color:#667eea;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;">💬</button>' : '') +
-        (isSelf ? '<span style="font-size:12px;color:#94a3b8;">我</span>' : '') +
+        (isSelf ? '<span style="font-size:12px;var(--text-muted);">我</span>' : '') +
         '</div>';
     }).join('');
 
@@ -6515,18 +6515,18 @@ window.switchProfileTab = switchProfileTab;
 async function loadFavoritesList() {
   var el = document.getElementById('favorites-list');
   if (!el) return;
-  el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">加载中...</div>';
+  el.innerHTML = '<div style="text-align:center;padding:32px;var(--text-muted);">加载中...</div>';
   try {
     var res = await api('/favorites');
     if (res.error) { el.innerHTML = '<div style="text-align:center;padding:32px;color:#ef4444;">加载失败</div>'; return; }
     if (!res.favorites || res.favorites.length === 0) {
-      el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;font-size:14px;">暂无收藏，快去收藏感兴趣的帖子吧～</div>';
+      el.innerHTML = '<div style="text-align:center;padding:32px;var(--text-muted);font-size:14px;">暂无收藏，快去收藏感兴趣的帖子吧～</div>';
       return;
     }
     el.innerHTML = res.favorites.map(p => `
       <div class="post-card" onclick="viewPost(${p.id})" style="cursor:pointer;padding:14px 16px;border-bottom:1px solid #f0f4f8;">
         <div style="font-size:15px;font-weight:700;color:#1e3a5f;margin-bottom:8px;">${escapeHtml(p.title)}</div>
-        <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#94a3b8;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;align-items:center;font-size:12px;var(--text-muted);flex-wrap:wrap;">
           ${p.tag_name ? `<span style="background:${p.tag_color}33;color:${p.tag_color};padding:2px 8px;border-radius:10px;font-weight:600;">${escapeHtml(p.tag_name)}</span>` : ''}
           <span>👤 ${escapeHtml(p.author_nickname || p.author_username)}</span>
           <span>💬 ${p.comment_count || 0}</span>
@@ -6560,7 +6560,7 @@ async function loadLeaderboard() {
   var myRankEl = document.getElementById('lb-my-rank-mini');
   if (!el) return;
   leaderboardLoaded = true;
-  el.innerHTML = '<div style="text-align:center;padding:16px;color:#94a3b8;">加载中...</div>';
+  el.innerHTML = '<div style="text-align:center;padding:16px;var(--text-muted);">加载中...</div>';
 
   var currentUser = getUser();
   var myUserId = currentUser ? currentUser.id : null;
@@ -6592,7 +6592,7 @@ async function loadLeaderboard() {
     var res = await api('/leaderboard?limit=10');
     var users = res.users || [];
     if (users.length === 0) {
-      el.innerHTML = '<div style="text-align:center;padding:16px;color:#94a3b8;">暂无数据</div>';
+      el.innerHTML = '<div style="text-align:center;padding:16px;var(--text-muted);">暂无数据</div>';
       return;
     }
     el.innerHTML = users.map(function(u) {
@@ -6606,7 +6606,7 @@ async function loadLeaderboard() {
         '<span style="font-size:18px;width:28px;text-align:center;">' + medal + '</span>' +
         '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,' + levelColor + ',#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;">' + (u.avatar ? '<img src="' + u.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' : name[0].toUpperCase()) + '</div>' +
         '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:#1e3a5f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + (isMe ? ' <span style="background:#667eea22;color:#667eea;font-size:10px;font-weight:700;padding:1px 5px;border-radius:6px;">我</span>' : '') + '</div><div style="font-size:11px;color:' + levelColor + ';">' + u.level_icon + ' ' + u.level_name + '</div></div>' +
-        '<div style="text-align:right;"><div style="font-size:14px;font-weight:800;color:#f59e0b;">' + u.points + '</div><div style="font-size:10px;color:#94a3b8;">积分</div></div></div>';
+        '<div style="text-align:right;"><div style="font-size:14px;font-weight:800;color:#f59e0b;">' + u.points + '</div><div style="font-size:10px;var(--text-muted);">积分</div></div></div>';
     }).join('');
   } catch (e) {
     el.innerHTML = '<div style="text-align:center;padding:16px;color:#ef4444;">加载失败</div>';
@@ -6714,8 +6714,8 @@ function expandReplies(commentId) {
         '</div>' +
         '<div class="comment-content">' + escapeHtml(r.content) + '</div>' +
         '<div class="comment-actions">' +
-        '<button class="comment-action-btn comment-like-btn" id="clike-btn-' + r.id + '" onclick="voteComment(' + r.id + ')" style="color:#94a3b8;">👍 <span id="clike-count-' + r.id + '">' + (r.like_count || 0) + '</span></button>' +
-        '<button class="comment-action-btn comment-react-btn" id="creact-btn-' + r.id + '" onclick="toggleReactionPicker(' + r.id + ', event)" style="color:#94a3b8;position:relative;">' +
+        '<button class="comment-action-btn comment-like-btn" id="clike-btn-' + r.id + '" onclick="voteComment(' + r.id + ')" style="color:var(--text-muted);">👍 <span id="clike-count-' + r.id + '">' + (r.like_count || 0) + '</span></button>' +
+        '<button class="comment-action-btn comment-react-btn" id="creact-btn-' + r.id + '" onclick="toggleReactionPicker(' + r.id + ', event)" style="color:var(--text-muted);position:relative;">' +
         '<span id="creact-display-' + r.id + '"></span><span id="creact-btn-text-' + r.id + '">😃</span></button>' +
         '<div id="creact-picker-' + r.id + '" class="reaction-picker-popup" style="display:none;position:absolute;bottom:30px;left:0;background:#fff;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:6px 8px;z-index:999;gap:4px;display:none;flex-wrap:wrap;width:160px;align-items:center;" onclick="event.stopPropagation()"></div>' +
         '</div></div>';
@@ -6773,8 +6773,8 @@ function loadMoreReplies(commentId) {
       '</div>' +
       '<div class="comment-content">' + escapeHtml(r.content) + '</div>' +
       '<div class="comment-actions">' +
-      '<button class="comment-action-btn comment-like-btn" id="clike-btn-' + r.id + '" onclick="voteComment(' + r.id + ')" style="color:#94a3b8;">👍 <span id="clike-count-' + r.id + '">' + (r.like_count || 0) + '</span></button>' +
-      '<button class="comment-action-btn comment-react-btn" id="creact-btn-' + r.id + '" onclick="toggleReactionPicker(' + r.id + ', event)" style="color:#94a3b8;position:relative;">' +
+      '<button class="comment-action-btn comment-like-btn" id="clike-btn-' + r.id + '" onclick="voteComment(' + r.id + ')" style="color:var(--text-muted);">👍 <span id="clike-count-' + r.id + '">' + (r.like_count || 0) + '</span></button>' +
+      '<button class="comment-action-btn comment-react-btn" id="creact-btn-' + r.id + '" onclick="toggleReactionPicker(' + r.id + ', event)" style="color:var(--text-muted);position:relative;">' +
       '<span id="creact-display-' + r.id + '"></span><span id="creact-btn-text-' + r.id + '">😃</span></button>' +
       '<div id="creact-picker-' + r.id + '" class="reaction-picker-popup" style="display:none;position:absolute;bottom:30px;left:0;background:#fff;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:6px 8px;z-index:999;gap:4px;display:none;flex-wrap:wrap;width:160px;align-items:center;" onclick="event.stopPropagation()"></div>' +
       '</div></div>';
@@ -6977,10 +6977,10 @@ let currentMsgPartner = null;
 async function loadMsgConversations() {
   const el = document.getElementById('msg-conversations');
   if (!el) return;
-  el.innerHTML = '<div style="padding:20px;text-align:center;color:#888;">加载中...</div>';
+  el.innerHTML = '<div style="padding:20px;text-align:center;var(--text-muted);">加载中...</div>';
   try {
     const res = await api('/messages/conversations');
-    if (res.error) { el.innerHTML = '<div style="padding:20px;color:#888;">加载失败</div>'; return; }
+    if (res.error) { el.innerHTML = '<div style="padding:20px;var(--text-muted);">加载失败</div>'; return; }
     const convs = res.conversations || [];
     if (!convs.length) {
       el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#a8b3d4;font-size:14px;">暂无消息记录<br><span style="font-size:12px;margin-top:8px;display:block;">快去找感兴趣的人发私信吧！</span></div>';
@@ -6996,13 +6996,13 @@ async function loadMsgConversations() {
       html += '<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#5d6dff,#7e5ad6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0;">' + (c.partner_nickname || c.partner_username || '?')[0].toUpperCase() + '</div>';
       html += '<div style="flex:1;min-width:0;">';
       html += '<div style="font-weight:700;font-size:14px;color:#1e2d5a;margin-bottom:3px;">' + e(c.partner_nickname || c.partner_username) + (hasUnread ? ' <span style="background:#ef4444;border-radius:50%;width:8px;height:8px;display:inline-block;vertical-align:middle;margin-left:4px;"></span>' : '') + '</div>';
-      html += '<div style="font-size:13px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + e(c.content) + '</div>';
+      html += '<div style="font-size:13px;var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + e(c.content) + '</div>';
       html += '</div><div style="font-size:11px;color:#a8b3d4;flex-shrink:0;">' + fd(c.created_at) + '</div></div>';
     }
     el.innerHTML = html;
   } catch (e) {
     console.error('[Messages]', e);
-    el.innerHTML = '<div style="padding:20px;color:#888;">加载失败，请重试</div>';
+    el.innerHTML = '<div style="padding:20px;var(--text-muted);">加载失败，请重试</div>';
   }
 }
 
@@ -7046,10 +7046,10 @@ window.openMsgDetail = async function(partnerId, partnerName) {
 async function loadMsgHistory(partnerId) {
   var el = document.getElementById('msg-history');
   if (!el) return;
-  el.innerHTML = '<div style="padding:20px;text-align:center;color:#888;">加载中...</div>';
+  el.innerHTML = '<div style="padding:20px;text-align:center;var(--text-muted);">加载中...</div>';
   try {
     var res = await api('/messages/with/' + partnerId);
-    if (res.error) { el.innerHTML = '<div style="padding:20px;color:#888;">加载失败</div>'; return; }
+    if (res.error) { el.innerHTML = '<div style="padding:20px;var(--text-muted);">加载失败</div>'; return; }
     var msgs = res.messages || [];
     if (!msgs.length) {
       el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#a8b3d4;font-size:13px;">暂无消息记录，快发送第一条吧！</div>';
@@ -7068,7 +7068,7 @@ async function loadMsgHistory(partnerId) {
     el.scrollTop = el.scrollHeight;
   } catch (e) {
     console.error('[Messages]', e);
-    el.innerHTML = '<div style="padding:20px;color:#888;">加载失败</div>';
+    el.innerHTML = '<div style="padding:20px;var(--text-muted);">加载失败</div>';
   }
 }
 
@@ -7121,7 +7121,7 @@ function startMsgPolling() {
 async function loadActivityCalendar(userId) {
   var el = document.getElementById('activity-heatmap');
   if (!el) return;
-  el.innerHTML = '<div style="text-align:center;padding:32px;color:#94a3b8;">加载中...</div>';
+  el.innerHTML = '<div style="text-align:center;padding:32px;var(--text-muted);">加载中...</div>';
   try {
     var res = await api('/users/' + userId + '/activity?days=90');
     var activityMap = {};
@@ -7158,7 +7158,7 @@ async function loadActivityCalendar(userId) {
       html += '</div>';
     }
     html += '</div>';
-    html += '<div style="display:flex;gap:4px;align-items:center;margin-top:8px;font-size:11px;color:#94a3b8;flex-wrap:wrap;">';
+    html += '<div style="display:flex;gap:4px;align-items:center;margin-top:8px;font-size:11px;var(--text-muted);flex-wrap:wrap;">';
     html += '<span>少</span>';
     levelColors.forEach(function(c) { html += '<div style="width:12px;height:12px;border-radius:2px;background:' + c + ';"></div>'; });
     html += '<span>多</span></div>';
@@ -7174,7 +7174,7 @@ function loadPointsTrend(userId, container) {
   var trendEl = document.createElement('div');
   trendEl.id = 'points-trend-chart';
   trendEl.style.marginTop = '16px';
-  trendEl.innerHTML = '<div style="text-align:center;padding:20px;color:#94a3b8;font-size:13px;">加载积分趋势...</div>';
+  trendEl.innerHTML = '<div style="text-align:center;padding:20px;var(--text-muted);font-size:13px;">加载积分趋势...</div>';
   container.appendChild(trendEl);
 
   api('/users/' + userId + '/points-trend?days=30').then(function(res) {
@@ -7196,7 +7196,7 @@ function loadPointsTrend(userId, container) {
       html += '</div>';
     });
     html += '</div>';
-    html += '<div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:4px;"><span>30天前</span><span>今天</span></div>';
+    html += '<div style="display:flex;justify-content:space-between;font-size:10px;var(--text-muted);margin-top:4px;"><span>30天前</span><span>今天</span></div>';
     trendEl.innerHTML = html;
   }).catch(function() {
     trendEl.innerHTML = '';

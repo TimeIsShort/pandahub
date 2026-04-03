@@ -7305,6 +7305,8 @@ async function loadActivityCalendar(userId) {
     el.innerHTML = html;
     // Also append points trend
     loadPointsTrend(userId, el);
+    // Also append best replies
+    loadBestReplies(userId, el);
   } catch (e) {
     el.innerHTML = '<div style="text-align:center;padding:32px;color:#ef4444;">加载失败</div>';
   }
@@ -7344,6 +7346,34 @@ function loadPointsTrend(userId, container) {
 }
 
 window.loadActivityCalendar = loadActivityCalendar;
+
+async function loadBestReplies(userId, container) {
+  var el = document.createElement('div');
+  el.id = 'best-replies-section';
+  el.style.marginTop = '16px';
+  el.innerHTML = '<div style="text-align:center;padding:20px;var(--text-muted);font-size:13px;">加载中...</div>';
+  container.appendChild(el);
+  try {
+    var res = await api('/users/' + userId + '/best-replies');
+    var replies = res.replies || [];
+    if (!replies.length) {
+      el.innerHTML = '<div style="font-size:12px;color:#f59e0b;font-weight:700;margin-bottom:8px;">🏅 最佳回复</div><div style="text-align:center;padding:12px;color:#94a3b8;font-size:13px;">暂无最佳回复</div>';
+      return;
+    }
+    var html = '<div style="font-size:12px;color:#f59e0b;font-weight:700;margin-bottom:10px;">🏅 最佳回复 TOP ' + replies.length + '</div>';
+    replies.slice(0, 5).forEach(function(r) {
+      html += '<div onclick="viewPost(' + r.post_id + ')" style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;transition:transform 0.15s;" onmouseover="this.style.transform=\'translateX(4px)\'" onmouseout="this.style.transform=\'\'">';
+      html += '<div style="font-size:13px;color:#374151;line-height:1.5;margin-bottom:8px;">' + escapeHtml(r.content.length > 80 ? r.content.substring(0, 80) + '...' : r.content) + '</div>';
+      html += '<div style="display:flex;gap:12px;font-size:11px;color:#94a3b8;">';
+      html += '<span>👍 ' + r.like_count + '</span><span>💬 ' + r.comment_count + '</span>';
+      html += '<span style="flex:1;"></span><span>🕐 ' + formatDate(r.created_at) + '</span>';
+      html += '</div></div>';
+    });
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '';
+  }
+}
 
 // ============ Notifications ============
 async function loadNotifications() {

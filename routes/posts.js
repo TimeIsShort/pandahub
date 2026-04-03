@@ -153,10 +153,10 @@ router.get('/:id', optionalAuth, (req, res) => {
           throw e;
         }
       }
-      // Log post view
+      // Log post view (upsert: update viewed_at if already viewed)
       try {
         db.prepare(
-          'INSERT INTO post_views (post_id, user_id, ip_address) VALUES (?, ?, ?)'
+          'INSERT INTO post_views (post_id, user_id, ip_address, viewed_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT(user_id, post_id) DO UPDATE SET viewed_at = CURRENT_TIMESTAMP, ip_address = excluded.ip_address'
         ).run(req.params.id, req.user?.id || null, req.ip || '');
       } catch (e) {
         console.error('[PostViewLog]', e.message);

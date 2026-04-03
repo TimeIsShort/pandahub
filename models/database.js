@@ -657,7 +657,8 @@ db.exec(`
     ip_address TEXT,
     viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (post_id) REFERENCES posts(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE(user_id, post_id)
   )
 `);
 
@@ -955,4 +956,16 @@ try {
     )
   `);
   db.exec('CREATE INDEX IF NOT EXISTS idx_ai_chat_user ON ai_chat_history(user_id, created_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_posts_section ON posts(section_id, status, created_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_posts_tag ON posts(tag_id, status, created_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_posts_user ON posts(user_id, status, created_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_posts_status ON posts(status, created_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id, created_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_comments_user ON comments(user_id, created_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_user_actions_created ON user_actions_log(created_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id, created_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_id, created_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_post_views_user ON post_views(user_id, viewed_at DESC)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_post_views_post ON post_views(post_id)');
 } catch(e) {}

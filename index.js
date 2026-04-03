@@ -75,6 +75,7 @@ const badgeRoutes = require('./routes/badges');
 const challengeRoutes = require('./routes/challenges');
 const wordFilterRoutes = require('./routes/wordFilter');
 const emailDigestRoutes = require('./routes/emailDigest');
+const browseHistoryRoutes = require('./routes/browseHistory');
 const aiChatRoutes = require('./routes/aiChat');
 const { rateLimit, authRateLimit } = require('./middleware/rateLimit');
 const { postCooldown, commentCooldown } = require('./middleware/cooldown');
@@ -99,6 +100,9 @@ app.use('/js', express.static(path.join(__dirname, 'public', 'js'), { maxAge: as
 app.use('/css', express.static(path.join(__dirname, 'public', 'css'), { maxAge: assetMaxAge }));
 // Default static (html files get no cache)
 app.use(express.static(path.join(__dirname, 'public')));
+
+// API response cache (30s TTL for public GET endpoints)
+try { app.use(require('./middleware/cache').apiCacheMiddleware); } catch(e) {}
 
 // Serve apply.html directly
 app.get('/apply', (req, res) => {
@@ -177,6 +181,7 @@ app.use('/api/badges', badgeRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/word-filter', wordFilterRoutes);
 app.use('/api/email-digest', emailDigestRoutes);
+app.use('/api/browse-history', browseHistoryRoutes);
 app.use('/api/ai-chat', aiChatRoutes);
 app.use('/api/invites', inviteCodesRoutes);
 app.use('/api/reactions', reactionRoutes);

@@ -41,7 +41,8 @@
     mk('query_builder', 'Query 构造器', 'network', '列表 ↔ Query'),
     mk('regex', '正则测试器', 'text', '匹配分组 + 高亮'),
     mk('text_case', 'Case 转换', 'text', 'camel/snake/kebab/pascal'),
-    mk('text_clean', '文本整理器', 'text', '去重/排序/去空行/行号')
+    mk('text_clean', '文本整理器', 'text', '去重/排序/去空行/行号'),
+    mk('markdown', 'Markdown 预览', 'text', '实时渲染 + 代码高亮')
   ];
 
   function mk(id, name, category, desc) {
@@ -272,7 +273,8 @@
       json: { input: '' }, json_yaml: { input: '' }, json_csv: { input: '' },
       timestamp: { input: '' }, uuid: {}, radix: { input: '' }, color: { input: '' },
       url_parser: { input: '' }, query_builder: { baseUrl: '', input: '' },
-      regex: { pattern: '', flags: 'g', input: '' }, text_case: { input: '' }, text_clean: { input: '' }
+      regex: { pattern: '', flags: 'g', input: '' }, text_case: { input: '' }, text_clean: { input: '' },
+      markdown: { input: '# Hello\n\nWrite **Markdown** here!\n\n```js\nconsole.log("Hello");\n```' }
     };
     return d[id] || {};
   }
@@ -283,7 +285,8 @@
       md5: { source: 'text', batch: false, outputCase: 'lower' }, sha256: { source: 'text', batch: false, outputCase: 'lower' }, hmac: { source: 'text', outputCase: 'lower' },
       json: { sortKeys: false, indent: 2 }, json_yaml: { indent: 2 }, json_csv: { delimiter: ',', pretty: true }, timestamp: { timezone: 'Asia/Shanghai' },
       uuid: { version: 'v4', count: 1 }, radix: { inputBase: 'auto' }, color: {}, url_parser: { decodeQuery: true }, query_builder: { encode: true },
-      regex: { maxMatches: 100 }, text_case: {}, text_clean: { trimEach: true, removeEmpty: true, dedupe: false, sort: false, addLineNo: false }
+      regex: { maxMatches: 100 }, text_case: {}, text_clean: { trimEach: true, removeEmpty: true, dedupe: false, sort: false, addLineNo: false },
+      markdown: { theme: 'default' }
     };
     return d[id] || {};
   }
@@ -321,7 +324,8 @@
       html: [['auto', '自动'], ['encode', '编码'], ['decode', '解码']], unicode: [['auto', '自动'], ['encode', '转义'], ['decode', '反转义']],
       json: [['format', '格式化'], ['minify', '压缩'], ['validate', '校验']], json_yaml: [['auto', '自动'], ['json_to_yaml', 'JSON→YAML'], ['yaml_to_json', 'YAML→JSON']],
       json_csv: [['json_to_csv', 'JSON→CSV'], ['csv_to_json', 'CSV→JSON']], timestamp: [['ts_to_date', '时间戳→日期'], ['date_to_ts', '日期→时间戳']],
-      query_builder: [['build', '列表→Query'], ['parse', 'Query→列表']], text_case: [['all', '全部'], ['camel', 'camel'], ['snake', 'snake'], ['kebab', 'kebab'], ['pascal', 'pascal']]
+      query_builder: [['build', '列表→Query'], ['parse', 'Query→列表']], text_case: [['all', '全部'], ['camel', 'camel'], ['snake', 'snake'], ['kebab', 'kebab'], ['pascal', 'pascal']],
+      markdown: [['preview', '实时预览'], ['raw', '纯文本']]
     };
     var m = cfg[id] || [['run', '执行']];
     return m.map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === current ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('');
@@ -643,8 +647,37 @@
       if (s.options.sort) arr = arr.slice().sort(function (a, b) { return a.localeCompare(b, 'zh-CN'); });
       if (s.options.addLineNo) arr = arr.map(function (x, i) { return (i + 1) + '. ' + x; });
       return ok(arr.join('\n'), '文本整理完成', '结果 ' + arr.length + ' 行');
+    },
+    markdown: function(s) {
+      var input = s.fields.input || '';
+      if (!input.trim()) return ok('', '请输入 Markdown');
+      if (s.mode === 'raw') return ok(input, '纯文本模式');
+      var html = renderMd(input);
+      return ok('', '渲染完成', '', '<div class="md-preview" style="padding:16px;line-height:1.7;font-size:14px;">' + html + '</div>');
     }
   };
+
+  function renderMd(text) {
+    if (!text) return '';
+    var html = text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/```(\w*)\n?([\s\S]*?)```/g, function(_, lang, code) {
+        return '<pre class="md-code" style="background:#1e1e1e;color:#d4d4d4;padding:14px;border-radius:8px;overflow-x:auto;margin:10px 0;"><code>' + code.replace(/&lt;/g, '&amp;lt;').replace(/&gt;/g, '&amp;gt;') + '</code></pre>';
+      })
+      .replace(/`([^`]+)`/g, '<code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:0.9em;">$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+      .replace(/^### (.+)$/gm, '<h3 style="margin:16px 0 8px;font-size:16px;font-weight:700;color:#1e3a5f;">$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2 style="margin:18px 0 10px;font-size:18px;font-weight:700;color:#1e3a5f;">$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1 style="margin:20px 0 12px;font-size:22px;font-weight:700;color:#1e3a5f;">$1</h1>')
+      .replace(/^\* ([^\n]+)/gm, '<li style="margin:4px 0;">$1</li>')
+      .replace(/^\d+\. ([^\n]+)/gm, '<li style="margin:4px 0;list-style:decimal;">$1</li>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:#667eea;">$1</a>')
+      .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0;">')
+      .replace(/\n\n/g, '</p><p style="margin:10px 0;">')
+      .replace(/\n/g, '<br>');
+    return '<p style="margin:10px 0;">' + html + '</p>';
+  }
 
   function ok(data, meta, extra, html) { return { data: data, meta: meta, extra: extra || '', html: html || '' }; }
   function must(v) { var s = String(v == null ? '' : v); if (!s.trim()) throw Error('请输入内容'); return s; }

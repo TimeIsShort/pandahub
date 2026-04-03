@@ -101,3 +101,30 @@ async function sendPushToUser(userId, { title, body, url, tag }) {
 
 module.exports = router;
 module.exports.sendPushToUser = sendPushToUser;
+
+// POST /api/push/broadcast - 管理员发送全站推送
+router.post('/broadcast', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: '需要管理员权限' });
+  const { title, body, url } = req.body;
+  if (!title) return res.status(400).json({ error: '标题不能为空' });
+
+  if (!webpush) return res.status(503).json({ error: 'Web Push 未配置' });
+
+  const subs = db.prepare('SELECT * FROM push_subscriptions').all();
+  let sent = 0, failed = 0;
+
+  for (const sub of subs) {
+    try {
+      await webpush.sendNotification({
+        endpoint: sub.endpoint,
+        keys: { p256dh: sub.p256dh, auth: sub.auth }
+      }, JSON.stringify({ title: title || '🐼 熊猫社区', body: body || '', url: url || '/', tag: 'broadcast' }));
+      sent++;
+    } catch(e) {
+      failed++;
+    }
+    await new Promise(r => setTimeout(r, 100));
+  }
+
+  res.json({ message: `发送完成：成功 ${sent}，失败 ${failed}` });
+});

@@ -235,4 +235,23 @@ router.get('/action-logs', authMiddleware, (req, res) => {
   }
 });
 
+// GET /profile/:userId/best-replies - Top liked comments by user
+router.get('/:userId/best-replies', (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const replies = db.prepare(`
+      SELECT c.id, c.content, c.post_id, c.created_at, c.like_count,
+             p.title as post_title
+      FROM comments c
+      JOIN posts p ON c.post_id = p.id
+      WHERE c.user_id = ? AND p.status = 'approved'
+      ORDER BY c.like_count DESC, c.created_at DESC
+      LIMIT 10
+    `).all(userId);
+    res.json({ replies });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;

@@ -306,6 +306,8 @@
               <span class="post-editor-meta" id="post-content-meta">0 字 · 1 行</span>
             </div>
             <textarea id="post-content" rows="14" aria-label="帖子内容" placeholder="输入内容，支持 Markdown 格式"></textarea>
+            <div id="sensitive-check-result" style="display:none;margin-top:8px;font-size:13px;line-height:1.6;"></div>
+            <div id="content-preview" style="display:none;margin-top:8px;padding:12px 14px;background:var(--surface-soft);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;line-height:1.7;color:var(--text);max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;"></div>
           </div>
           <div class="form-group">
             <label>图片（可选，最多9张）</label>
@@ -321,6 +323,7 @@
           </div>
           <div class="form-actions">
             <button id="btn-submit-post" class="btn-primary" onclick="submitPost()">发布</button>
+            <button type="button" class="btn-secondary" onclick="if(confirm('确定清空草稿？')){clearPostDraft();document.getElementById('post-title').value='';document.getElementById('post-content').value='';document.getElementById('post-section').value='';document.getElementById('post-tag').value='';updatePostContentMeta&&updatePostContentMeta();}">🗑️ 清空</button>
             <button class="btn-secondary" onclick="goHome()">取消</button>
           </div>
         </div>

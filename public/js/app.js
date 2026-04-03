@@ -3659,12 +3659,62 @@ function initPostComposer() {
     editor.addEventListener('input', () => {
       updatePostContentMeta();
       resizePostContentEditor();
+      checkSensitiveWords();
     });
     editor.addEventListener('focus', resizePostContentEditor);
   }
 
   updatePostContentMeta();
   resizePostContentEditor();
+}
+
+// ─── Sensitive word real-time highlighting ───────────────────────────────────
+var _sensitiveTimer = null;
+
+async function checkSensitiveWords() {
+  clearTimeout(_sensitiveTimer);
+  _sensitiveTimer = setTimeout(async function() {
+    var content = document.getElementById('post-content')?.value || '';
+    var title = document.getElementById('post-title')?.value || '';
+    var combined = (title + ' ' + content).trim();
+    if (!combined) {
+      document.getElementById('sensitive-check-result').style.display = 'none';
+      document.getElementById('content-preview').style.display = 'none';
+      return;
+    }
+    try {
+      var res = await fetch(API_BASE + '/word-filter/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: combined })
+      }).then(function(r) { return r.json(); });
+      var resultEl = document.getElementById('sensitive-check-result');
+      var previewEl = document.getElementById('content-preview');
+      if (res.hasSensitive && res.matchedWords && res.matchedWords.length > 0) {
+        resultEl.style.display = 'block';
+        resultEl.style.color = '#dc2626';
+        resultEl.style.background = '#fee2e2';
+        resultEl.style.border = '1px solid #fca5a5';
+        resultEl.style.borderRadius = '8px';
+        resultEl.style.padding = '8px 12px';
+        resultEl.innerHTML = '<strong>⚠️ 检测到敏感词：</strong>' + res.matchedWords.map(function(w) { return ' <span style="font-weight:700;">' + escapeHtml(w) + '</span>'; }).join(', ') + '<br><span style="font-size:12px;opacity:0.8;">请修改后重试，发布时系统也会检测</span>';
+
+        // Show preview with highlighted words
+        var previewHtml = escapeHtml(content);
+        res.matchedWords.forEach(function(w) {
+          var escaped = escapeHtml(w);
+          previewHtml = previewHtml.replace(new RegExp(escaped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<mark style="background:#fee2e2;color:#dc2626;padding:0 2px;border-radius:3px;font-weight:700;">' + escaped + '</mark>');
+        });
+        previewEl.style.display = 'block';
+        previewEl.innerHTML = previewHtml;
+      } else {
+        resultEl.style.display = 'none';
+        previewEl.style.display = 'none';
+      }
+    } catch(e) {
+      // Silent fail
+    }
+  }, 600);
 }
 
 async function suggestPostTags() {
@@ -4010,6 +4060,83 @@ async function showNewPost() {
 
   // Load sections and tags
   await loadPostSections();
+
+  // Restore draft if not editing
+  if (!editingPostId) {
+    loadPostDraft();
+    bindDraftAutoSave();
+  }
+}
+
+function getDraftKey() {
+  return 'pandahub_draft_v1';
+}
+
+function savePostDraft() {
+  var title = document.getElementById('post-title')?.value || '';
+  var content = document.getElementById('post-content')?.value || '';
+  var sectionId = document.getElementById('post-section')?.value || '';
+  var tagId = document.getElementById('post-tag')?.value || '';
+  if (!title && !content) return;
+  var draft = { title, content, sectionId, tagId, savedAt: Date.now() };
+  try {
+    localStorage.setItem(getDraftKey(), JSON.stringify(draft));
+  } catch(e) {}
+}
+
+function loadPostDraft() {
+  try {
+    var raw = localStorage.getItem(getDraftKey());
+    if (!raw) return;
+    var draft = JSON.parse(raw);
+    var age = (Date.now() - (draft.savedAt || 0)) / 1000 / 60; // minutes
+    if (age > 60 * 24) { // older than 24 hours
+      localStorage.removeItem(getDraftKey());
+      return;
+    }
+    if (draft.title) {
+      var t = document.getElementById('post-title');
+      if (t) t.value = draft.title;
+    }
+    if (draft.sectionId) {
+      var s = document.getElementById('post-section');
+      if (s) s.value = draft.sectionId;
+    }
+    if (draft.content) {
+      var c = document.getElementById('post-content');
+      if (c) c.value = draft.content;
+      updatePostContentMeta && updatePostContentMeta();
+    }
+    if (draft.tagId) {
+      setTimeout(function() {
+        var tg = document.getElementById('post-tag');
+        if (tg) tg.value = draft.tagId;
+      }, 100);
+    }
+    if (draft.title || draft.content) {
+      showToast('已恢复草稿（' + Math.round(age) + '分钟前）', 'info', 2500);
+    }
+  } catch(e) {}
+}
+
+function clearPostDraft() {
+  try { localStorage.removeItem(getDraftKey()); } catch(e) {}
+}
+
+var _draftTimer = null;
+function bindDraftAutoSave() {
+  var fields = ['post-title', 'post-section', 'post-tag', 'post-content'];
+  fields.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.removeEventListener('input', onDraftInput);
+    el.addEventListener('input', onDraftInput);
+  });
+}
+
+function onDraftInput() {
+  clearTimeout(_draftTimer);
+  _draftTimer = setTimeout(savePostDraft, 800);
 }
 
 async function loadPostSections() {
@@ -4161,6 +4288,7 @@ async function submitPost() {
     } else {
       showToast(successMsg, 'success');
     }
+    clearPostDraft();
     goHome();
   } catch (e) {
     showToast(e?.message || '发布失败', 'error');

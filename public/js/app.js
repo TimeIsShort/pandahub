@@ -4856,6 +4856,10 @@ async function loadNotificationSettings() {
     }
     if (quietStart) quietStart.value = s.notification_quiet_start || '22:00';
     if (quietEnd) quietEnd.value = s.notification_quiet_end || '08:00';
+    // Load notification mode
+    var modeRadios = document.querySelectorAll('input[name="notif-mode"]');
+    var mode = s.notification_mode || 'all';
+    modeRadios.forEach(function(r) { r.checked = r.value === mode; });
   } catch (e) {}
 }
 
@@ -5339,6 +5343,8 @@ async function saveSettings() {
     if (quietToggle) notifSettings.notification_quiet_hours = quietToggle.checked;
     if (quietStart) notifSettings.notification_quiet_start = quietStart.value;
     if (quietEnd) notifSettings.notification_quiet_end = quietEnd.value;
+    var modeEls = document.querySelectorAll('input[name="notif-mode"]:checked');
+    if (modeEls.length) notifSettings.notification_mode = modeEls[0].value;
     try {
       await api('/users/me/notification-settings', { method: 'POST', body: JSON.stringify(notifSettings) });
     } catch (e) { console.warn('Notification settings save failed:', e); }

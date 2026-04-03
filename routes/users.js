@@ -228,7 +228,7 @@ router.get('/:id/points-trend', (req, res) => {
 // GET /api/users/me/notification-settings
 router.get('/me/notification-settings', (req, res) => {
   const user = db.prepare(
-    'SELECT notification_quiet_hours, notification_quiet_start, notification_quiet_end, notify_email, notify_push FROM users WHERE id = ?'
+    'SELECT notification_quiet_hours, notification_quiet_start, notification_quiet_end, notify_email, notify_push, notification_mode FROM users WHERE id = ?'
   ).get(req.user?.id);
   if (!user) return res.status(401).json({ error: '未登录' });
   res.json({ settings: user });
@@ -236,7 +236,7 @@ router.get('/me/notification-settings', (req, res) => {
 
 // POST /api/users/me/notification-settings
 router.post('/me/notification-settings', (req, res) => {
-  const { notification_quiet_hours, notification_quiet_start, notification_quiet_end, notify_email, notify_push } = req.body;
+  const { notification_quiet_hours, notification_quiet_start, notification_quiet_end, notify_email, notify_push, notification_mode } = req.body;
   try {
     db.prepare(`
       UPDATE users SET
@@ -244,7 +244,8 @@ router.post('/me/notification-settings', (req, res) => {
         notification_quiet_start = COALESCE(?, notification_quiet_start),
         notification_quiet_end = COALESCE(?, notification_quiet_end),
         notify_email = COALESCE(?, notify_email),
-        notify_push = COALESCE(?, notify_push)
+        notify_push = COALESCE(?, notify_push),
+        notification_mode = COALESCE(?, notification_mode)
       WHERE id = ?
     `).run(
       notification_quiet_hours !== undefined ? (notification_quiet_hours ? 1 : 0) : null,
@@ -252,6 +253,7 @@ router.post('/me/notification-settings', (req, res) => {
       notification_quiet_end || null,
       notify_email !== undefined ? (notify_email ? 1 : 0) : null,
       notify_push !== undefined ? (notify_push ? 1 : 0) : null,
+      notification_mode || null,
       req.user.id
     );
     res.json({ success: true, message: '通知设置已更新' });

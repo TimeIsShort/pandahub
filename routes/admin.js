@@ -1071,4 +1071,61 @@ router.post('/rebuild-fts', authMiddleware, (req, res) => {
   }
 });
 
+// GET /api/admin/daily-report - Daily or weekly community data report
+router.get('/daily-report', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: '需要管理员权限' });
+  try {
+    const period = req.query.period || 'daily'; // 'daily' or 'weekly'
+    const days = period === 'weekly' ? 7 : 1;
+    const now = new Date();
+    var startDate = new Date(now.getTime() - days * 86400000).toISOString().slice(0, 10);
+
+    // User stats
+    const totalUsers = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
+    const newUsers = db.prepare('SELECT COUNT(*) as c FROM users WHERE DATE(created_at) >= ?').get(startDate).c;
+    const activeUsers = db.prepare('SELECT COUNT(DISTINCT user_id) as c FROM user_actions_log WHERE created_at >= ?').get(startDate + 'T00:00:00Z').c;
+
+    // Post stats
+    const newPosts = db.prepare("SELECT COUNT(*) as c FROM posts WHERE status = 'approved' AND DATE(created_at) >= ?").get(startDate).c;
+    const totalPosts = db.prepare("SELECT COUNT(*) as c FROM posts WHERE status = 'approved'").get().c;
+    const pendingPosts = db.prepare("SELECT COUNT(*) as c FROM posts WHERE status = 'pending'").get().c;
+
+    // Comment stats
+    const newComments = db.prepare('SELECT COUNT(*) as c FROM comments WHERE DATE(created_at) >= ?').get(startDate).c;
+
+    // Engagement
+    const newReactions = db.prepare("SELECT COUNT(*) as c FROM post_reactions WHERE DATE(created_at) >= ?").get(startDate).c;
+    const newCheckins = db.prepare('SELECT COUNT(*) as c FROM checkins WHERE DATE(checkin_date) >= ?').get(startDate).c;
+    const newLogins = db.prepare('SELECT COUNT(*) as c FROM user_login_rewards WHERE DATE(reward_date) >= ?').get(startDate).c;
+
+    // Top content (by reactions in period)
+    const topPosts = db.prepare(`
+      SELECT p.id, p.title, p.ai_summary,
+             (SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id) as likes,
+             (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments
+      FROM posts p
+      WHERE p.status = 'approved' AND DATE(p.created_at) >= ?
+      ORDER BY likes DESC, comments DESC
+      LIMIT 5
+    `).all(startDate);
+
+    // New users this period
+    const recentUsers = db.prepare(`
+      SELECT id, username, nickname, avatar, created_at
+      FROM users
+      WHERE DATE(created_at) >= ?
+      ORDER BY created_at DESC
+      LIMIT 10
+    `).all(startDate);
+
+    res.json({
+      period, startDate, endDate: now.toISOString().slice(0, 10),
+      stats: { totalUsers, newUsers, activeUsers, totalPosts, newPosts, pendingPosts, newComments, newReactions, newCheckins, newLogins },
+      topPosts, recentUsers
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;

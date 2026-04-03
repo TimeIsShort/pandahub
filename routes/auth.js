@@ -420,6 +420,16 @@ router.post('/login', authRateLimit({ limit: 10, windowMs: 60 * 1000, key: 'logi
     // Update last login
     db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
 
+    // Daily login reward: 5 points for first login of the day
+    var loginReward = 5;
+    var today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    var existing = db.prepare('SELECT id FROM user_login_rewards WHERE user_id = ? AND reward_date = ?').get(user.id, today);
+    if (!existing) {
+      db.prepare('INSERT INTO user_login_rewards (user_id, reward_date, points_earned) VALUES (?, ?, ?)').run(user.id, today, loginReward);
+      db.prepare('UPDATE users SET points = points + ? WHERE id = ?').run(loginReward, user.id);
+      console.log('[LoginReward] 用户 ' + user.id + ' 获得每日登录奖励 ' + loginReward + ' 积分');
+    }
+
     // Log admin login
     if (user.role === 'admin') {
       logAction({ adminId: user.id, action: 'admin_login', targetType: 'user', targetId: user.id, details: '管理员登录: ' + user.username });

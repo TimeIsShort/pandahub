@@ -609,6 +609,7 @@
         <button class="tab-btn" id="tabWordsBtn">🛡️ 敏感词</button>
         <button class="tab-btn" id="tabLogsBtn">📊 操作日志</button>
         <button class="tab-btn" id="tabChartsBtn">📈 统计看板</button>
+        <button class="tab-btn" id="tabReportBtn">📋 数据报告</button>
         <button class="tab-btn" id="tabTagsBtn">🏷️ 标签管理</button>
         <button class="tab-btn" id="tabSectionsBtn">📁 版块管理</button>
         <button class="tab-btn" id="tabReportsBtn">🚩 举报管理<span id="pendingReportsBadge"></span></button>
@@ -873,6 +874,22 @@
         </div>
       </div>
 
+      <!-- 数据报告 -->
+      <div id="tabReport" class="hidden">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+            <h2>📋 社区数据报告</h2>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" id="report-daily-btn" onclick="loadReport('daily')">今日</button>
+              <button class="btn btn-secondary" id="report-weekly-btn" onclick="loadReport('weekly')">本周</button>
+            </div>
+          </div>
+          <div id="report-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;"></div>
+          <div id="report-top-posts" style="margin-bottom:20px;"></div>
+          <div id="report-recent-users"></div>
+        </div>
+      </div>
+
       <!-- 操作日志 -->
       <div id="tabLogs" class="hidden">
         <div class="card">
@@ -995,7 +1012,7 @@
 
     function setActiveTab(tab) {
       currentTab = tab;
-      var tabs = ['apps', 'posts', 'users', 'words', 'logs', 'charts', 'tags', 'sections', 'polls', 'reports', 'accesslogs'];
+      var tabs = ['apps', 'posts', 'users', 'words', 'logs', 'charts', 'report', 'tags', 'sections', 'polls', 'reports', 'accesslogs'];
       for (var i = 0; i < tabs.length; i++) {
         var key = tabs[i];
         var panel = document.getElementById('tab' + key.charAt(0).toUpperCase() + key.slice(1));
@@ -1027,6 +1044,7 @@
     document.getElementById('tabWordsBtn').onclick = function() { setActiveTab('words'); };
     document.getElementById('tabLogsBtn').onclick = function() { setActiveTab('logs'); };
     document.getElementById('tabChartsBtn').onclick = function() { setActiveTab('charts'); };
+    document.getElementById('tabReportBtn').onclick = function() { setActiveTab('report'); loadReport('daily'); };
     document.getElementById('tabTagsBtn').onclick = function() { setActiveTab('tags'); };
     document.getElementById('tabSectionsBtn').onclick = function() { setActiveTab('sections'); };
     document.getElementById('tabPollsBtn').onclick = function() { setActiveTab('polls'); };
@@ -2637,6 +2655,55 @@
         el.textContent = data.message || data.error || '发送完成';
         showToast(el.textContent, data.error ? 'error' : 'success');
       } catch(e) { el.textContent = '发送失败'; showToast('发送失败', 'error'); }
+    }
+
+    async function loadReport(period) {
+      setActiveTab('report');
+      document.getElementById('report-daily-btn').className = 'btn ' + (period === 'daily' ? 'btn-primary' : 'btn-secondary');
+      document.getElementById('report-weekly-btn').className = 'btn ' + (period === 'weekly' ? 'btn-primary' : 'btn-secondary');
+      try {
+        var res = await fetch('/api/admin/daily-report?period=' + period, { headers: { 'Authorization': 'Bearer ' + token } });
+        var data = await res.json();
+        if (data.error) return;
+        var s = data.stats;
+        var periodLabel = period === 'weekly' ? '本周' : '今日';
+        document.getElementById('report-summary').innerHTML =
+          '<div class="summary-card users"><div class="summary-label">' + periodLabel + '新增用户</div><div class="summary-value">' + s.newUsers + '</div></div>' +
+          '<div class="summary-card active"><div class="summary-label">' + periodLabel + '活跃用户</div><div class="summary-value">' + s.activeUsers + '</div></div>' +
+          '<div class="summary-card posts"><div class="summary-label">' + periodLabel + '新帖子</div><div class="summary-value">' + s.newPosts + '</div></div>' +
+          '<div class="summary-card"><div class="summary-label">' + periodLabel + '新评论</div><div class="summary-value">' + s.newComments + '</div></div>' +
+          '<div class="summary-card"><div class="summary-label">' + periodLabel + '互动次数</div><div class="summary-value">' + s.newReactions + '</div></div>' +
+          '<div class="summary-card"><div class="summary-label">累计用户</div><div class="summary-value">' + s.totalUsers + '</div></div>' +
+          '<div class="summary-card"><div class="summary-label">累计帖子</div><div class="summary-value">' + s.totalPosts + '</div></div>' +
+          '<div class="summary-card" style="background:#fef9c3;"><div class="summary-label" style="color:#92400e;">待审帖子</div><div class="summary-value" style="color:#d97706;">' + s.pendingPosts + '</div></div>';
+        // Top posts
+        var topHtml = '<h3 style="font-size:15px;color:#374151;margin:0 0 12px;">🔥 ' + periodLabel + '热门帖子</h3>';
+        if (data.topPosts && data.topPosts.length) {
+          topHtml += '<div style="display:flex;flex-direction:column;gap:10px;">';
+          data.topPosts.forEach(function(p, i) {
+            topHtml += '<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:12px;">';
+            topHtml += '<div style="font-size:14px;font-weight:600;color:#1e3a5f;margin-bottom:4px;">' + (i+1) + '. <a href="/post/' + p.id + '" target="_blank" style="color:#667eea;text-decoration:none;">' + escapeHtml(p.title) + '</a></div>';
+            topHtml += '<div style="font-size:12px;color:#94a3b8;">👍 ' + p.likes + ' · 💬 ' + p.comments + (p.ai_summary ? ' · 🤖 ' + escapeHtml(p.ai_summary.substring(0,30)) : '') + '</div></div>';
+          });
+          topHtml += '</div>';
+        } else {
+          topHtml += '<div style="color:#94a3b8;font-size:13px;text-align:center;padding:16px;">暂无数据</div>';
+        }
+        document.getElementById('report-top-posts').innerHTML = topHtml;
+        // Recent users
+        var usersHtml = '<h3 style="font-size:15px;color:#374151;margin:0 0 12px;">🆕 ' + periodLabel + '新用户</h3>';
+        if (data.recentUsers && data.recentUsers.length) {
+          usersHtml += '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
+          data.recentUsers.forEach(function(u) {
+            var avatar = u.avatar ? '<img src="' + u.avatar + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">' : '<div style="width:28px;height:28px;border-radius:50%;background:#667eea;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">' + (u.nickname || u.username)[0].toUpperCase() + '</div>';
+            usersHtml += '<div style="display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:20px;padding:4px 10px 4px 4px;font-size:12px;color:#374151;">' + avatar + escapeHtml(u.nickname || u.username) + '</div>';
+          });
+          usersHtml += '</div>';
+        } else {
+          usersHtml += '<div style="color:#94a3b8;font-size:13px;text-align:center;padding:16px;">暂无数据</div>';
+        }
+        document.getElementById('report-recent-users').innerHTML = usersHtml;
+      } catch(e) { console.error('Report load error', e); }
     }
 
     if (token) showAdminView();

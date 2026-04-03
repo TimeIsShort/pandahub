@@ -47,9 +47,13 @@ function isInQuietHours(userId) {
 async function sendPushToUser(userId, { title, body, url, tag }) {
   try {
     const db = require('../models/database');
-    const user = db.prepare('SELECT notify_push FROM users WHERE id = ?').get(Number(userId));
+    const user = db.prepare('SELECT notify_push, notification_mode FROM users WHERE id = ?').get(Number(userId));
     if (!user || !user.notify_push) return;
     if (isInQuietHours(userId)) return;
+    // Respect notification mode: 'all' = everything, 'dm_only' = only new_message, 'silent' = none
+    const mode = user.notification_mode || 'all';
+    if (mode === 'silent') return;
+    if (mode === 'dm_only' && tag !== 'private-message' && tag !== 'new_message') return;
 
     initPush();
     if (!webpushReady) return;

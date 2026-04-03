@@ -214,6 +214,7 @@ ensureColumn('tags', 'section_id', 'INTEGER');
 ensureColumn('posts', 'views', 'INTEGER DEFAULT 0');
 ensureColumn('posts', 'ai_summary', 'TEXT');
 ensureColumn('posts', 'status', "TEXT DEFAULT 'pending'");
+ensureColumn('users', 'notification_mode', "TEXT DEFAULT 'all'");
 ensureColumn('posts', 'created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
 ensureColumn('posts', 'updated_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
 ensureColumn('posts', 'like_count', 'INTEGER DEFAULT 0');
@@ -671,6 +672,19 @@ db.exec(`
     username TEXT,
     success INTEGER DEFAULT 0,
     attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`);
+
+// ============ Daily Login Rewards ============
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_login_rewards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    reward_date DATE NOT NULL,
+    points_earned INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, reward_date),
     FOREIGN KEY (user_id) REFERENCES users(id)
   )
 `);

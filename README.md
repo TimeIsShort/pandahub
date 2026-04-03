@@ -4,6 +4,37 @@
 
 ---
 
+## 🚀 快速启动
+
+### 🐳 Docker（推荐，3分钟）
+
+```bash
+# 克隆后进入项目
+cd pandahub
+
+# 复制并编辑环境变量（填入真实 API Key）
+cp .env.example .env
+# 编辑 .env，填入 MINIMAX_API_KEY 和 JWT_SECRET
+
+# 启动（数据自动持久化）
+docker-compose up -d
+
+# 访问 http://localhost:3000
+# 示例账号: demo / demo123（管理员）
+```
+
+### 💻 本地开发
+
+```bash
+npm install
+cp .env.example .env   # 填入 API Key
+npm run db:seed        # 初始化示例数据
+npm start
+# 访问 http://localhost:3000
+```
+
+---
+
 ## 📌 项目概述
 
 | 项目 | 内容 |

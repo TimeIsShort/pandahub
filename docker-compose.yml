@@ -1,0 +1,42 @@
+services:
+  forum:
+    build: .
+    image: pandahub:latest
+    container_name: pandahub
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # ↓ 在 .env 或这里填入真实值（.env 不会提交到 Git）
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY:-your_minimax_api_key}
+      - JWT_SECRET=${JWT_SECRET:-change_me_to_random_string}
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-your_vapid_public_key}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-your_vapid_private_key}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:admin@yourdomain.com}
+      - SMTP_HOST=${SMTP_HOST:-smtp.example.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-your_email@example.com}
+      - SMTP_PASS=${SMTP_PASS:-your_smtp_password}
+      - SMTP_FROM=${SMTP_FROM:-noreply@yourdomain.com}
+      - SITE_URL=${SITE_URL:-http://localhost:3000}
+      - TENCENT_COS_SECRET_ID=${TENCENT_COS_SECRET_ID:-}
+      - TENCENT_COS_SECRET_KEY=${TENCENT_COS_SECRET_KEY:-}
+      - TENCENT_COS_REGION=${TENCENT_COS_REGION:-ap-singapore}
+      - TENCENT_COS_BUCKET=${TENCENT_COS_BUCKET:-}
+    volumes:
+      # 数据持久化：SQLite 数据库文件
+      - pandahub-data:/app/data
+      # 文件持久化：用户上传（头像/图片等）
+      - pandahub-uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/sections"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  pandahub-data:
+  pandahub-uploads:

@@ -11,7 +11,9 @@
     "build:mascot:full": "npm run sync:three-runtime && npm run build:mascot",
     "test:smoke": "npx playwright test tests/smoke.spec.js --reporter=line",
     "test:smoke:ci": "npx playwright test tests/smoke.spec.js --reporter=github",
-    "test:login-flow": "npx playwright test tests/login-flow.spec.js --reporter=line"
+    "test:login-flow": "npx playwright test tests/login-flow.spec.js --reporter=line",
+    "db:seed": "node scripts/seed.js",
+    "db:seed:clean": "node scripts/seed.js --clean"
   },
   "keywords": [],
   "author": "",

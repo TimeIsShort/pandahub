@@ -1,0 +1,11 @@
+node_modules/
+data/
+*.db
+*.log
+.env
+.git/
+.gitignore
+*.md
+tests/
+test-results/
+coverage/

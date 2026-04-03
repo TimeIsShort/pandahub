@@ -44,6 +44,8 @@ services:
   # ========== 自动构建 + 重启 ==========
   auto-updater:
     image: alpine:latest
+    ports:
+      - "3001:3001"  # Webhook 接收端口
     container_name: pandahub-updater
     restart: unless-stopped
     volumes:

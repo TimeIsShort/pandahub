@@ -960,25 +960,7 @@ router.get('/stats', authMiddleware, (req, res) => {
       LIMIT 10
     `).all();
 
-    res.json({
-      summary: {
-        totalUsers, activeUsers, newUsers, pendingApps,
-        totalPosts, newPosts, pendingPosts,
-      },
-      trend: {
-        dailyPosts,
-        dailyUsers,
-        dailyActive,
-      },
-      // DAU/MAU trend (last 30 days regardless of range param)
-      dauMau: getDauMauTrend(),
-      // Hourly activity heatmap
-      heatmap: getActivityHeatmap(),
-      tagDist,
-      topPosters,
-      range: days,
-    });
-
+    // ── Helper functions (defined before use) ─────────────────────────────────
     function getDauMauTrend() {
       const days30 = [];
       for (let i = 29; i >= 0; i--) {
@@ -988,7 +970,6 @@ router.get('/stats', authMiddleware, (req, res) => {
       }
       const startDate = days30[0].date;
 
-      // DAU: active users per day (by last_login)
       const dauRows = db.prepare(`
         SELECT DATE(last_login) as date, COUNT(DISTINCT id) as count
         FROM users
@@ -999,7 +980,6 @@ router.get('/stats', authMiddleware, (req, res) => {
       const dauMap = {};
       dauRows.forEach(r => { dauMap[r.date] = r.count; });
 
-      // MAU per day: distinct users who were active in the last 30 days ending that day
       const mauMap = {};
       days30.forEach(day => {
         const start = new Date(day.date); start.setDate(start.getDate() - 29);
@@ -1012,16 +992,13 @@ router.get('/stats', authMiddleware, (req, res) => {
       });
 
       return days30.map(d => ({
-        date: d.date,
-        label: d.label,
+        date: d.date, label: d.label,
         dau: dauMap[d.date] || 0,
         mau: mauMap[d.date] || 0
       }));
     }
 
     function getActivityHeatmap() {
-      // Activity by day-of-week (0=Sun..6=Sat) × hour-of-day (0..23)
-      // Use user_actions_log for detailed activity
       const rows = db.prepare(`
         SELECT strftime('%w', created_at) as dow,
                strftime('%H', created_at) as hour,
@@ -1031,22 +1008,15 @@ router.get('/stats', authMiddleware, (req, res) => {
         GROUP BY dow, hour
       `).all();
 
-      // Also count by checkin_log for sign-in activity
       const checkinRows = db.prepare(`
         SELECT strftime('%w', created_at) as dow,
                strftime('%H', created_at) as hour,
                COUNT(*) as count
-        FROM checkin_log
+        FROM checkins
         WHERE created_at >= datetime('now', '-30 days')
         GROUP BY dow, hour
       `).all();
 
-      // Build 7×24 matrix (dow × hour)
-      const matrix = Array.from({ length: 7 }, () => Array(24).fill(0));
-      rows.forEach(r => { matrix[Number(r.dow)][Number(r.hour)] += r.count; });
-      checkinRows.forEach(r => { matrix[Number(r.dow)][Number(r.hour)] += r.count; });
-
-      // Also include posts as activity
       const postRows = db.prepare(`
         SELECT strftime('%w', created_at) as dow,
                strftime('%H', created_at) as hour,
@@ -1055,10 +1025,30 @@ router.get('/stats', authMiddleware, (req, res) => {
         WHERE created_at >= datetime('now', '-30 days')
         GROUP BY dow, hour
       `).all();
-      postRows.forEach(r => { matrix[Number(r.dow)][Number(r.hour)] += r.count * 2; });
 
-      return matrix; // [7][24]
+      const matrix = Array.from({ length: 7 }, () => Array(24).fill(0));
+      rows.forEach(r => { matrix[Number(r.dow)][Number(r.hour)] += r.count; });
+      checkinRows.forEach(r => { matrix[Number(r.dow)][Number(r.hour)] += r.count; });
+      postRows.forEach(r => { matrix[Number(r.dow)][Number(r.hour)] += r.count * 2; });
+      return matrix;
     }
+
+    res.json({
+      summary: {
+        totalUsers, activeUsers, newUsers, pendingApps,
+        totalPosts, newPosts, pendingPosts,
+      },
+      trend: {
+        dailyPosts,
+        dailyUsers,
+        dailyActive,
+      },
+      dauMau: getDauMauTrend(),
+      heatmap: getActivityHeatmap(),
+      tagDist,
+      topPosters,
+      range: days,
+    });
   } catch (err) {
     console.error('[Admin] Stats error:', err);
     res.status(500).json({ error: '获取统计数据失败' });

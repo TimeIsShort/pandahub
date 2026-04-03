@@ -657,6 +657,24 @@ function formatDate(date) {
   return d.toLocaleDateString('zh-CN');
 }
 
+// ─── Top loading bar ─────────────────────────────────────────────────────────
+var loadingBarTimer = null;
+function showLoadingBar() {
+  clearTimeout(loadingBarTimer);
+  var bar = document.getElementById('top-loading-bar');
+  if (bar) { bar.classList.add('active'); }
+}
+function hideLoadingBar() {
+  clearTimeout(loadingBarTimer);
+  var bar = document.getElementById('top-loading-bar');
+  if (bar) {
+    bar.style.transition = 'opacity 0.3s ease';
+    bar.classList.remove('active');
+    bar.style.opacity = '0';
+    setTimeout(function() { bar.style.opacity = ''; }, 300);
+  }
+}
+
 function showToast(message, type = 'info', duration = 2200) {
   if (!message) return;
 
@@ -2588,6 +2606,7 @@ function renderPostsLoading() {
 
 async function loadPosts() {
   renderPostsLoading();
+  showLoadingBar();
   const user = getUser();
   const params = new URLSearchParams({ page: currentPage, limit: 20 });
   // If "following" sort, call API differently
@@ -2621,6 +2640,7 @@ async function loadPosts() {
     if (!res.posts.length) {
       container.innerHTML = '<div class="empty-state-card">暂无帖子，来发布第一条内容吧</div>';
       document.getElementById('pagination').innerHTML = '';
+      hideLoadingBar();
       return;
     }
 
@@ -2653,7 +2673,9 @@ async function loadPosts() {
     }).join('');
 
     renderPagination(res.pages, res.page);
+    hideLoadingBar();
   } catch (e) {
+    hideLoadingBar();
     console.error(e);
     const container = document.getElementById('post-list');
     if (container) {
@@ -2732,8 +2754,10 @@ async function viewPost(id) {
     commentFormEl.style.display = 'none';
   }
 
+  showLoadingBar();
   try {
     const res = await api(`/posts/${postId}`);
+    hideLoadingBar();
     if (res.error || !res.post) {
       showToast(res.error || '帖子不存在或暂不可见', 'error');
       if (postDetailEl) {
@@ -2950,6 +2974,7 @@ async function viewPost(id) {
 
     window._commentsFlatData = comments; // expose for expandReplies
   } catch (e) {
+    hideLoadingBar();
     console.error(e);
     showToast('加载失败', 'error');
     if (postDetailEl) {

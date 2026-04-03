@@ -162,6 +162,10 @@ forum/
 - [x] RSS 订阅（/feed.xml，RSS 2.0 标准格式 + 完整订阅UI页面）
 - [x] 黑暗模式（5套主题：薄荷/夕阳/天空/赛博/极光）
 - [x] 国际化i18n（简体中文/English，设置页语言切换）
+- [x] WebSocket 实时通知（私信/评论秒推送，自动重连）
+- [x] 邮件聚合（每周五18:00自动发送，管理后台可测试发送）
+- [x] 社区勋章墙（/badges/wall/:userId 公开页面，已解锁/待解锁进度）
+- [x] AI 帖子摘要（发布时自动生成，列表页显示 🤖 标识）
 - [x] PWA（Service Worker离线缓存/添加到主屏幕/熊猫图标/主题色）
 
 ---
@@ -396,6 +400,9 @@ forum/
 | POST | /sensitive-words | 添加敏感词 | word |
 | DELETE | /sensitive-words/:id | 删除敏感词 | - |
 | POST | /word-filter/check | 检测敏感词 | content |
+| GET | /email-digest/stats | 本周邮件聚合数据 | - |
+| POST | /email-digest/send | 发送测试邮件到自己 | - |
+| POST | /email-digest/broadcast | 广播给所有活跃用户 | limit |
 | GET | /logs | 操作日志 | page, limit, action |
 | POST | /users/:id/ban | 封禁用户 | - |
 | POST | /users/:id/unban | 解封用户 | - |

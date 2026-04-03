@@ -561,7 +561,9 @@ npm run dev
 - ✅ 按钮涟漪 + 按下缩放动画
 - ✅ 帖子卡片毛玻璃增强 + 3D倾斜hover
 - ✅ 通知列表unread渐变背景 + 右滑hover
-- ✅ 空状态卡片emoji图标 + hover光圈
+- ✅ 空状态卡片emoji图标 + hover光圈 + CSS变量支持各主题适配
+- ✅ 页面切换过渡动画（translateY+scale淡入，前5个帖子卡片依次延迟出现）
+- ✅ 深色主题CSS变量统一（认证弹窗/工具栏/表单/Markdown编辑器等）
 - ✅ Toast图标 + 渐变背景 + 弹入缩放动画
 - ✅ 底部导航激活态主色发光圆点indicator
 - ✅ 评论折叠按钮hover边框实线 + 阴影扩散

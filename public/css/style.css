@@ -115,10 +115,13 @@ body {
   background: var(--bg-gradient-a), var(--bg-gradient-b), var(--bg-gradient-c);
   color: var(--text);
   line-height: 1.65;
-  min-height: 100vh;
+  min-height: 100dvh;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 body::before,
@@ -197,7 +200,29 @@ body.home-view-active #petal-rain {
 }
 
 #app {
-  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Keyboard open state - hide bottom nav when keyboard is visible */
+body.keyboard-open #bottom-nav {
+  display: none !important;
+}
+
+/* When keyboard is open, give comment form extra bottom padding so it clears the keyboard */
+body.keyboard-open #comment-form {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+}
+
+/* Mobile: ensure inputs scroll into view properly */
+@media (max-width: 768px) {
+  #app {
+    min-height: 100dvh;
+  }
+  #comment-input,
+  #post-title,
+  #search-input {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+  }
 }
 
 .container {
@@ -2225,8 +2250,15 @@ main.container {
   margin-bottom: 4px;
 }
 
+body.keyboard-open .view-post-sticky-header {
+  position: relative;
+}
+
 #comment-form {
   margin-top: 12px;
+  /* Ensure comment form is always above bottom nav on mobile */
+  position: relative;
+  z-index: 100;
 }
 
 #comment-input {

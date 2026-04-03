@@ -7760,6 +7760,142 @@ async function init() {
   }
 
   document.getElementById('search-input').addEventListener('keyup', handleSearch);
+
+  // ─── Mobile keyboard awareness ─────────────────────────────────────────────
+  if (window.visualViewport) {
+    function handleVisualViewport() {
+      var vp = window.visualViewport;
+      var keyboardHeight = window.innerHeight - vp.height - vp.offsetTop;
+      if (keyboardHeight > 100) {
+        document.body.classList.add('keyboard-open');
+        document.body.style.setProperty('--keyboard-height', keyboardHeight + 'px');
+      } else {
+        document.body.classList.remove('keyboard-open');
+      }
+    }
+    window.visualViewport.addEventListener('resize', handleVisualViewport);
+    window.visualViewport.addEventListener('scroll', handleVisualViewport);
+    handleVisualViewport();
+  }
+
+  // Auto-scroll focused inputs into view on mobile
+  document.addEventListener('focusin', function(e) {
+    if (window.innerWidth < 768 && e.target.matches('input,textarea')) {
+      setTimeout(function() {
+        if (window.visualViewport) {
+          var vp = window.visualViewport;
+          e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 120);
+    }
+  });
+
+  // ─── Touch swipe gestures on post list ─────────────────────────────────────
+  (function() {
+    var container = document.getElementById('post-list');
+    if (!container) return;
+    var touchStartX = 0;
+    var touchStartY = 0;
+    var currentTranslate = 0;
+    var swiping = false;
+    var animating = false;
+
+    container.addEventListener('touchstart', function(e) {
+      if (e.touches.length !== 1) return;
+      var tag = e.target.tagName;
+      if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'A') return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      swiping = false;
+      currentTranslate = 0;
+    }, { passive: true });
+
+    container.addEventListener('touchmove', function(e) {
+      if (e.touches.length !== 1) return;
+      var dx = e.touches[0].clientX - touchStartX;
+      var dy = e.touches[0].clientY - touchStartY;
+      var absDx = Math.abs(dx);
+      var absDy = Math.abs(dy);
+
+      // Only track horizontal swipes (ignore vertical scrolls)
+      if (!swiping && absDx < 10) return;
+      if (absDy > absDx * 1.5) return; // more vertical than horizontal → ignore
+
+      swiping = true;
+      e.preventDefault();
+
+      var card = e.target.closest('.post-card');
+      if (!card) return;
+
+      var clampedDx = Math.max(-100, Math.min(100, dx));
+      currentTranslate = clampedDx;
+      var rotateY = (clampedDx / 100) * 3; // max 3deg tilt
+      var opacity = 1 - Math.abs(clampedDx) / 200;
+
+      // Update card style
+      card.style.transition = 'none';
+      card.style.transform = 'translateX(' + clampedDx + 'px) rotateY(' + rotateY + 'deg) scale(' + (1 - Math.abs(clampedDx) / 800) + ')';
+      card.style.opacity = String(opacity);
+      card.style.zIndex = '10';
+
+      // Swipe indicator background
+      var existing = card.querySelector('.swipe-indicator');
+      if (!existing) {
+        var ind = document.createElement('div');
+        ind.className = 'swipe-indicator';
+        ind.style.cssText = 'position:absolute;top:0;bottom:0;width:80px;display:flex;align-items:center;justify-content:center;font-size:22px;opacity:0.9;pointer-events:none;border-radius:inherit;';
+        card.style.position = 'relative';
+        card.appendChild(ind);
+      }
+      var ind = card.querySelector('.swipe-indicator');
+      if (dx > 20) {
+        ind.style.cssText = 'position:absolute;left:0;top:0;bottom:0;width:80px;display:flex;align-items:center;justify-content:center;font-size:22px;pointer-events:none;border-radius:inherit;background:linear-gradient(90deg,rgba(16,185,129,0.7),rgba(16,185,129,0.3));';
+        ind.textContent = '👍';
+      } else if (dx < -20) {
+        ind.style.cssText = 'position:absolute;right:0;top:0;bottom:0;width:80px;display:flex;align-items:center;justify-content:center;font-size:22px;pointer-events:none;border-radius:inherit;background:linear-gradient(-90deg,rgba(14,165,233,0.7),rgba(14,165,233,0.3));';
+        ind.textContent = '💬';
+      } else {
+        if (ind) ind.textContent = '';
+      }
+    }, { passive: false });
+
+    container.addEventListener('touchend', function(e) {
+      var card = e.target.closest('.post-card');
+      if (card) {
+        var dx = currentTranslate;
+        card.style.transition = 'transform 0.3s cubic-bezier(0.34,1.2,0.64,1), opacity 0.3s ease';
+        card.style.transform = '';
+        card.style.opacity = '';
+        card.style.zIndex = '';
+        var ind = card.querySelector('.swipe-indicator');
+        if (ind) ind.remove();
+
+        if (Math.abs(dx) > 60) {
+          var postId = Number(card.dataset.postId);
+          if (dx > 60) {
+            // Quick like on swipe right
+            toggleFavorite(postId);
+            showToast('已收藏', 'success', 1500);
+          }
+          // (Swipe left could open comments - already accessible by clicking)
+        }
+      }
+      swiping = false;
+      currentTranslate = 0;
+    }, { passive: true });
+
+    container.addEventListener('touchcancel', function() {
+      var card = e && e.target && e.target.closest && e.target.closest('.post-card');
+      if (card) {
+        card.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+        card.style.transform = '';
+        card.style.opacity = '';
+        var ind = card.querySelector('.swipe-indicator');
+        if (ind) ind.remove();
+      }
+      swiping = false;
+    });
+  })();
 }
 
 // ─── Ripple effect for buttons ───────────────────────────────────────────────

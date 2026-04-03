@@ -68,6 +68,9 @@
           <button id="nav-leaderboard-btn" onclick="openLeaderboard()" style="display:none;background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;font-size:12px;color:#a855f7;font-weight:600;" title="活跃排行榜" onmouseover="this.style.background='#a855f722'" onmouseout="this.style.background='none'">
             🏆
           </button>
+          <button id="nav-challenges-btn" onclick="openChallenges()" style="display:none;background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;font-size:12px;color:#f59e0b;font-weight:600;" title="本周挑战" onmouseover="this.style.background='#f59e0b22'" onmouseout="this.style.background='none'">
+            🎯
+          </button>
           <!-- Avatar / User Dropdown -->
           <div id="nav-user-menu" style="display:none;position:relative;">
             <button id="nav-avatar-btn" class="nav-avatar-btn" onclick="toggleUserMenu()" style="background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:20px;display:flex;align-items:center;gap:6px;font-size:13px;color:#667eea;font-weight:600;" onmouseover="this.style.background='#667eea22'" onmouseout="this.style.background='none'">
@@ -907,6 +910,22 @@
         </div>
       </div>
       <div id="leaderboard-content" style="overflow-y:auto;flex:1;padding:12px 16px;"></div>
+    </div>
+  </div>
+
+  <!-- Challenges Modal -->
+  <div id="challenges-modal" class="modal" style="display:none;z-index:1500;">
+    <div class="modal-content" style="max-width:500px;border-radius:16px;padding:0;max-height:80vh;display:flex;flex-direction:column;">
+      <div style="padding:20px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:17px;font-weight:700;color:var(--text);">🎯 本周挑战</div>
+            <div id="challenges-season-name" style="font-size:12px;color:var(--text-muted);margin-top:2px;"></div>
+          </div>
+          <button onclick="closeChallenges()" style="background:var(--surface);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;color:var(--text-muted);">×</button>
+        </div>
+      </div>
+      <div id="challenges-content" style="overflow-y:auto;flex:1;padding:16px;"></div>
     </div>
   </div>
 

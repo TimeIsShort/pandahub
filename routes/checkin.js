@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
 const { checkBadges } = require('./badges');
+const { syncChallengeProgress } = require('./challenges');
 const { checkMilestones } = require('../utils/milestones');
 
 const router = express.Router();
@@ -134,6 +135,7 @@ router.post('/checkin', authMiddleware, (req, res) => {
 
     // Check and award badges
     checkBadges(req.user.id);
+    syncChallengeProgress(req.user.id);
 
     // Check milestones (checkin streak)
     checkMilestones('checkin_streak', newStreak);

@@ -607,6 +607,8 @@ function setAuth(token, user) {
   // Show leaderboard button
   var lbBtn = document.getElementById('nav-leaderboard-btn');
   if (lbBtn) lbBtn.style.display = 'inline-flex';
+  var chBtn = document.getElementById('nav-challenges-btn');
+  if (chBtn) chBtn.style.display = 'inline-flex';
 }
 
 function clearAuth() {
@@ -617,6 +619,8 @@ function clearAuth() {
   if (_msgPollInterval) { clearInterval(_msgPollInterval); _msgPollInterval = null; }
   var lbBtn = document.getElementById('nav-leaderboard-btn');
   if (lbBtn) lbBtn.style.display = 'none';
+  var chBtn = document.getElementById('nav-challenges-btn');
+  if (chBtn) chBtn.style.display = 'none';
 }
 
 function api(endpoint, options = {}) {
@@ -5351,20 +5355,95 @@ async function loadProfileBadges(userId) {
   try {
     var res = await api('/badges/' + userId);
     var badges = res.badges || [];
-    if (!badges.length) {
-      el.innerHTML = '';
-      return;
+    var earnedCount = res.earnedCount || 0;
+    var totalCount = res.totalCount || 0;
+    window._badgeCache = badges;
+
+    if (!badges.length) { el.innerHTML = ''; return; }
+
+    // Separate earned vs locked
+    var earned = badges.filter(function(b) { return !b.locked; });
+    var locked = badges.filter(function(b) { return b.locked; });
+    var allSorted = earned.concat(locked);
+
+    var html = '<div style="margin-top:16px;">';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">';
+    html += '<h3 style="font-size:15px;font-weight:700;color:var(--text);margin:0;">🏅 成就徽章</h3>';
+    html += '<span style="font-size:12px;color:var(--text-muted);background:var(--surface);padding:2px 10px;border-radius:999px;border:1px solid var(--border);">' + earnedCount + '/' + totalCount + '</span>';
+    html += '</div>';
+
+    // Show earned badges first in a row (full color)
+    if (earned.length > 0) {
+      html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">';
+      earned.forEach(function(b) {
+        html += '<div class="badge-earned-item" onclick="showBadgeDetail(\'' + b.id + '\')" title="' + escapeHtml(b.description || '') + '" ' +
+          'style="cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;min-width:72px;transition:transform 0.2s ease,box-shadow 0.2s ease;">';
+        html += '<span style="font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.18));animation:badge-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both;">' + b.icon + '</span>';
+        html += '<span style="font-size:11px;font-weight:600;color:var(--text);text-align:center;white-space:nowrap;">' + escapeHtml(b.name.replace(/^[^\s]+\s/, '')) + '</span>';
+        html += '</div>';
+      });
+      html += '</div>';
     }
-    el.innerHTML = '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:#fff;border-radius:12px;border:1px solid #e5e7eb;">' +
-      '<span style="font-size:12px;color:#94a3b8;margin-right:4px;">🏅 成就：</span>' +
-      badges.map(function(b) {
-        return '<span title="' + escapeHtml(b.description || '') + '" style="font-size:18px;cursor:default;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15));">' + b.icon + '</span>';
-      }).join('') +
-      '</div>';
+
+    // Locked badges in a collapsible row
+    if (locked.length > 0) {
+      html += '<div id="locked-badges-toggle" onclick="toggleLockedBadges()" style="cursor:pointer;font-size:12px;color:var(--text-muted);padding:6px 0;display:flex;align-items:center;gap:6px;">';
+      html += '<span>🔒 还有 ' + locked.length + ' 个徽章待解锁</span><span id="lock-toggle-arrow">▼</span></div>';
+      html += '<div id="locked-badges-grid" style="display:none;gap:8px;flex-wrap:wrap;margin-top:8px;">';
+      locked.forEach(function(b) {
+        html += '<div title="' + escapeHtml(b.description || '') + ': ' + b.current + '/' + b.target + '" ' +
+          'style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;min-width:72px;opacity:0.55;filter:grayscale(0.8);">';
+        html += '<span style="font-size:28px;">🔒</span>';
+        html += '<span style="font-size:11px;font-weight:600;color:var(--text-muted);text-align:center;white-space:nowrap;">' + escapeHtml(b.name.replace(/^[^\s]+\s/, '')) + '</span>';
+        // Mini progress bar
+        var pct = Math.round((b.current / b.target) * 100);
+        html += '<div style="width:56px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:2px;">';
+        html += '<div style="width:' + pct + '%;height:100%;background:var(--primary);border-radius:2px;transition:width 0.3s ease;"></div>';
+        html += '</div>';
+        html += '<span style="font-size:10px;color:var(--text-muted);">' + b.current + '/' + b.target + '</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    html += '</div>';
+    el.innerHTML = html;
   } catch (e) {
     el.innerHTML = '';
   }
 }
+
+window.toggleLockedBadges = function() {
+  var grid = document.getElementById('locked-badges-grid');
+  var arrow = document.getElementById('lock-toggle-arrow');
+  if (!grid) return;
+  var isHidden = grid.style.display === 'none';
+  grid.style.display = isHidden ? 'flex' : 'none';
+  arrow.textContent = isHidden ? '▲' : '▼';
+};
+
+window.showBadgeDetail = function(badgeId) {
+  var badges = window._badgeCache || [];
+  var b = badges.find(function(x) { return x.id === badgeId; });
+  if (!b) return;
+
+  var isEarned = !b.locked;
+  var modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:var(--font-sans);';
+  modal.innerHTML = '<div style="background:var(--surface-solid);border-radius:20px;padding:28px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.2);">' +
+    '<div style="font-size:56px;margin-bottom:12px;filter:' + (isEarned ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))' : 'grayscale(1);opacity:0.4') + ';">' + b.icon + '</div>' +
+    '<h3 style="font-size:18px;font-weight:700;margin:0 0 6px;color:var(--text);">' + escapeHtml(b.name) + '</h3>' +
+    '<p style="font-size:13px;color:var(--text-muted);margin:0 0 14px;line-height:1.6;">' + escapeHtml(b.description || '') + '</p>' +
+    (isEarned
+      ? '<div style="font-size:11px;color:var(--primary);font-weight:600;background:var(--primary-soft);padding:4px 12px;border-radius:999px;display:inline-block;">✅ 已获得</div>'
+      : '<div><div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">进度: ' + b.current + ' / ' + b.target + '</div>' +
+        '<div style="width:100%;height:8px;background:var(--border);border-radius:4px;overflow:hidden;">' +
+        '<div style="width:' + b.progress + '%;height:100%;background:linear-gradient(90deg,var(--primary),#14b8a6);border-radius:4px;transition:width 0.4s ease;"></div></div></div>') +
+    '<button onclick="this.closest(\'div\').parentNode.remove()" style="margin-top:18px;background:var(--primary);color:#fff;border:none;border-radius:12px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;">关闭</button>' +
+    '</div>';
+  document.body.appendChild(modal);
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+};
 
 // Load follower/following counts for profile header
 async function loadFollowCounts(userId) {
@@ -5666,6 +5745,80 @@ async function openLeaderboard(type) {
 function closeLeaderboard() {
   document.getElementById('leaderboard-modal').style.display = 'none';
   enableBottomNav();
+}
+
+window.openChallenges = async function() {
+  var modal = document.getElementById('challenges-modal');
+  modal.style.display = 'flex';
+  disableBottomNav();
+  await loadChallenges();
+};
+
+window.closeChallenges = function() {
+  document.getElementById('challenges-modal').style.display = 'none';
+  enableBottomNav();
+};
+
+async function loadChallenges() {
+  var content = document.getElementById('challenges-content');
+  var seasonName = document.getElementById('challenges-season-name');
+  content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">加载中...</div>';
+  try {
+    var res = await api('/challenges/season');
+    if (!res.season || !res.challenges.length) {
+      content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">暂无进行中的挑战</div>';
+      return;
+    }
+    var season = res.season;
+    var challenges = res.challenges;
+    if (seasonName) seasonName.textContent = season.name + ' · ' + season.start_date + ' 至 ' + season.end_date;
+
+    var completedCount = challenges.filter(function(c) { return c.completed; }).length;
+
+    var html = '<div style="margin-bottom:16px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+    html += '<span style="font-size:13px;color:var(--text-muted);">挑战进度</span>';
+    html += '<span style="font-size:13px;font-weight:700;color:var(--primary);">' + completedCount + '/' + challenges.length + '</span>';
+    html += '</div>';
+    html += '<div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;">';
+    html += '<div style="height:100%;width:' + Math.round((completedCount / challenges.length) * 100) + '%;background:linear-gradient(90deg,var(--primary),#14b8a6);border-radius:4px;transition:width 0.4s ease;"></div>';
+    html += '</div>';
+    html += '</div>';
+
+    challenges.forEach(function(c) {
+      var pct = Math.min(Math.round((c.progress / c.task_target) * 100), 100);
+      var isCompleted = c.completed;
+      html += '<div style="padding:14px;background:var(--surface);border:1px solid ' + (isCompleted ? 'var(--primary)' : 'var(--border)') + ';border-radius:14px;margin-bottom:10px;transition:all 0.2s ease;' + (isCompleted ? 'background:var(--primary-soft);' : '') + '">';
+      html += '<div style="display:flex;align-items:center;gap:12px;">';
+      html += '<span style="font-size:32px;filter:' + (isCompleted ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : 'grayscale(0.4)') + ';">' + c.icon + '</span>';
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
+      html += '<span style="font-size:14px;font-weight:700;color:var(--text);">' + escapeHtml(c.title) + '</span>';
+      if (isCompleted) {
+        html += '<span style="font-size:10px;font-weight:700;background:var(--primary);color:#fff;padding:1px 7px;border-radius:999px;">✅ 完成</span>';
+      }
+      html += '</div>';
+      html += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">' + escapeHtml(c.description || '') + '</div>';
+      html += '<div style="display:flex;align-items:center;gap:8px;">';
+      html += '<div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">';
+      html += '<div style="height:100%;width:' + pct + '%;background:' + (isCompleted ? 'var(--primary)' : 'linear-gradient(90deg,var(--primary),#14b8a6)') + ';border-radius:3px;transition:width 0.4s ease;"></div>';
+      html += '</div>';
+      html += '<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">' + c.progress + '/' + c.task_target + '</span>';
+      html += '</div>';
+      html += '</div>';
+      html += '<div style="text-align:right;flex-shrink:0;">';
+      html += '<div style="font-size:11px;color:var(--text-muted);">奖励</div>';
+      html += '<div style="font-size:13px;font-weight:700;color:var(--primary);">+' + c.reward_points + '积分</div>';
+      html += '</div>';
+      html += '</div></div>';
+    });
+
+    html += '<p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:8px;">挑战进度每周一重置，请持续活跃 🚀</p>';
+    content.innerHTML = html;
+  } catch (e) {
+    console.error(e);
+    content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">加载失败，请稍后重试</div>';
+  }
 }
 
 async function openInviteModal() {
@@ -7575,6 +7728,8 @@ async function init() {
     setTimeout(checkNewMilestones, 3000);
     var lbBtn = document.getElementById('nav-leaderboard-btn');
     if (lbBtn) lbBtn.style.display = 'inline-flex';
+    var chBtn = document.getElementById('nav-challenges-btn');
+    if (chBtn) chBtn.style.display = 'inline-flex';
   }
 
   // Critical: load sections, tags, trending in parallel for faster first paint

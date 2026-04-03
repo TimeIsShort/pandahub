@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
 const { checkBadges } = require('./badges');
+const { syncChallengeProgress } = require('./challenges');
 const router = express.Router();
 
 const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '😡'];
@@ -134,7 +135,11 @@ router.post('/posts/:postId/react', authMiddleware, (req, res) => {
     // Check badges for post owner (reactions received)
     if (post.user_id !== userId) {
       checkBadges(post.user_id);
+      syncChallengeProgress(post.user_id);
     }
+    // Track reactions given for the user who gave the reaction
+    checkBadges(userId);
+    syncChallengeProgress(userId);
   } catch (err) {
     console.error('[PostReactions]', err);
     res.status(500).json({ error: '操作失败' });

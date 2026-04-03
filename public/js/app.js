@@ -2650,14 +2650,14 @@ async function loadPosts() {
     container.innerHTML = res.posts.map(post => {
         const e = (name) => name ? name[0].toUpperCase() + name.slice(1) : "A";
         return `
-      <div class="post-card" data-post-id="${post.id}" onclick="viewPost(${post.id})">
+      <div class="post-card${post.is_featured ? ' is-featured' : ''}${post.is_pinned ? ' is-pinned' : ''}" data-post-id="${post.id}" onclick="viewPost(${post.id})">
         <div class="post-top-meta">
           ${post.is_pinned ? '<span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;margin-right:4px;">🏆 置顶</span>' : ''}
           ${post.is_featured ? '<span style="background:#ec4899;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;margin-right:4px;">⭐ 精选</span>' : ''}
           ${post.tag_name ? `<span class="post-tag" style="background:${post.tag_color}">${escapeHtml(post.tag_name)}</span>` : ''}
         </div>
         <div class="post-title">${escapeHtml(post.title)}</div>
-        <div class="post-excerpt">${post.summary ? '<span style="color:#667eea;font-size:11px;margin-right:4px;">🤖</span>' + escapeHtml(post.summary) : escapeHtml(stripMarkdown(post.content).substring(0, 80)) + (post.content && post.content.length > 160 ? '…' : '')}</div>
+        <div class="post-excerpt">${post.summary ? '<span class="ai-summary-tag" style="color:var(--primary);font-size:11px;margin-right:4px;">🤖</span>' + escapeHtml(post.summary) : escapeHtml(stripMarkdown(post.content).substring(0, 80)) + (post.content && post.content.length > 160 ? '…' : '')}</div>
         <div class="post-bottom-meta">
           <div class="post-author-info">
             <span class="avatar-small">${post.avatar ? `<img src="${post.avatar}" alt="avatar">` : (post.nickname || post.username)[0].toUpperCase()}</span>

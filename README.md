@@ -171,6 +171,9 @@ forum/
 - [x] API 缓存中间件（30秒 TTL，自动缓存公开 GET 请求）
 - [x] 数据库索引优化（posts/comments/notifications/user_actions_log 等关键查询列均已建索引）
 - [x] 工具箱 Markdown 预览（实时渲染 + 代码高亮）
+- [x] 通知免打扰模式（全部通知/仅私信/完全静默，设置页可切换）
+- [x] 每日登录奖励（每天首次登录自动获得5积分，不重复发放）
+- [x] 管理后台数据报告（📋数据报告 tab：今日/本周切换，热门帖子/新用户/关键指标一览）
 - [x] PWA（Service Worker离线缓存/添加到主屏幕/熊猫图标/主题色）
 
 ---
@@ -411,6 +414,7 @@ forum/
 | GET | /browse-history | 我的浏览历史 | limit, offset |
 | DELETE | /browse-history/clear | 清除浏览历史 | - |
 | POST | /push/broadcast | 全站 Web Push（管理员） | title, body, url |
+| GET | /admin/daily-report | 数据报告（管理员） | period=daily\|weekly |
 | POST | /users/:id/ban | 封禁用户 | - |
 | POST | /users/:id/unban | 解封用户 | - |
 

@@ -166,6 +166,11 @@ forum/
 - [x] 邮件聚合（每周五18:00自动发送，管理后台可测试发送）
 - [x] 社区勋章墙（/badges/wall/:userId 公开页面，已解锁/待解锁进度）
 - [x] AI 帖子摘要（发布时自动生成，列表页显示 🤖 标识）
+- [x] 浏览历史（个人主页"最近在看"列表，清除功能）
+- [x] 全站推送广播（管理后台 → 统计看板 → 📱全站推送，发送 Web Push 到所有已订阅用户）
+- [x] API 缓存中间件（30秒 TTL，自动缓存公开 GET 请求）
+- [x] 数据库索引优化（posts/comments/notifications/user_actions_log 等关键查询列均已建索引）
+- [x] 工具箱 Markdown 预览（实时渲染 + 代码高亮）
 - [x] PWA（Service Worker离线缓存/添加到主屏幕/熊猫图标/主题色）
 
 ---
@@ -403,7 +408,9 @@ forum/
 | GET | /email-digest/stats | 本周邮件聚合数据 | - |
 | POST | /email-digest/send | 发送测试邮件到自己 | - |
 | POST | /email-digest/broadcast | 广播给所有活跃用户 | limit |
-| GET | /logs | 操作日志 | page, limit, action |
+| GET | /browse-history | 我的浏览历史 | limit, offset |
+| DELETE | /browse-history/clear | 清除浏览历史 | - |
+| POST | /push/broadcast | 全站 Web Push（管理员） | title, body, url |
 | POST | /users/:id/ban | 封禁用户 | - |
 | POST | /users/:id/unban | 解封用户 | - |
 

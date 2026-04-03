@@ -98,6 +98,7 @@ forum/
 
 ### 内容发布
 - [x] 发布帖子（支持 Markdown）
+- [x] 帖子草稿自动保存（localStorage，24小时有效，恢复后提示）
 - [x] 富文本编辑器（工具栏：加粗/斜体/代码/链接/标题/列表/引用）
 - [x] Markdown 渲染（标题/加粗/斜体/代码/链接/列表/引用/图片）
 - [x] 帖子编辑 + 删除（作者/管理员）
@@ -146,6 +147,8 @@ forum/
 - [x] API 频率限制（滑动窗口：匿名120次/分钟，已登录300次/分钟）
 - [x] 发帖/评论冷却时间（发帖30秒冷却，评论15秒冷却）
 - [x] 恶意注册拦截（临时邮箱域名黑名单 + IP注册频率限制 + 用户名黑名单）
+- [x] 敏感词实时检测高亮（发帖时自动检测，内容预览+提示）
+- [x] 用户封禁/解封（管理员操作，含封禁原因记录）
 
 ### 其他
 - [x] AI 助手（每天10次额度，可搜索帖子，聊天历史持久化）
@@ -391,6 +394,7 @@ forum/
 | GET | /sensitive-words | 敏感词列表 | - |
 | POST | /sensitive-words | 添加敏感词 | word |
 | DELETE | /sensitive-words/:id | 删除敏感词 | - |
+| POST | /word-filter/check | 检测敏感词 | content |
 | GET | /logs | 操作日志 | page, limit, action |
 | POST | /users/:id/ban | 封禁用户 | - |
 | POST | /users/:id/unban | 解封用户 | - |

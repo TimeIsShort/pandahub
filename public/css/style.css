@@ -1239,8 +1239,9 @@ main.container {
 #comment-input:focus,
 #ai-input:focus {
   outline: none;
-  border-color: #3ba498;
-  box-shadow: 0 0 0 3px rgba(59, 164, 152, 0.18);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.2), 0 0 12px rgba(15, 118, 110, 0.1);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .search-box button,
@@ -1248,25 +1249,54 @@ main.container {
   border: none;
   background: linear-gradient(135deg, var(--primary), #149588);
   color: #fff;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 10px 15px;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.2px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.search-box button::after,
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--rx, 50%) var(--ry, 50%), rgba(255,255,255,0.35) 0%, transparent 60%);
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.1s, transform 0.1s;
+  pointer-events: none;
+}
+
+.search-box button.ripple::after,
+.btn-primary.ripple::after {
+  opacity: 1;
+  transform: scale(2.8);
+  transition: transform 0.5s cubic-bezier(0.2, 0.6, 0.4, 1), opacity 0.5s ease;
+}
+
+.search-box button.ripple-out::after,
+.btn-primary.ripple-out::after {
+  opacity: 0;
+  transform: scale(2.8);
+  transition: opacity 0.35s ease;
 }
 
 .search-box button:hover,
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.32);
-  filter: brightness(1.02);
+  box-shadow: 0 14px 28px rgba(15, 118, 110, 0.32);
+  filter: brightness(1.03);
 }
 
 .search-box button:active,
 .btn-primary:active {
-  transform: translateY(0);
+  transform: scale(0.96) translateY(0);
+  box-shadow: 0 6px 14px rgba(15, 118, 110, 0.22);
 }
 
 .btn-primary:disabled {
@@ -1286,21 +1316,50 @@ main.container {
 }
 
 .btn-secondary {
-  border: 1px solid #cadbe2;
-  background: rgba(248, 252, 253, 0.9);
-  color: #2c4f60;
-  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: var(--radius-sm);
   padding: 10px 15px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-secondary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--rx, 50%) var(--ry, 50%), rgba(15,118,110,0.18) 0%, transparent 60%);
+  opacity: 0;
+  transform: scale(0);
+  pointer-events: none;
+}
+
+.btn-secondary.ripple::after {
+  opacity: 1;
+  transform: scale(2.8);
+  transition: transform 0.5s cubic-bezier(0.2, 0.6, 0.4, 1), opacity 0.5s ease;
+}
+
+.btn-secondary.ripple-out::after {
+  opacity: 0;
+  transition: opacity 0.35s ease;
 }
 
 .btn-secondary:hover {
-  border-color: #91b8c4;
-  background: #ffffff;
+  border-color: var(--primary);
+  background: var(--primary-soft);
   transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(15, 118, 110, 0.14);
+}
+
+.btn-secondary:active {
+  transform: scale(0.96) translateY(0);
+  box-shadow: none;
 }
 
 .btn-back {
@@ -1333,6 +1392,14 @@ main.container {
 
 .post-loading-card {
   padding: 16px;
+  background:
+    radial-gradient(220px 80px at 100% -8%, rgba(14, 148, 136, 0.08), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(246, 251, 253, 0.88));
+  border: 1px solid rgba(166, 197, 208, 0.7);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 20px rgba(17, 58, 79, 0.08);
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
 }
 
 .skeleton-circle {
@@ -1446,7 +1513,12 @@ main.container {
   background:
     radial-gradient(220px 80px at 100% -8%, rgba(14, 148, 136, 0.12), transparent 70%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 251, 253, 0.9));
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
   box-shadow: 0 10px 24px rgba(17, 58, 79, 0.1);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+  transform-style: preserve-3d;
+  perspective: 800px;
 }
 
 #view-home .post-card::before {
@@ -1462,13 +1534,24 @@ main.container {
   transition: transform 0.22s ease;
 }
 
+#view-home .post-card::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: linear-gradient(to top, rgba(255,255,255,0.7), transparent);
+  pointer-events: none;
+}
+
 #view-home .post-card:hover::before {
   transform: scaleX(1);
 }
 
 #view-home .post-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 18px 32px rgba(14, 54, 78, 0.16);
+  transform: translateY(-5px) rotateY(0.8deg);
+  box-shadow: -6px 12px 32px rgba(14, 54, 78, 0.18), 6px 0 24px rgba(14, 54, 78, 0.08);
   border-color: rgba(95, 160, 177, 0.88);
 }
 
@@ -1630,6 +1713,8 @@ main.container {
   font-size: 10px;
   font-weight: 700;
   color: #fff;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.25) inset, 0 2px 6px rgba(0,0,0,0.18);
+  letter-spacing: 0.3px;
 }
 
 .post-excerpt {

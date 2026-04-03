@@ -7381,4 +7381,24 @@ async function init() {
   document.getElementById('search-input').addEventListener('keyup', handleSearch);
 }
 
+// ─── Ripple effect for buttons ───────────────────────────────────────────────
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('.btn-primary, .btn-secondary, .nav-btn, .hero-mini-btn, .hero-mini-btn-primary');
+  if (!btn || btn.disabled) return;
+
+  var rect = btn.getBoundingClientRect();
+  var x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+  var y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+  btn.style.setProperty('--rx', x + '%');
+  btn.style.setProperty('--ry', y + '%');
+
+  btn.classList.remove('ripple-out');
+  btn.classList.add('ripple');
+  setTimeout(function() {
+    btn.classList.remove('ripple');
+    btn.classList.add('ripple-out');
+    setTimeout(function() { btn.classList.remove('ripple-out'); }, 400);
+  }, 420);
+});
+
 init();

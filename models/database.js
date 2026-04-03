@@ -742,6 +742,7 @@ try {
 // ============ User Badges System ============
 ensureColumn('users', 'checkin_streak', 'INTEGER DEFAULT 0');
 ensureColumn('users', 'last_checkin_date', 'TEXT');
+ensureColumn('users', 'bg_image', 'TEXT DEFAULT \'\'');
 
 try {
   db.exec(`

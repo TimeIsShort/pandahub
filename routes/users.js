@@ -82,7 +82,7 @@ router.get('/:id', optionalAuth, (req, res) => {
     const canViewAllPosts = !!(req.user && (req.user.role === 'admin' || req.user.id === profileUserId));
 
     const user = db.prepare(`
-      SELECT id, username, nickname, avatar, bio, bio as about, role, created_at, last_login,
+      SELECT id, username, nickname, avatar, bg_image, bio, bio as about, role, created_at, last_login,
              points, checkin_streak, influence_score,
              (SELECT COUNT(*) + 1 FROM users u2 WHERE u2.influence_score > users.influence_score AND u2.role != 'admin') as influence_rank
       FROM users WHERE id = ?

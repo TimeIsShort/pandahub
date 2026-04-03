@@ -39,6 +39,35 @@ if (!fs.existsSync(avatarDir)) {
   fs.mkdirSync(avatarDir, { recursive: true });
 }
 
+// Configure bg-image upload
+const bgStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../public/uploads/bg-images'));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `bg-${req.user.id}-${uniqueSuffix}${ext}`);
+  }
+});
+
+const bgUpload = multer({
+  storage: bgStorage,
+  limits: { fileSize: 4 * 1024 * 1024 }, // 4MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) { return cb(null, true); }
+    cb(new Error('只支持图片格式：jpg, png, gif, webp'));
+  }
+});
+
+const bgDir = path.join(__dirname, '../public/uploads/bg-images');
+if (!fs.existsSync(bgDir)) {
+  fs.mkdirSync(bgDir, { recursive: true });
+}
+
 // Get all hobbies
 router.get('/hobbies', (req, res) => {
   try {
@@ -54,7 +83,7 @@ router.get('/hobbies', (req, res) => {
 router.get('/me', authMiddleware, (req, res) => {
   try {
     const user = db.prepare(
-      'SELECT id, username, nickname, avatar, bio, role, email, email_verified, created_at FROM users WHERE id = ?'
+      'SELECT id, username, nickname, avatar, bg_image, bio, role, email, email_verified, created_at FROM users WHERE id = ?'
     ).get(req.user.id);
     
     if (!user) {
@@ -77,14 +106,15 @@ router.get('/me', authMiddleware, (req, res) => {
 // Update user profile
 router.put('/me', authMiddleware, (req, res) => {
   try {
-    const { nickname, bio, hobby_ids } = req.body;
+    const { nickname, bio, hobby_ids, bg_image } = req.body;
     
     // Update basic info
-    if (nickname !== undefined || bio !== undefined) {
+    if (nickname !== undefined || bio !== undefined || bg_image !== undefined) {
       const updates = [];
       const params = [];
       if (nickname !== undefined) { updates.push('nickname = ?'); params.push(nickname); }
       if (bio !== undefined) { updates.push('bio = ?'); params.push(bio); }
+      if (bg_image !== undefined) { updates.push('bg_image = ?'); params.push(bg_image); }
       params.push(req.user.id);
       
       db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params);
@@ -149,6 +179,34 @@ router.post('/avatar', authMiddleware, avatarUpload.single('avatar'), (req, res)
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: '上传失败' });
+  }
+});
+
+// Upload profile background image
+router.post('/bg-image', authMiddleware, bgUpload.single('bg_image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '请选择图片文件' });
+    }
+    
+    const bgUrl = `/uploads/bg-images/${req.file.filename}`;
+    db.prepare('UPDATE users SET bg_image = ? WHERE id = ?').run(bgUrl, req.user.id);
+    
+    res.json({ bg_image: bgUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '上传失败' });
+  }
+});
+
+// Remove profile background image
+router.delete('/bg-image', authMiddleware, (req, res) => {
+  try {
+    db.prepare('UPDATE users SET bg_image = \'\' WHERE id = ?').run(req.user.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: '删除失败' });
   }
 });
 

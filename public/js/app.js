@@ -1306,25 +1306,28 @@ async function loadProfile(userId) {
         : '<button onclick="toggleFollow(' + userId + ', this)" class="following-btn" id="follow-btn-' + userId + '">+ 关注</button>';
     }
 
-    var html = '<div class="profile-header">';
-    html += '  <div class="profile-avatar" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,' + (level.color || '#667eea') + ',#764ba2);display:flex;align-items:center;justify-content:center;overflow:hidden;color:#fff;font-size:28px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,0.1);">' + avatar + '</div>';
+    var html = '<div class="profile-header' + (user.bg_image ? ' has-bg' : '') + '">';
+    if (user.bg_image) {
+      html += '  <img src="' + user.bg_image + '" class="profile-header-bg" alt="背景图" loading="lazy">';
+    }
+    html += '  <div class="profile-avatar' + (user.bg_image ? '" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,' + (level.color || '#667eea') + ',#764ba2);display:flex;align-items:center;justify-content:center;overflow:hidden;color:#fff;font-size:28px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:2px solid rgba(255,255,255,0.7);' : '" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,' + (level.color || '#667eea') + ',#764ba2);display:flex;align-items:center;justify-content:center;overflow:hidden;color:#fff;font-size:28px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,0.1);') + '>' + avatar + '</div>';
     html += '  <div class="profile-info">';
     html += '    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
-    html += '      <h2 style="font-size:20px;font-weight:700;color:var(--text);margin:0;">' + escapeHtml(user.nickname || user.username) + '</h2>';
+    html += '      <h2 style="font-size:20px;font-weight:700;color:' + (user.bg_image ? '#fff' : 'var(--text)') + ';margin:0;text-shadow:0 1px 3px rgba(0,0,0,0.3);">' + escapeHtml(user.nickname || user.username) + '</h2>';
     html += '      <span class="level-badge" style="background:' + (level.color || '#667eea') + ';color:#fff;font-size:11px;padding:2px 8px;border-radius:999px;margin:0;">Lv.' + level.level + '</span>';
     html += followBtn;
     html += '    </div>';
-    html += '    <div style="font-size:12px;color:#94a3b8;margin-top:4px;">@' + escapeHtml(user.username) + ' · 注册于 ' + formatDate(user.created_at) + '</div>';
-    html += '    <div style="display:flex;gap:16px;margin-top:8px;font-size:13px;color:#64748b;">';
-    html += '      <span><strong style="color:var(--text);">' + (user.points || 0) + '</strong> 积分</span>';
+    html += '    <div style="font-size:12px;color:' + (user.bg_image ? 'rgba(255,255,255,0.8)' : '#94a3b8') + ';margin-top:4px;">@' + escapeHtml(user.username) + ' · 注册于 ' + formatDate(user.created_at) + '</div>';
+    html += '    <div style="display:flex;gap:16px;margin-top:8px;font-size:13px;color:' + (user.bg_image ? 'rgba(255,255,255,0.85)' : '#64748b') + ';">';
+    html += '      <span><strong style="color:' + (user.bg_image ? '#fff' : 'var(--text)') + ';">' + (user.points || 0) + '</strong> 积分</span>';
     if (user.influence_score > 0) {
       html += '      <span style="color:#ec4899;"><strong>' + user.influence_score + '</strong> 影响力</span>';
     }
-    html += '      <span style="cursor:pointer;" onclick="showFollowers(' + userId + ')"><strong style="color:var(--text);">' + (followRes.followers_count || 0) + '</strong> 粉丝</span>';
-    html += '      <span style="cursor:pointer;" onclick="showFollowing(' + userId + ')"><strong style="color:var(--text);">' + (followRes.following_count || 0) + '</strong> 关注</span>';
+    html += '      <span style="cursor:pointer;" onclick="showFollowers(' + userId + ')"><strong style="color:' + (user.bg_image ? '#fff' : 'var(--text)') + ';">' + (followRes.followers_count || 0) + '</strong> 粉丝</span>';
+    html += '      <span style="cursor:pointer;" onclick="showFollowing(' + userId + ')"><strong style="color:' + (user.bg_image ? '#fff' : 'var(--text)') + ';">' + (followRes.following_count || 0) + '</strong> 关注</span>';
     html += '    </div>';
     if (user.bio) {
-      html += '    <div style="margin-top:8px;font-size:13px;color:#64748b;line-height:1.6;">' + escapeHtml(user.bio) + '</div>';
+      html += '    <div style="margin-top:8px;font-size:13px;color:' + (user.bg_image ? 'rgba(255,255,255,0.9)' : '#64748b') + ';line-height:1.6;">' + escapeHtml(user.bio) + '</div>';
     }
     html += '  </div>';
     html += '</div>';
@@ -2803,7 +2806,7 @@ async function viewPost(id) {
         <div class="post-actions">
           <button id="btn-favorite" onclick="toggleFavorite(${res.post.id})">☆ 收藏</button>
           <button id="btn-follow-post" onclick="togglePostFollow(${res.post.id})">＋ 关注帖子</button>
-          <button onclick="sharePost(${res.post.id}, '${escapeHtml(res.post.title)}')">🔗 分享</button>
+          <button onclick="sharePost(${res.post.id}, '${escapeHtml(res.post.title)}', {likes: ${res.post.like_count || 0}, comments: ${res.post.comment_count || 0}, views: ${res.post.views || 0}})">🔗 分享</button>
           <button onclick="quoteToAI(${res.post.id}, '${escapeHtml(res.post.title.replace(/'/g, "\\'"))}')">🤖 引用到AI</button>
           ${user && user.id !== res.post.user_id ? `<button onclick="openReportModal('post', ${res.post.id}, '${escapeHtml(res.post.title.replace(/'/g, "\\'"))}')" style="color:#94a3b8;">🚩 举报</button>` : ''}
           ${res.user && res.user.id === res.post.user_id || (user && user.role === 'admin') ? `<button onclick="editPost(${res.post.id})" style="color:#5d6dff">✏️ 编辑</button>` : ''}
@@ -2866,10 +2869,13 @@ async function viewPost(id) {
 
     // Render a single comment item
     function renderCommentItem(comment, depth) {
-      var indentClass = depth === 0 ? 'comment-depth-root' : depth === 1 ? 'comment-depth-1' : depth === 2 ? 'comment-depth-2' : 'comment-depth-3';
-      var maxDepthForNesting = 2; // deeper than this gets depth-3 style but still renders
+      var indentClass = depth === 0 ? 'comment-depth-root' : depth === 1 ? 'comment-depth-1' : depth === 2 ? 'comment-depth-2' : depth === 3 ? 'comment-depth-3' : 'comment-depth-4';
+      var maxDepthForNesting = 3;
       var displayDepth = Math.min(depth, maxDepthForNesting);
       if (depth > 0) indentClass = 'comment-depth-' + displayDepth;
+      var depthBadge = depth > 0
+        ? '<span class="comment-depth-badge depth-' + displayDepth + '"><span class="comment-depth-dot depth-' + displayDepth + '"></span>#' + depth + '</span>'
+        : '';
 
       var replyLine = comment.reply_to_nickname || comment.reply_to_username
         ? '<span class="comment-reply-to">回复 <b>' + escapeHtml(comment.reply_to_nickname || comment.reply_to_username) + '</b></span>'
@@ -2940,6 +2946,7 @@ async function viewPost(id) {
         '<div class="comment-header">' +
         '<span class="avatar-small">' + avatar + '</span>' +
         '<span class="comment-author">' + escapeHtml(comment.nickname || comment.username) + '</span>' +
+        depthBadge +
         replyLine +
         '<span class="comment-time">' + formatDate(comment.created_at) + '</span>' +
         '</div>' +
@@ -3223,26 +3230,146 @@ function removeCommentImage(index) {
   }
 }
 
-window.sharePost = function(id, title) {
+window.sharePost = function(id, title, stats) {
   const url = window.location.origin + '/#/post/' + id;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(function() {
-      showToast('链接已复制到剪贴板', 'success');
-    }, function() {
-      showToast('复制失败，请手动复制链接', 'error');
-    });
-  } else {
-    // Fallback
-    var ta = document.createElement('textarea');
-    ta.value = url;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('链接已复制到剪贴板', 'success');
+  const postTitle = title || '来看看这篇帖子';
+  const likes = stats ? (stats.likes || 0) : 0;
+  const comments = stats ? (stats.comments || 0) : 0;
+  const views = stats ? (stats.views || 0) : 0;
+
+  // Build canvas poster
+  var canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 500;
+  var ctx = canvas.getContext('2d');
+
+  // Background gradient
+  var grad = ctx.createLinearGradient(0, 0, 800, 500);
+  grad.addColorStop(0, '#0f766e');
+  grad.addColorStop(0.5, '#115e59');
+  grad.addColorStop(1, '#134e4a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 800, 500);
+
+  // Decorative blob top-right
+  var blob = ctx.createRadialGradient(700, 50, 10, 700, 50, 200);
+  blob.addColorStop(0, 'rgba(245,158,11,0.35)');
+  blob.addColorStop(1, 'transparent');
+  ctx.fillStyle = blob;
+  ctx.fillRect(500, 0, 300, 200);
+
+  // Decorative blob bottom-left
+  var blob2 = ctx.createRadialGradient(80, 450, 10, 80, 450, 160);
+  blob2.addColorStop(0, 'rgba(20,150,136,0.4)');
+  blob2.addColorStop(1, 'transparent');
+  ctx.fillStyle = blob2;
+  ctx.fillRect(0, 300, 240, 200);
+
+  // Panda emoji at top
+  ctx.font = '56px Arial';
+  ctx.fillText('🐼', 48, 80);
+
+  // Title (wrap long text)
+  var maxWidth = 700;
+  ctx.font = 'bold 32px "STZhongsong", "Noto Serif SC", "PingFang SC", sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.textBaseline = 'top';
+
+  var lines = [];
+  var currentLine = '';
+  var titleChars = postTitle.split('');
+  for (var i = 0; i < titleChars.length; i++) {
+    var testLine = currentLine + titleChars[i];
+    var metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && currentLine.length > 0) {
+      lines.push(currentLine);
+      currentLine = titleChars[i];
+    } else {
+      currentLine = testLine;
+    }
   }
+  if (currentLine) lines.push(currentLine);
+  lines = lines.slice(0, 3); // max 3 lines
+
+  var lineHeight = 44;
+  var startY = 130;
+  for (var li = 0; li < lines.length; li++) {
+    ctx.fillText(lines[li], 48, startY + li * lineHeight);
+  }
+
+  // Divider line
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(48, startY + lines.length * lineHeight + 16);
+  ctx.lineTo(752, startY + lines.length * lineHeight + 16);
+  ctx.stroke();
+
+  // Stats row
+  var statsY = startY + lines.length * lineHeight + 44;
+  ctx.font = '20px "Noto Sans SC", "PingFang SC", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillText('👍 ' + likes + '    💬 ' + comments + '    👁 ' + views, 48, statsY);
+
+  // Bottom: URL + brand
+  ctx.font = '16px "Noto Sans SC", "PingFang SC", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.fillText(url, 48, 452);
+
+  ctx.font = 'bold 18px "Noto Sans SC", "PingFang SC", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.textAlign = 'right';
+  ctx.fillText('pandahub.cloud', 752, 452);
+  ctx.textAlign = 'left';
+
+  // Download button
+  var dataUrl = canvas.toDataURL('image/png');
+
+  // Also copy URL
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).catch(function() {});
+  }
+
+  // Show a modal with poster preview + download
+  var modal = document.createElement('div');
+  modal.id = 'share-poster-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;font-family:var(--font-sans);';
+  modal.innerHTML = '<div style="background:#fff;border-radius:16px;padding:20px;max-width:440px;width:100%;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">' +
+    '<span style="font-size:16px;font-weight:700;color:var(--text);">分享海报</span>' +
+    '<button id="close-share-modal" style="background:none;border:none;font-size:22px;cursor:pointer;color:#94a3b8;line-height:1;">×</button>' +
+    '</div>' +
+    '<img src="' + dataUrl + '" style="width:100%;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);display:block;" alt="分享海报">' +
+    '<div style="display:flex;gap:10px;margin-top:14px;">' +
+    '<button id="download-poster-btn" class="btn-primary" style="flex:1;">📥 下载海报</button>' +
+    '<button id="copy-url-btn" class="btn-secondary" style="flex:1;">🔗 复制链接</button>' +
+    '</div>' +
+    '<p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:10px;">海报已生成，图片可保存或直接分享</p>' +
+    '</div>';
+  document.body.appendChild(modal);
+
+  document.getElementById('close-share-modal').onclick = function() { modal.remove(); };
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  document.getElementById('download-poster-btn').onclick = function() {
+    var a = document.createElement('a');
+    a.download = 'pandahub-' + id + '.png';
+    a.href = dataUrl;
+    a.click();
+    showToast('海报已下载', 'success');
+    modal.remove();
+  };
+
+  document.getElementById('copy-url-btn').onclick = function() {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(function() {
+        showToast('链接已复制', 'success');
+      }).catch(function() {
+        showToast('复制失败', 'error');
+      });
+    }
+    modal.remove();
+  };
 };
 
 async function deletePost(id) {
@@ -4530,6 +4657,17 @@ async function loadSettings() {
       avatarLetter.textContent = (user.nickname || user.username)[0].toUpperCase();
     }
 
+    // Set bg image preview
+    const bgPreview = document.getElementById('settings-bg-preview');
+    const removeBgBtn = document.getElementById('btn-remove-bg');
+    if (user.bg_image) {
+      bgPreview.style.backgroundImage = `url('${user.bg_image}')`;
+      bgPreview.style.backgroundSize = 'cover';
+      bgPreview.style.backgroundPosition = 'center';
+      bgPreview.style.border = '1px solid var(--border)';
+      if (removeBgBtn) removeBgBtn.style.display = '';
+    }
+
     // Build hobby grid
     const hobbyGrid = document.getElementById('hobby-grid');
     const selectedIds = userHobbies.map(h => h.id);
@@ -4957,6 +5095,64 @@ async function handleAvatarUpload(event) {
   }
 
   event.target.value = '';
+}
+
+async function handleBgUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 4 * 1024 * 1024) {
+    showToast('图片不能超过4MB', 'error', 2800);
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('bg_image', file);
+
+  try {
+    const res = await fetch(`${API_BASE}/profile/bg-image`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${getToken()}` },
+      body: formData
+    }).then(r => r.json());
+
+    if (res.bg_image) {
+      const preview = document.getElementById('settings-bg-preview');
+      preview.style.backgroundImage = `url('${res.bg_image}')`;
+      preview.style.backgroundSize = 'cover';
+      preview.style.backgroundPosition = 'center';
+      preview.style.border = '1px solid var(--border)';
+      const removeBtn = document.getElementById('btn-remove-bg');
+      if (removeBtn) removeBtn.style.display = '';
+      showToast('背景图上传成功', 'success');
+    } else {
+      showToast('上传失败', 'error', 2800);
+    }
+  } catch (e) {
+    showToast('上传失败', 'error', 2800);
+  }
+
+  event.target.value = '';
+}
+
+async function removeBgImage() {
+  try {
+    const res = await fetch(`${API_BASE}/profile/bg-image`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    }).then(r => r.json());
+
+    if (res.success) {
+      const preview = document.getElementById('settings-bg-preview');
+      preview.style.backgroundImage = '';
+      preview.style.border = '';
+      const removeBtn = document.getElementById('btn-remove-bg');
+      if (removeBtn) removeBtn.style.display = 'none';
+      showToast('背景图已移除', 'success');
+    }
+  } catch (e) {
+    showToast('删除失败', 'error', 2800);
+  }
 }
 
 async function saveSettings() {
@@ -6359,6 +6555,7 @@ function expandReplies(commentId) {
         '<div class="comment-header">' +
         '<span class="avatar-small" style="background:linear-gradient(135deg,' + levelColor + ',#764ba2);color:#fff;font-weight:700;">' + avatar + '</span>' +
         '<span class="comment-author">' + escapeHtml(r.nickname || r.username) + '</span>' +
+        '<span class="comment-depth-badge depth-2"><span class="comment-depth-dot depth-2"></span>#2</span>' +
         replyTo +
         '<span class="comment-time">' + formatDate(r.created_at) + '</span>' +
         '</div>' +
@@ -6417,6 +6614,7 @@ function loadMoreReplies(commentId) {
       '<div class="comment-header">' +
       '<span class="avatar-small" style="background:linear-gradient(135deg,' + levelColor + ',#764ba2);color:#fff;font-weight:700;">' + avatar + '</span>' +
       '<span class="comment-author">' + escapeHtml(r.nickname || r.username) + '</span>' +
+      '<span class="comment-depth-badge depth-2"><span class="comment-depth-dot depth-2"></span>#2</span>' +
       replyTo +
       '<span class="comment-time">' + formatDate(r.created_at) + '</span>' +
       '</div>' +

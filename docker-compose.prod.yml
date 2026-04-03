@@ -1,0 +1,97 @@
+# pandahub 生产环境 - 自动拉取部署
+# 使用方式：
+#   首次部署：docker-compose -f docker-compose.prod.yml up -d
+#   自动更新：POST http://IP:3001/webhook 带 X-Webhook-Secret 头
+
+services:
+  forum:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pandahub:latest
+    container_name: pandahub
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - VAPID_SUBJECT=${VAPID_SUBJECT}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
+      - SITE_URL=${SITE_URL}
+      - TENCENT_COS_SECRET_ID=${TENCENT_COS_SECRET_ID}
+      - TENCENT_COS_SECRET_KEY=${TENCENT_COS_SECRET_KEY}
+      - TENCENT_COS_REGION=${TENCENT_COS_REGION:-ap-singapore}
+      - TENCENT_COS_BUCKET=${TENCENT_COS_BUCKET}
+    volumes:
+      - pandahub-data:/app/data
+      - pandahub-uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/sections"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ========== 自动构建 + 重启 ==========
+  auto-updater:
+    image: alpine:latest
+    container_name: pandahub-updater
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/app
+    environment:
+      - GIT_URL=https://github.com/TimeIsShort/pandahub.git
+      - BRANCH=master
+      - COMPOSE_FILE=docker-compose.prod.yml
+      - CHECK_INTERVAL=300
+      - WEBHOOK_PORT=3001
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-change_me}
+    command: |
+      sh -c "
+        apk add --no-cache curl docker-cli git bash && \
+        cd /app && \
+        echo '=== Auto-updater 启动 ===' && \
+        echo '   Git: '$$GIT_URL && \
+        echo '   分支: '$$BRANCH && \
+        echo '   检查间隔: '$$CHECK_INTERVAL's' && \
+        echo '' && \
+        echo '更新方式:' && \
+        echo '  1. 自动: 每隔 '$$CHECK_INTERVAL' 秒 git pull 检测' && \
+        echo '  2. Webhook: POST http://host:3001/webhook (X-Webhook-Secret: '$$WEBHOOK_SECRET')' && \
+        echo '' && \
+        echo '=== 首次同步源码 ===' && \
+        git remote set-url origin $$GIT_URL && \
+        git checkout $$BRANCH && \
+        git pull origin $$BRANCH && \
+        echo '源码同步完成，当前版本: '$$(git rev-parse --short HEAD) && \
+        echo '' && \
+        # 后台启动 webhook server
+        (bash /app/.webhook-server.sh &) && \
+        # 定期 git pull 循环
+        while sleep $$CHECK_INTERVAL; do
+          LOCAL=$$(git rev-parse HEAD)
+          REMOTE=$$(git fetch origin $$BRANCH && git rev-parse origin/$$BRANCH)
+          if [ \"$$LOCAL\" != \"$$REMOTE\" ]; then
+            echo \"[ $$(date '+%H:%M:%S') ] 发现新提交，開始更新...\" && \
+            git pull origin $$BRANCH && \
+            docker compose -f $$COMPOSE_FILE build forum && \
+            docker compose -f $$COMPOSE_FILE up -d --no-deps forum && \
+            echo \"[ $$(date '+%H:%M:%S') ] 更新完成: $$(git rev-parse --short HEAD)\"
+          fi
+        done & \
+        wait
+      "
+
+volumes:
+  pandahub-data:
+  pandahub-uploads:

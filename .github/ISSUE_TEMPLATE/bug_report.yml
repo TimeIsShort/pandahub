@@ -1,0 +1,65 @@
+name: Bug Report 🐛
+description: Report a bug or unexpected behavior
+title: "[Bug] "
+labels: ["bug"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🐛 Bug Description
+        Briefly describe the bug.
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Steps To Reproduce"
+      description: "How to reproduce the bug (be specific)"
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "✅ Expected Behavior"
+      description: "What you expected to happen"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: "❌ Actual Behavior"
+      description: "What actually happened"
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: "📷 Screenshots"
+      description: "Add screenshots if applicable"
+    validations:
+      required: false
+
+  - type: input
+    id: environment
+    attributes:
+      label: "🖥 Environment"
+      description: "OS, browser, device etc."
+      placeholder: "e.g. Chrome on macOS, Mobile Safari iOS 17"
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: "📌 Version"
+      description: "pandahub version or commit hash"
+      placeholder: "e.g. v1.9 or commit abc1234"
+    validations:
+      required: false

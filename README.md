@@ -1,3 +1,7 @@
+# PandaHub
+
+[![CI](https://github.com/TimeIsShort/pandahub/actions/workflows/ci.yml/badge.svg)](https://github.com/TimeIsShort/pandahub/actions/workflows/ci.yml)
+
 # 技术交流社区论坛
 
 一个简洁高效的小圈子技术交流论坛，支持 AI 主题讨论。

@@ -69,8 +69,7 @@ jobs:
 
       - name: Verify i18n files in image
         run: |
-          docker run --rm pandahub:test sh -c "ls /app/i18n-data/" || echo "FAIL: i18n-data missing"
-          docker run --rm pandahub:test sh -c "test -f /app/i18n-data/zh.json && echo 'zh.json OK' || echo 'FAIL: zh.json missing'"
+          docker run --rm --entrypoint /bin/sh pandahub:test -c "ls /app/i18n-data/ && test -f /app/i18n-data/zh.json && echo 'i18n OK'" || echo "i18n missing"
 
       - name: Run pandahub container
         run: |

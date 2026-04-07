@@ -12,33 +12,56 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    services:
-      pandahub:
-        image: pandahub:latest
-        ports:
-          - 3000:3000
-        env:
-          NODE_ENV: production
-          PORT: 3000
-          JWT_SECRET: ci_test_jwt_secret_${{ github.run_id }}
-          VAPID_PUBLIC_KEY: ci_test_vapid_pub_${{ github.run_id }}
-          VAPID_PRIVATE_KEY: ci_test_vapid_priv_${{ github.run_id }}
-          VAPID_SUBJECT: mailto:test@ci.local
-          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY || 'ci_dummy_key' }}
-          SITE_URL: http://localhost:3000
-        options: >-
-          --health-cmd "wget -qO- http://localhost:3000/api/sections"
-          --health-interval 10s
-          --health-retries 10
-          --health-timeout 5s
-          --health-start-period 15s
-        volumes:
-          - pandahub-data:/app/data
-          - pandahub-uploads:/app/uploads
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build pandahub image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          tags: pandahub:test
+          envs: |
+            NODE_ENV=production
+            PORT=3000
+
+      - name: Run pandahub container
+        run: |
+          docker run -d --name pandahub \
+            -e NODE_ENV=production \
+            -e PORT=3000 \
+            -e JWT_SECRET=ci_test_jwt_secret_${{ github.run_id }} \
+            -e VAPID_PUBLIC_KEY=ci_test_vapid_pub_${{ github.run_id }} \
+            -e VAPID_PRIVATE_KEY=ci_test_vapid_priv_${{ github.run_id }} \
+            -e VAPID_SUBJECT=mailto:test@ci.local \
+            -e MINIMAX_API_KEY=ci_dummy_key \
+            -e SITE_URL=http://localhost:3000 \
+            -p 3000:3000 \
+            --health-cmd "wget -qO- http://127.0.0.1:3000/api/sections" \
+            --health-interval 10s \
+            --health-retries 10 \
+            --health-timeout 5s \
+            --health-start-period 15s \
+            pandahub:test
+
+      - name: Wait for health check
+        run: |
+          for i in $(seq 1 30); do
+            if docker exec pandahub wget -qO- http://127.0.0.1:3000/api/sections > /dev/null 2>&1; then
+              echo "Container is healthy"
+              exit 0
+            fi
+            echo "Waiting for container... ($i/30)"
+            sleep 2
+          done
+          echo "Container did not become healthy"
+          docker logs pandahub
+          exit 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -52,6 +75,10 @@ jobs:
         run: npm run test:smoke:ci
         env:
           SITE_URL: http://localhost:3000
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f pandahub || true
 
   api-check:
     name: API Check
@@ -71,6 +98,15 @@ jobs:
         run: npm ci --omit=dev
 
       - name: Start server
+        env:
+          NODE_ENV: production
+          PORT: 3000
+          JWT_SECRET: ci_test_jwt
+          VAPID_PUBLIC_KEY: ci_test_pub
+          VAPID_PRIVATE_KEY: ci_test_priv
+          VAPID_SUBJECT: mailto:test@ci.local
+          MINIMAX_API_KEY: ci_dummy_key
+          SITE_URL: http://localhost:3000
         run: |
           npm start &
           sleep 5
@@ -80,7 +116,3 @@ jobs:
           curl -s http://localhost:3000/api/sections | python3 -c "import sys,json; d=json.load(sys.stdin); assert d.get('sections') is not None, 'sections missing'; print('sections OK')"
           curl -s http://localhost:3000/api/posts?limit=1 | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'posts' in d, 'posts missing'; print('posts OK')"
           curl -s http://localhost:3000/api/tags | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'tags' in d, 'tags missing'; print('tags OK')"
-
-volumes:
-  pandahub-data:
-  pandahub-uploads:

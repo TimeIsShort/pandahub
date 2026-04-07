@@ -39,12 +39,18 @@ jobs:
           SITE_URL: http://localhost:3000
         run: |
           nohup npm start > /tmp/server.log 2>&1 &
-          for i in $(seq 1 15); do
-            curl -s http://localhost:3000/api/sections > /dev/null 2>&1 && echo "Server up!" && exit 0
+          echo "Waiting for server... (PID $!)"
+          for i in $(seq 1 20); do
+            if curl -s http://localhost:3000/api/sections > /dev/null 2>&1; then
+              echo "Server up after $i attempts!"
+              exit 0
+            fi
             sleep 2
           done
-          echo "Server failed to start:"
+          echo "=== Server startup failed ==="
           cat /tmp/server.log
+          echo "=== Port check ==="
+          ss -tlnp | grep 3000 || netstat -tlnp | grep 3000 || echo "Port 3000 not listening"
           exit 1
 
       - name: Smoke API

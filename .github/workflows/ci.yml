@@ -38,12 +38,13 @@ jobs:
           MINIMAX_API_KEY: ci_dummy_key
           SITE_URL: http://localhost:3000
         run: |
-          npm start &
+          nohup npm start > /tmp/server.log 2>&1 &
           for i in $(seq 1 15); do
             curl -s http://localhost:3000/api/sections > /dev/null 2>&1 && echo "Server up!" && exit 0
             sleep 2
           done
-echo "Server failed"
+          echo "Server failed to start:"
+          cat /tmp/server.log
 exit 1
 
       - name: Smoke API

@@ -10,8 +10,10 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY . .
 
 # i18n 翻译文件和词过滤独立打包（不受 data volume 挂载影响）
-COPY data/i18n /app/i18n-data
-COPY data/word-filter.txt /app/data-wordfilter
+# 先确保目录存在再用 COPY（避免 BuildKit cache key 误判）
+RUN mkdir -p /app/i18n-data /app/data-wordfilter
+COPY ./data/i18n/ /app/i18n-data/
+COPY ./data/word-filter.txt /app/data-wordfilter/
 
 # 创建数据目录（SQLite 和上传文件）
 RUN mkdir -p data uploads && \

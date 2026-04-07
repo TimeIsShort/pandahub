@@ -23,6 +23,23 @@ docker-compose up -d
 # 示例账号: demo / demo123（管理员）
 ```
 
+### 🐳 生产部署（Docker + 自动更新）
+
+```bash
+# 复制并编辑环境变量
+cp .env.example .env
+# 编辑 .env，填入所有环境变量（SMTP/VAPID/SITE_URL 等）
+
+# 启动生产服务
+docker-compose -f docker-compose.prod.yml up -d
+
+# 自动更新方式（二选一）：
+# 1. Webhook 触发：POST http://IP:3001/webhook（需 X-Webhook-Secret 头）
+# 2. 自动检测：auto-updater 每 5 分钟检测 Git master 分支，有新提交自动构建重启
+```
+
+> **数据持久化**：SQLite 数据库和上传文件通过 Docker volume 自动保存，删除容器不会丢失数据。
+
 ### 💻 本地开发
 
 ```bash
@@ -541,7 +558,7 @@ npm run dev
 
 ## 🔜 后续可扩展功能
 
-- [ ] Docker 部署
+- [x] Docker 部署
 - [ ] 积分转账/交易
 - [x] 帖子置顶/加精（管理后台）
 - [ ] 黑暗模式
@@ -611,7 +628,7 @@ npm run dev
 - ✅ P2 精选/置顶（🏆置顶⭐加精+管理后台按钮）
 - ✅ P2 标签管理后台（增删改+颜色图标）
 
-### v1.9（2026-04-03）
+### v1.9-patch（2026-04-03）
 - ✅ 顶部加载进度条（三色渐变横条，帖子/首页/评论加载时显示）
 - ✅ 按钮涟漪 + 按下缩放动画
 - ✅ 帖子卡片毛玻璃增强 + 3D倾斜hover

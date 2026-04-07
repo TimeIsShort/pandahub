@@ -1,5 +1,4 @@
 node_modules/
-data/
 *.db
 *.log
 .env
@@ -9,3 +8,5 @@ data/
 tests/
 test-results/
 coverage/
+data/*.db
+data/*.db-*

@@ -1,5 +1,4 @@
 node_modules/
-*.db
 *.log
 .env
 .git/
@@ -8,5 +7,6 @@ node_modules/
 tests/
 test-results/
 coverage/
+# DB files - keep i18n and word-filter
 data/*.db
 data/*.db-*

@@ -1,8 +1,11 @@
 node_modules/
-data/
 *.db
 .env
 *.log
 .DS_Store
 uploads/
-/forum_backup_*/
+forum_backup_*/
+
+# i18n and word-filter are needed in Docker image
+!data/i18n/
+!data/word-filter.txt

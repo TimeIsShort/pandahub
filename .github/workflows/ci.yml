@@ -25,7 +25,9 @@ jobs:
           node-version: '24'
 
       - name: Install deps
-        run: npm ci
+        env:
+          CI: "true"
+        run: npm install --prefer-offline --no-audit
 
       - name: Start server
         env:

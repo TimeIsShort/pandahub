@@ -51,8 +51,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/app
+      - /root/.ssh/id_ed25519:/root/.ssh/id_ed25519:ro
     environment:
-      - GIT_URL=https://github.com/TimeIsShort/pandahub.git
+      - GIT_URL=git@github.com:TimeIsShort/pandahub.git
       - BRANCH=master
       - COMPOSE_FILE=docker-compose.prod.yml
       - CHECK_INTERVAL=300
@@ -60,7 +61,7 @@ services:
       - WEBHOOK_SECRET=${WEBHOOK_SECRET:-change_me}
     command: |
       sh -c "
-        apk add --no-cache curl docker-cli git bash && \
+        apk add --no-cache curl docker-cli git bash openssh-client && \
         cd /app && \
         echo '=== Auto-updater 启动 ===' && \
         echo '   Git: '$$GIT_URL && \
@@ -74,7 +75,7 @@ services:
         echo '=== 首次同步源码 ===' && \
         git remote set-url origin $$GIT_URL && \
         git checkout $$BRANCH && \
-        git pull origin $$BRANCH && \
+        GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519 -o StrictHostKeyChecking=no' git pull origin $$BRANCH && \
         echo '源码同步完成，当前版本: '$$(git rev-parse --short HEAD) && \
         echo '' && \
         # 后台启动 webhook server
@@ -85,7 +86,7 @@ services:
           REMOTE=$$(git fetch origin $$BRANCH && git rev-parse origin/$$BRANCH)
           if [ \"$$LOCAL\" != \"$$REMOTE\" ]; then
             echo \"[ $$(date '+%H:%M:%S') ] 发现新提交，開始更新...\" && \
-            git pull origin $$BRANCH && \
+            GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519 -o StrictHostKeyChecking=no' git pull origin $$BRANCH && \
             docker compose -f $$COMPOSE_FILE build forum && \
             docker compose -f $$COMPOSE_FILE up -d --no-deps forum && \
             echo \"[ $$(date '+%H:%M:%S') ] 更新完成: $$(git rev-parse --short HEAD)\"

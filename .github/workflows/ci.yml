@@ -13,6 +13,7 @@ jobs:
     timeout-minutes: 10
     env:
       HOME: /home/runner
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
       - name: Checkout
@@ -21,7 +22,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install deps
         run: npm ci
@@ -38,7 +39,12 @@ jobs:
           SITE_URL: http://localhost:3000
         run: |
           npm start &
-          sleep 5
+          for i in $(seq 1 15); do
+            curl -s http://localhost:3000/api/sections > /dev/null 2>&1 && echo "Server up!" && exit 0
+            sleep 2
+          done
+echo "Server failed"
+exit 1
 
       - name: Smoke API
         run: |
@@ -52,13 +58,15 @@ jobs:
     name: Docker Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build pandahub image
         uses: docker/build-push-action@v5
@@ -68,7 +76,6 @@ jobs:
           load: true
           tags: pandahub:test
           no-cache: true
-          envs: NODE_ENV,PORT
 
       - name: Verify i18n files in image
         run: |
@@ -112,8 +119,8 @@ jobs:
 
       - name: Verify API
         run: |
-          curl -sf http://localhost:3000/api/sections | python3 -c "import sys,json; d=json.load(sys.stdin); print('API sections OK:', len(d['sections']))"
-          curl -sf http://localhost:3000/api/i18n/t?lang=zh | python3 -c "import sys,json; d=json.load(sys.stdin); print('i18n OK:', d['translations'].get('site_name'))"
+          curl -s http://localhost:3000/api/sections | python3 -c "import sys,json; d=json.load(sys.stdin); print('API sections OK:', len(d['sections']))"
+          curl -s http://localhost:3000/api/i18n/t?lang=zh | python3 -c "import sys,json; d=json.load(sys.stdin); print('i18n OK:', d['translations'].get('site_name'))"
 
       - name: Cleanup
         if: always()

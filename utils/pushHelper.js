@@ -102,11 +102,14 @@ async function sendEmailToUser(userId, { subject, html }) {
   try {
     const db = require('../models/database');
     const user = db.prepare(
-      'SELECT email, email_verified, nickname, notify_email FROM users WHERE id = ?'
+      'SELECT email, email_verified, nickname, notify_email, notification_mode FROM users WHERE id = ?'
     ).get(Number(userId));
 
     if (!user || !user.email || user.email_verified !== 1) return;
-    if (!user.notify_email) return;
+    // notify_email: 0 = off, 1 = on
+    if (user.notify_email === 0) return;
+    // notification_mode: 'all' = all, 'dm_only' = push only (no email), 'silent' = muted
+    if (user.notification_mode === 'silent' || user.notification_mode === 'dm_only') return;
     if (isInQuietHours(userId)) return; // Quiet hours apply to email too
 
     initEmail();

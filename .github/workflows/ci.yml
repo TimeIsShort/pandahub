@@ -14,6 +14,7 @@ jobs:
     env:
       HOME: /home/runner
       CI: "true"
+      ACTIONS_ALLOW_UNSECURED_NODE_VERSION: "true"
 
     steps:
       - name: Checkout
@@ -25,7 +26,7 @@ jobs:
           node-version: '20'
 
       - name: Install deps
-        run: npm ci --ignore-scripts
+        run: npm ci --ignore-scripts --no-update-notifier
 
       - name: Start server
         env:

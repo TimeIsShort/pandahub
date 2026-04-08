@@ -26,7 +26,7 @@ jobs:
           node-version: '18'
 
       - name: Install deps
-        run: npm ci --ignore-scripts
+        run: corepack enable && pnpm install --ignore-scripts
 
       - name: Start server
         env:

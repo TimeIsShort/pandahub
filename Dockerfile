@@ -6,6 +6,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
+# 升级 npm 到 npm@9（修复 "Exit handler never called" bug）
+RUN npm install -g npm@9
+
 COPY package*.json ./
 
 RUN npm install && \

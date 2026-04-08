@@ -1,4 +1,7 @@
-FROM node:20
+FROM node:20-slim
+
+# 安装 wget（健康检查用）
+RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

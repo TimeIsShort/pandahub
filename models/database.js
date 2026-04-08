@@ -175,41 +175,25 @@ db.exec(`
 
 // Lightweight schema migration for legacy databases
 function ensureColumn(tableName, columnName, definitionSql) {
-  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+  let columns = [];
+  try {
+    columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+  } catch (e) {
+    return; // table doesn't exist yet, skip
+  }
   const exists = columns.some(col => col.name === columnName);
   if (!exists) {
     try {
       db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definitionSql}`);
     } catch (err) {
-      // SQLite may reject CURRENT_TIMESTAMP defaults in legacy ALTER scenarios
       if (/CURRENT_TIMESTAMP/i.test(definitionSql)) {
         const fallbackDefinition = definitionSql.replace(/\s+DEFAULT\s+CURRENT_TIMESTAMP/i, '');
         db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${fallbackDefinition}`);
-      } else {
-        throw err;
       }
+      // ignore other errors
     }
   }
 }
-
-ensureColumn('users', 'nickname', 'TEXT');
-ensureColumn('users', 'avatar', 'TEXT');
-ensureColumn('users', 'bio', 'TEXT');
-ensureColumn('users', 'role', "TEXT DEFAULT 'member'");
-ensureColumn('users', 'approved', 'INTEGER DEFAULT 0');
-ensureColumn('users', 'ai_quota', 'INTEGER DEFAULT 100');
-ensureColumn('users', 'ai_reset_date', 'DATE');
-ensureColumn('users', 'is_banned', 'INTEGER DEFAULT 0');
-ensureColumn('users', 'banned_reason', 'TEXT');
-ensureColumn('users', 'banned_at', 'DATETIME');
-ensureColumn('users', 'applied_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP');
-ensureColumn('users', 'last_login', 'DATETIME');
-ensureColumn('ai_chats', 'session_id', 'TEXT');
-ensureColumn('ai_chats', 'provider', 'TEXT');
-ensureColumn('ai_chats', 'model', 'TEXT');
-ensureColumn('posts', 'tag_id', 'INTEGER');
-ensureColumn('posts', 'section_id', 'INTEGER');
-ensureColumn('tags', 'icon', "TEXT DEFAULT '🏷️'");
 ensureColumn('tags', 'section_id', 'INTEGER');
 ensureColumn('posts', 'views', 'INTEGER DEFAULT 0');
 ensureColumn('posts', 'ai_summary', 'TEXT');

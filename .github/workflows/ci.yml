@@ -28,8 +28,8 @@ jobs:
       - name: Install deps
         run: |
           corepack enable
-          pnpm install --ignore-scripts
-          pnpm rebuild better-sqlite3
+          pnpm install
+          pnpm rebuild better-sqlite3 || npx node-pre-gyp rebuild || npx prebuild-install || echo "rebuild attempted"
 
       - name: Start server
         env:

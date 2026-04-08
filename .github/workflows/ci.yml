@@ -65,7 +65,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build pandahub image
-        run: docker build --load -t pandahub:test -f Dockerfile .
+        run: docker build --load --no-cache -t pandahub:test -f Dockerfile .
 
       - name: Verify i18n files in image
         run: |

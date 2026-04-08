@@ -26,7 +26,9 @@ jobs:
           node-version: '18'
 
       - name: Install deps
-        run: corepack enable && pnpm install --ignore-scripts
+        run: |
+          pnpm install --ignore-scripts
+          pnpm rebuild better-sqlite3
 
       - name: Start server
         env:

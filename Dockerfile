@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf 
 WORKDIR /app
 
 # 启用 corepack 并使用 pnpm（更稳定的包管理器）
-RUN corepack enable && corepack prepare pnpm@stable --activate
+RUN corepack enable && corepack prepare pnpm@8 --activate
 
 # 安装依赖
 COPY package*.json pnpm-lock.yaml ./

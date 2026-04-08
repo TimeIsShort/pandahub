@@ -8,8 +8,7 @@ WORKDIR /app
 # 启用 corepack 并使用 pnpm
 COPY package*.json pnpm-lock.yaml ./
 RUN corepack enable && corepack prepare pnpm@10 --activate && \
-  pnpm install --ignore-scripts && \
-  pnpm rebuild better-sqlite3 && \
+  pnpm install && \
   test -d node_modules/dotenv && echo "OK" || (echo "FATAL: dotenv missing" && exit 1)
 
 # 复制源码

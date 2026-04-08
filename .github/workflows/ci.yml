@@ -27,9 +27,9 @@ jobs:
 
       - name: Install deps
         run: |
+          sudo apt-get update && sudo apt-get install -y python3 make g++
           corepack enable
-          pnpm install --ignore-scripts
-          pnpm rebuild better-sqlite3 || echo "rebuild attempted"
+          pnpm install
 
       - name: Start server
         env:

@@ -4,7 +4,7 @@ WORKDIR /app
 
 # 安装依赖（利用缓存）
 COPY package*.json ./
-RUN npm install --omit=dev && npm cache clean --force
+RUN npm ci
 
 # 复制源码
 COPY . .

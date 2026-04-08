@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf 
 
 WORKDIR /app
 
-# 安装依赖（利用缓存）
+# 安装依赖
 COPY package*.json ./
 RUN npm ci
 

@@ -7,7 +7,7 @@ WORKDIR /app
 
 # 安装依赖
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --prefer-offline
 
 # 复制源码
 COPY . .

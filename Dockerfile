@@ -6,11 +6,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends wget python3 ma
 WORKDIR /app
 
 # 启用 corepack 并使用 pnpm
-RUN corepack enable && corepack prepare pnpm@10 --activate
-
-# 安装依赖
 COPY package*.json pnpm-lock.yaml ./
-RUN pnpm install && test -d node_modules/dotenv && echo "OK" || (echo "FATAL: dotenv missing" && exit 1)
+RUN corepack enable && corepack prepare pnpm@10 --activate && \
+  PNPM_BUILD_APPROVE_ALL=true pnpm install && \
+  test -d node_modules/dotenv && echo "OK" || (echo "FATAL: dotenv missing" && exit 1)
 
 # 复制源码
 COPY . .

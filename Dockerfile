@@ -1,16 +1,16 @@
 FROM node:18-slim
 
-# 安装 wget（健康检查用）
-RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf /var/lib/apt/lists/*
+# 安装 wget（健康检查用）和编译工具（better-sqlite3 需要）
+RUN apt-get update && apt-get install -y --no-install-recommends wget python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# 启用 corepack 并使用 pnpm（更稳定的包管理器）
-RUN corepack enable && corepack prepare pnpm@8 --activate
+# 启用 corepack 并使用 pnpm
+RUN corepack enable && corepack prepare pnpm@10 --activate
 
 # 安装依赖
 COPY package*.json pnpm-lock.yaml ./
-RUN pnpm install --ignore-scripts && test -d node_modules/dotenv && echo "OK" || (echo "FATAL: dotenv missing" && exit 1)
+RUN pnpm install && test -d node_modules/dotenv && echo "OK" || (echo "FATAL: dotenv missing" && exit 1)
 
 # 复制源码
 COPY . .

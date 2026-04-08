@@ -27,6 +27,7 @@ jobs:
 
       - name: Install deps
         run: |
+          corepack enable
           pnpm install --ignore-scripts
           pnpm rebuild better-sqlite3
 

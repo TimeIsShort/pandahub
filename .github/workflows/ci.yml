@@ -26,9 +26,9 @@ jobs:
           node-version: '20'
 
       - name: Install deps
-        env:
-          npm_config_ignore_scripts: 'true'
-        run: npm ci --ignore-scripts --no-optional --no-fund --no-audit --no-progress
+        run: |
+          npm install -g npm@11 --prefer-offline 2>/dev/null || npm install -g npm@11 || true
+          npm ci --ignore-scripts
 
       - name: Start server
         env:

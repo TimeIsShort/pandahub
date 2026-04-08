@@ -6,11 +6,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY package*.json pnpm-lock.yaml .npmrc ./
+COPY package*.json ./
 
-RUN corepack enable && corepack prepare pnpm@10 --activate && \
-    pnpm install --frozen-lockfile && \
-    pnpm rebuild better-sqlite3 && \
+RUN npm install && \
     node -e "require('better-sqlite3'); console.log('better-sqlite3 OK')"
 
 COPY . .

@@ -23,12 +23,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
 
       - name: Install deps
-        run: |
-          npm install -g npm@11 --prefer-offline 2>/dev/null || npm install -g npm@11 || true
-          npm ci --ignore-scripts
+        run: npm ci --ignore-scripts
 
       - name: Start server
         env:

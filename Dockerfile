@@ -5,9 +5,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf 
 
 WORKDIR /app
 
+# 升级 npm 到最新版修复 Exit handler bug
+RUN npm install -g npm@11 --prefer-offline 2>/dev/null || npm install -g npm@11 || true
+
 # 安装依赖
 COPY package*.json ./
-RUN npm ci --no-update-notifier
+RUN npm ci --no-update-notifier && test -d node_modules/dotenv && echo "OK" || (echo "FATAL: dotenv missing" && exit 1)
 
 # 复制源码
 COPY . .

@@ -16,7 +16,8 @@ router.post('/view', authMiddleware, (req, res) => {
     `).run(req.user.id, post_id);
     res.json({ success: true });
   } catch(e) {
-    res.status(500).json({ error: e.message });
+    console.error('[BrowseHistory]', e);
+    res.status(500).json({ error: '记录浏览历史失败' });
   }
 });
 
@@ -43,7 +44,8 @@ router.get('/', authMiddleware, (req, res) => {
     const total = db.prepare('SELECT COUNT(*) as c FROM post_views WHERE user_id = ?').get(req.user.id).c;
     res.json({ history, total });
   } catch(e) {
-    res.status(500).json({ error: e.message });
+    console.error('[BrowseHistory]', e);
+    res.status(500).json({ error: '获取浏览历史失败' });
   }
 });
 
@@ -53,7 +55,8 @@ router.delete('/clear', authMiddleware, (req, res) => {
     db.prepare('DELETE FROM post_views WHERE user_id = ?').run(req.user.id);
     res.json({ success: true });
   } catch(e) {
-    res.status(500).json({ error: e.message });
+    console.error('[BrowseHistory]', e);
+    res.status(500).json({ error: '清除浏览历史失败' });
   }
 });
 

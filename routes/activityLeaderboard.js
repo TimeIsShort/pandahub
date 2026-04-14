@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models/database');
+const { authMiddleware } = require('../middleware/auth');
 
 // Get current week key: 'YYYY-Wxx'
 function getWeekKey(date = new Date()) {
@@ -251,7 +252,8 @@ router.get('/', (req, res) => {
 });
 
 // POST /api/leaderboard/calculate - Trigger calculation (admin/cron)
-router.post('/calculate', (req, res) => {
+router.post('/calculate', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: '需要管理员权限' });
   try {
     const { type } = req.body; // 'weekly' | 'monthly' | 'both'
 

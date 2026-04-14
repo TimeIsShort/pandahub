@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getCacheStats } = require('../utils/cache');
+const { authMiddleware } = require('../middleware/auth');
 
 // Performance metrics storage (in-memory ring buffer)
 const MAX_METRICS = 1440; // 24h at 1-min granularity
@@ -61,8 +62,9 @@ function latencyMiddleware(req, res, next) {
 // Apply latency middleware to API routes
 router.use(latencyMiddleware);
 
-// Get performance dashboard data
-router.get('/dashboard', (req, res) => {
+// Get performance dashboard data (admin only)
+router.get('/dashboard', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: '需要管理员权限' });
   try {
     const now = Date.now();
     const oneHourAgo = now - 3600 * 1000;

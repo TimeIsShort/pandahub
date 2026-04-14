@@ -144,6 +144,13 @@ router.post('/register', registerGuardMiddleware, async (req, res) => {
       if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
         return res.status(400).json({ error: '邀请码已过期' });
       }
+      // 防止自己生成邀请码自己用（刷积分）
+      if (invite.creator_id) {
+        const creator = db.prepare('SELECT id FROM users WHERE id = ?').get(invite.creator_id);
+        if (creator && creator.id) {
+          return res.status(400).json({ error: '不能使用自己生成的邀请码' });
+        }
+      }
       validInviteCode = invite_code;
     }
 
@@ -255,11 +262,19 @@ router.post('/send-register-code', registerGuardMiddleware, async (req, res) => 
     ).run(username, hashedPassword, username, email, validInviteCode);
     const userId = result.lastInsertRowid;
 
+    // 防止自己用自己生成的邀请码刷积分（invite.creator_id 在 db 中是创建者 user id）
+    if (validInviteCode && invite && invite.creator_id && Number(invite.creator_id) === Number(userId)) {
+      return res.status(400).json({ error: '不能使用自己生成的邀请码' });
+    }
+
     // Generate code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Save code
+    // 先删除该邮箱的旧验证码（防止并发重复发放）
+    db.prepare("DELETE FROM email_codes WHERE email = ? AND purpose = 'register' AND used = 0")
+      .run(email);
+    // Save new code
     db.prepare(
       "INSERT INTO email_codes (email, user_id, code, purpose, expires_at) VALUES (?, ?, ?, 'register', ?)"
     ).run(email, userId, code, expiresAt.toISOString());

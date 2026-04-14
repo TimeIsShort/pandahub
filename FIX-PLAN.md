@@ -75,6 +75,28 @@
 
 ---
 
+## 🟡 本周修复（新增）
+
+### [ ] Bug #9 — AI 摘要 UPDATE 写到了错误的列名
+- **文件：** `routes/admin.js`
+- **位置：** 第 160、508、587 行
+- **问题：** `UPDATE posts SET summary = ?` → 正确列名是 `ai_summary`，三处全写错，AI 摘要数据永久丢失
+- **修复方案：** 三处 `summary` → `ai_summary`
+
+### [ ] Bug #10 — 邀请码缺少自用检测
+- **文件：** `routes/auth.js`
+- **位置：** 第 137 行（register）、第 247 行（send-register-code）
+- **问题：** 两处验证时没有 `creator_id !== user.id` 检查，用户可自己生成邀请码再用于自己刷积分
+- **修复方案：** 与 `verify-register` 保持一致，加上 `&& invite.creator_id !== user.id`
+
+### [ ] Bug #11 — 验证码并发重复发放
+- **文件：** `routes/auth.js`
+- **位置：** 第 259-260 行（send-register-code）
+- **问题：** 并发请求同一邮箱会创建多条未使用验证码，扩大攻击面
+- **修复方案：** INSERT 前先 `DELETE FROM email_codes WHERE email = ? AND purpose = 'register' AND used = 0`
+
+---
+
 ## 🟢 后续优化
 
 ### [ ] Bug #6 — FTS 索引失败静默忽略
@@ -110,3 +132,6 @@
 | 6 | 🟢 | FTS 失败已有console.error | ✅ 已改善 | 2026-04-14 |
 | 7 | 🟢 | 登录奖励并发竞态 | ✅ 已修复 | 2026-04-14 |
 | 8 | 🟢 | JWT_SECRET 生产无强退出 | ✅ 已修复 | 2026-04-14 |
+| 9 | 🔴 | AI摘要 UPDATE 到错误列名 | ⬜ 待修复 | |
+| 10 | 🟡 | 邀请码缺少自用检测 | ⬜ 待修复 | |
+| 11 | 🟡 | 验证码并发重复发放 | ⬜ 待修复 | |

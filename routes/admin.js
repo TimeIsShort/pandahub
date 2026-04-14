@@ -157,7 +157,7 @@ router.post('/posts/:id/approve', authMiddleware, (req, res) => {
     if (post.content) {
       generatePostSummary(post.title, post.content).then(summary => {
         if (summary && summary.length > 5) {
-          db.prepare('UPDATE posts SET summary = ? WHERE id = ?').run(summary, req.params.id);
+          db.prepare('UPDATE posts SET ai_summary = ? WHERE id = ?').run(summary, req.params.id);
         }
       }).catch(() => {});
     }
@@ -505,7 +505,7 @@ router.post('/posts/:id/auto-review', authMiddleware, async (req, res) => {
     if (post.content) {
       generatePostSummary(post.title, post.content).then(summary => {
         if (summary && summary.length > 5) {
-          db.prepare('UPDATE posts SET summary = ? WHERE id = ?').run(summary, post.id);
+          db.prepare('UPDATE posts SET ai_summary = ? WHERE id = ?').run(summary, post.id);
         }
       }).catch(() => {});
     }
@@ -584,7 +584,7 @@ router.post('/posts/auto-review-all', authMiddleware, async (req, res) => {
       if (post.content) {
         generatePostSummary(post.title, post.content).then(summary => {
           if (summary && summary.length > 5) {
-            db.prepare('UPDATE posts SET summary = ? WHERE id = ?').run(summary, post.id);
+            db.prepare('UPDATE posts SET ai_summary = ? WHERE id = ?').run(summary, post.id);
           }
         }).catch(() => {});
       }

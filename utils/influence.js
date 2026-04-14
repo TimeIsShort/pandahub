@@ -7,10 +7,11 @@ const db = require('../models/database');
 
 // Influence score rules
 const RULES = {
-  post_like:       { delta: 3,  reason: '帖子被点赞' },
-  comment_like:    { delta: 1,  reason: '评论被点赞' },
-  post_favorite:   { delta: 5,  reason: '帖子被收藏' },
-  post_comment:    { delta: 2,  reason: '帖子被回复' },
+  post_like:       { delta:  3, reason: '帖子被点赞' },
+  post_dislike:    { delta:  0, reason: '帖子被点踩' },   // 点踩无积分，切换时正确清零
+  comment_like:    { delta:  1, reason: '评论被点赞' },
+  post_favorite:   { delta:  5, reason: '帖子被收藏' },
+  post_comment:    { delta:  2, reason: '帖子被回复' },
 };
 
 function addInfluence(userId, eventType, targetType, targetId) {

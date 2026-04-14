@@ -94,7 +94,8 @@ router.post('/register', registerGuardMiddleware, async (req, res) => {
 
     // Honeypot check — bots fill hidden fields
     if (__hp) {
-      return res.status(201).json({ pending: true, message: '注册成功，请验证邮箱完成账号激活' });
+      // 静默返回通用错误，不给机器人任何区分性反馈
+      return res.status(429).json({ error: '请求过于频繁，请稍后再试' });
     }
 
     // Time check — humans take > 2 seconds to fill the form
@@ -123,8 +124,8 @@ router.post('/register', registerGuardMiddleware, async (req, res) => {
     if (password.length < 6) {
       return res.status(400).json({ error: '密码长度不能少于6位' });
     }
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      return res.status(400).json({ error: '密码必须包含大小写字母和数字' });
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{6,}$/.test(password)) {
+      return res.status(400).json({ error: '密码必须包含大小写字母和数字，仅支持英文字母' });
     }
 
     // Track registration
@@ -183,7 +184,8 @@ router.post('/send-register-code', registerGuardMiddleware, async (req, res) => 
 
     // Honeypot check — bots fill hidden fields
     if (__hp) {
-      return res.json({ success: true, message: '验证码已发送（开发模式）', dev_code: '123456' });
+      // 静默返回通用错误，不给机器人任何区分性反馈
+      return res.status(429).json({ error: '请求过于频繁，请稍后再试' });
     }
 
     // Time check — humans take > 2 seconds to fill the form
@@ -423,9 +425,9 @@ router.post('/login', authRateLimit({ limit: 10, windowMs: 60 * 1000, key: 'logi
     // Daily login reward: 5 points for first login of the day
     var loginReward = 5;
     var today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    var existing = db.prepare('SELECT id FROM user_login_rewards WHERE user_id = ? AND reward_date = ?').get(user.id, today);
-    if (!existing) {
-      db.prepare('INSERT INTO user_login_rewards (user_id, reward_date, points_earned) VALUES (?, ?, ?)').run(user.id, today, loginReward);
+    // 使用 INSERT OR IGNORE 避免并发竞态：UNIQUE 约束保证只有一条记录写入
+    var result = db.prepare('INSERT OR IGNORE INTO user_login_rewards (user_id, reward_date, points_earned) VALUES (?, ?, ?)').run(user.id, today, loginReward);
+    if (result.changes > 0) {
       db.prepare('UPDATE users SET points = points + ? WHERE id = ?').run(loginReward, user.id);
       console.log('[LoginReward] 用户 ' + user.id + ' 获得每日登录奖励 ' + loginReward + ' 积分');
     }

@@ -1,6 +1,7 @@
 // WebSocket server for PandaHub real-time notifications
 const { WebSocketServer } = require('ws');
 const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../middleware/auth');
 
 let wss = null;
 const clients = new Map(); // userId -> Set<ws>
@@ -19,8 +20,8 @@ function init(server) {
         const msg = JSON.parse(raw);
         if (msg.type === 'auth') {
           try {
-            const decoded = jwt.verify(msg.token, process.env.JWT_SECRET || '');
-            userId = decoded.userId;
+            const decoded = jwt.verify(msg.token, JWT_SECRET);
+            userId = decoded.id;   // 与 auth.js 签发的 claim 名保持一致
             ws.userId = userId;
             if (!clients.has(userId)) clients.set(userId, new Set());
             clients.get(userId).add(ws);

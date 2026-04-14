@@ -639,15 +639,19 @@ router.post('/:id/vote', authMiddleware, (req, res) => {
     }
 
     // Influence score tracking
-    if (vote_type === 'like') {
-      if (action === 'added') {
-        addInfluence(post.user_id, 'post_like', 'post', req.params.id);
-      } else if (action === 'removed') {
-        removeInfluence(post.user_id, 'post_like', 'post', req.params.id);
-      } else if (action === 'changed') {
-        // changed from dislike to like: gain influence for like
-        addInfluence(post.user_id, 'post_like', 'post', req.params.id);
-      }
+    // Map vote_type to influence event key
+    const voteToEvent = { like: 'post_like', dislike: 'post_dislike' };
+    const newEvent = voteToEvent[vote_type];
+
+    if (action === 'added') {
+      addInfluence(post.user_id, newEvent, 'post', req.params.id);
+    } else if (action === 'removed') {
+      removeInfluence(post.user_id, newEvent, 'post', req.params.id);
+    } else if (action === 'changed') {
+      // Switching vote: first remove old influence, then add new
+      const oldEvent = existingVote.vote_type === 'like' ? 'post_like' : 'post_dislike';
+      removeInfluence(post.user_id, oldEvent, 'post', req.params.id);
+      addInfluence(post.user_id, newEvent, 'post', req.params.id);
     }
 
     // Get updated counts

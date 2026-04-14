@@ -7,6 +7,7 @@ const { callBailianModeration, parseModerationResult } = require('../middleware/
 const { sendPushToUser, notifyUserPostApproved, notifyUserPostRejected } = require('../utils/pushHelper');
 const { checkMilestones } = require('../utils/milestones');
 const { generatePostSummary } = require('../utils/summarize');
+const { POINT_COST } = require('../models/database');
 
 const router = express.Router();
 const AI_DAILY_QUOTA = 100;
@@ -204,7 +205,11 @@ router.post('/posts/:id/reject', authMiddleware, (req, res) => {
     
     db.prepare("UPDATE posts SET status = 'rejected', rejected_reason = ? WHERE id = ?").run(reason || null, req.params.id);
 
-    logAction({ adminId: req.user.id, action: 'reject_post', targetType: 'post', targetId: Number(req.params.id), reason: reason || null, details: `拒绝帖子: ${post.title}` });
+    // 退还发帖扣掉的积分
+    const refundAmount = POINT_COST.create_post || 5;
+    db.prepare('UPDATE users SET points = points + ? WHERE id = ?').run(refundAmount, post.user_id);
+
+    logAction({ adminId: req.user.id, action: 'reject_post', targetType: 'post', targetId: Number(req.params.id), reason: reason || null, details: `拒绝帖子: ${post.title}，退款 ${refundAmount} 积分` });
 
     // Create notification for the post author
     const reasonText = reason ? '原因：' + reason : '很遗憾，您的帖子未通过审核。';
@@ -523,6 +528,9 @@ router.post('/posts/:id/auto-review', authMiddleware, async (req, res) => {
 
   if (result === 'rejected') {
     db.prepare("UPDATE posts SET status = 'rejected' WHERE id = ?").run(post.id);
+    // 退还发帖扣掉的积分
+    const refundAmount = POINT_COST.create_post || 5;
+    db.prepare('UPDATE users SET points = points + ? WHERE id = ?').run(refundAmount, post.user_id);
     db.prepare(`
       INSERT INTO notifications (user_id, type, title, content, post_id)
       VALUES (?, 'post_rejected', '❌ 帖子审核未通过', '您的帖子「' || ? || '」未通过审核（AI自动判定），请联系管理员申诉', ?)
@@ -588,6 +596,9 @@ router.post('/posts/auto-review-all', authMiddleware, async (req, res) => {
       results.approved++;
     } else if (result === 'rejected') {
       db.prepare("UPDATE posts SET status = 'rejected' WHERE id = ?").run(post.id);
+      // 退还发帖扣掉的积分
+      const refundAmount = POINT_COST.create_post || 5;
+      db.prepare('UPDATE users SET points = points + ? WHERE id = ?').run(refundAmount, post.user_id);
       db.prepare(`
         INSERT INTO notifications (user_id, type, title, content, post_id)
         VALUES (?, 'post_rejected', '❌ 帖子审核未通过', '您的帖子「' || ? || '」未通过审核（AI自动判定），请联系管理员申诉', ?)

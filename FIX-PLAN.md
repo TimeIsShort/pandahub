@@ -149,3 +149,10 @@
 | 23 | 🟡 | apply.js SMTP硬编码真实服务默认值 | ✅ 已修复 | 2026-04-14 |
 | 24 | 🔴 | users.js notification-settings 缺 authMiddleware | ✅ 已修复 | 2026-04-14 |
 | 25 | 🟡 | 勋章墙页面 nickname/avatar 未 HTML 转义 | ✅ 已修复 | 2026-04-14 |
+| 26 | 🔴 | reports.js admin列表 status 参数 SQL 拼接 | ✅ 已修复 | 2026-04-14 |
+| 27 | 🔴 | featured.js 加精/取消加精无权限校验 | ✅ 已修复 | 2026-04-14 |
+| 28 | 🔴 | sections.js 版块增删改无权限校验 | ✅ 已修复 | 2026-04-14 |
+| 29 | 🟡 | featured.js delete postId 未做数值校验 | ✅ 已修复 | 2026-04-14 |
+| 30 | 🟢 | push.js VAPID_SUBJECT 硬编码默认值 | ✅ 已修复 | 2026-04-14 |
+| 31 | 🟡 | shop.js 积分兑换无事务，并发可超兑 | ✅ 已修复 | 2026-04-14 |
+| 32 | 🟡 | featured.js add post_id 未做数值校验 | ✅ 已修复 | 2026-04-14 |

@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('../models/database');
-const { optionalAuth } = require('../middleware/auth');
+const { optionalAuth, authMiddleware } = require('../middleware/auth');
 const { getUserLevel, getLevelBenefits } = require('../models/database');
 
 const router = express.Router();
@@ -226,16 +226,15 @@ router.get('/:id/points-trend', (req, res) => {
 
 
 // GET /api/users/me/notification-settings
-router.get('/me/notification-settings', (req, res) => {
+router.get('/me/notification-settings', authMiddleware, (req, res) => {
   const user = db.prepare(
     'SELECT notification_quiet_hours, notification_quiet_start, notification_quiet_end, notify_email, notify_push, notification_mode FROM users WHERE id = ?'
-  ).get(req.user?.id);
-  if (!user) return res.status(401).json({ error: '未登录' });
+  ).get(req.user.id);
   res.json({ settings: user });
 });
 
 // POST /api/users/me/notification-settings
-router.post('/me/notification-settings', (req, res) => {
+router.post('/me/notification-settings', authMiddleware, (req, res) => {
   const { notification_quiet_hours, notification_quiet_start, notification_quiet_end, notify_email, notify_push, notification_mode } = req.body;
   try {
     db.prepare(`

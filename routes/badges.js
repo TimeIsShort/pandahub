@@ -3,6 +3,12 @@ const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
 const router = express.Router();
 
+// HTML escape helper to prevent XSS in user-generated content rendered in badge wall
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 // Get all available badges (public)
 router.get('/', (req, res) => {
   try {
@@ -181,7 +187,7 @@ router.get('/wall/:userId', (req, res) => {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${user.nickname || user.username} 的勋章墙 - 熊猫社区</title>
+<title>${escapeHtml(user.nickname || user.username)} 的勋章墙 - 熊猫社区</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   body { background: #edf3f5; margin: 0; font-family: -apple-system, sans-serif; }
@@ -216,10 +222,10 @@ router.get('/wall/:userId', (req, res) => {
 <div class="header">
   <h1>🏅 勋章墙</h1>
   <div class="user-info">
-    ${user.avatar ? `<img class="avatar" src="${user.avatar}" alt="avatar">` : `<div class="avatar" style="display:flex;align-items:center;justify-content:center;font-size:28px;background:rgba(255,255,255,0.3);">${(user.nickname || user.username)[0].toUpperCase()}</div>`}
+    ${user.avatar ? `<img class="avatar" src="${escapeHtml(user.avatar)}" alt="avatar">` : `<div class="avatar" style="display:flex;align-items:center;justify-content:center;font-size:28px;background:rgba(255,255,255,0.3);">${escapeHtml((user.nickname || user.username)[0] || '').toUpperCase()}</div>`}
     <div>
-      <div style="font-size:18px;font-weight:700;">${user.nickname || user.username}</div>
-      ${user.level_name ? `<div class="level-badge">${user.level_icon || '⭐'} ${user.level_name}</div>` : ''}
+      <div style="font-size:18px;font-weight:700;">${escapeHtml(user.nickname || user.username)}</div>
+      ${user.level_name ? `<div class="level-badge">${escapeHtml(user.level_icon || '⭐')} ${escapeHtml(user.level_name)}</div>` : ''}
     </div>
   </div>
   <div class="stats-bar">

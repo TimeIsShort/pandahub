@@ -110,11 +110,21 @@ app.get('/apply', (req, res) => {
 });
 
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
+  const filePath = path.join(__dirname, 'public', 'admin-login.html');
+  fs.readFile(filePath, (err, data) => {
+    if (err) return res.status(500).json({ error: '服务器错误' });
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(data);
+  });
 });
 
 app.get('/admin-login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
+  const filePath = path.join(__dirname, 'public', 'admin-login.html');
+  fs.readFile(filePath, (err, data) => {
+    if (err) return res.status(500).json({ error: '服务器错误' });
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(data);
+  });
 });
 
 app.get('/ai', (req, res) => {

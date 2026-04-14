@@ -12,6 +12,28 @@
 
 ---
 
+## 📸 Screenshots | 项目截图
+
+![首页](./screenshots/home.png)
+*首页 — 帖子列表 + 侧边栏*
+
+![排行榜](./screenshots/leaderboard.png)
+*积分排行榜 + 本周活跃榜*
+
+![AI 助手](./screenshots/ai-chat.png)
+*AI 助手 — Kimi 大模型对话*
+
+![工具箱](./screenshots/toolbox.png)
+*工具箱 — 签到 · 抽奖 · 任务*
+
+![移动端](./screenshots/home-mobile.png)
+*移动端自适应界面*
+
+![管理员后台](./screenshots/admin.png)
+*管理员后台 — 数据总览*
+
+---
+
 ## ✨ Features | 功能亮点
 
 | | |

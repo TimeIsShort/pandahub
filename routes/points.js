@@ -46,7 +46,7 @@ router.post('/transfer', authMiddleware, (req, res) => {
     // Check badges for receiver (points milestone)
     checkBadges(toUser.id);
     // Record transfer
-    const result = db.prepare(
+    const transferRecord = db.prepare(
       'INSERT INTO point_transfers (from_user_id, to_user_id, amount, note) VALUES (?, ?, ?, ?)'
     ).run(fromUserId, toUser.id, amountNum, note || null);
 
@@ -60,7 +60,7 @@ router.post('/transfer', authMiddleware, (req, res) => {
       req
     });
 
-    res.json({ success: true, id: result.lastInsertRowid, amount: amountNum });
+    res.json({ success: true, id: transferRecord.lastInsertRowid, amount: amountNum });
   } catch (err) {
     console.error('[Points transfer]', err);
     res.status(500).json({ error: '转账失败' });

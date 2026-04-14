@@ -147,3 +147,5 @@
 | 21 | 🟡 | 投票并发重复投票（race condition） | ✅ 已修复 | 2026-04-14 |
 | 22 | 🟡 | 邀请码奖励两次生成值不一致 | ✅ 已修复 | 2026-04-14 |
 | 23 | 🟡 | apply.js SMTP硬编码真实服务默认值 | ✅ 已修复 | 2026-04-14 |
+| 24 | 🔴 | users.js notification-settings 缺 authMiddleware | ✅ 已修复 | 2026-04-14 |
+| 25 | 🟡 | 勋章墙页面 nickname/avatar 未 HTML 转义 | ✅ 已修复 | 2026-04-14 |

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../models/database');
+const { authMiddleware } = require('../middleware/auth');
 
 // Get current week's featured posts
 router.get('/', (req, res) => {
@@ -44,10 +45,12 @@ router.get('/', (req, res) => {
 });
 
 // Add a post to featured list
-router.post('/', (req, res) => {
+router.post('/', authMiddleware, (req, res) => {
   try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: '需要管理员权限' });
     const { post_id, period_type = 'weekly' } = req.body;
-    if (!post_id) return res.status(400).json({ error: '缺少post_id' });
+    const postIdNum = Number(post_id);
+    if (!post_id || !postIdNum || isNaN(postIdNum)) return res.status(400).json({ error: '无效的post_id' });
 
     const post = db.prepare('SELECT id, title FROM posts WHERE id = ?').get(post_id);
     if (!post) return res.status(404).json({ error: '帖子不存在' });
@@ -56,10 +59,10 @@ router.post('/', (req, res) => {
 
     db.prepare(`
       INSERT OR IGNORE INTO featured_posts (post_id, period_type, period_key) VALUES (?, ?, ?)
-    `).run(post_id, period_type, periodKey);
+    `).run(postIdNum, period_type, periodKey);
 
     // Also mark as featured in posts table
-    db.prepare('UPDATE posts SET is_featured = 1 WHERE id = ?').run(post_id);
+    db.prepare('UPDATE posts SET is_featured = 1 WHERE id = ?').run(postIdNum);
 
     res.json({ success: true, message: '已加精' });
   } catch (err) {
@@ -69,9 +72,11 @@ router.post('/', (req, res) => {
 });
 
 // Remove a post from featured
-router.delete('/:postId', (req, res) => {
+router.delete('/:postId', authMiddleware, (req, res) => {
   try {
-    const postId = req.params.postId;
+    if (req.user.role !== 'admin') return res.status(403).json({ error: '需要管理员权限' });
+    const postId = Number(req.params.postId);
+    if (!postId || isNaN(postId)) return res.status(400).json({ error: '无效的帖子ID' });
     const type = req.query.type || 'weekly';
     const periodKey = getPeriodKey(type);
 

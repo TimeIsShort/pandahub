@@ -6,7 +6,7 @@ const router = express.Router();
 
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || '';
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@yourdomain.com';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT;
 
 let webpush = null;
 try {

@@ -73,11 +73,8 @@ router.get('/admin', authMiddleware, (req, res) => {
 
     const { status = 'pending', page = 1, limit = 20 } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
-
-    let whereClause = '';
-    if (status && status !== 'all') {
-      whereClause = "WHERE r.status = '" + status.replace(/'/g, '') + "'";
-    }
+    const validStatuses = ['pending', 'resolved', 'dismissed'];
+    const statusParam = validStatuses.includes(status) ? status : 'pending';
 
     const reports = db.prepare(`
       SELECT r.*,
@@ -91,12 +88,12 @@ router.get('/admin', authMiddleware, (req, res) => {
       LEFT JOIN posts p ON r.target_type = 'post' AND r.target_id = p.id
       LEFT JOIN comments c ON r.target_type = 'comment' AND r.target_id = c.id
       LEFT JOIN users target_user ON p.user_id = target_user.id OR c.user_id = target_user.id
-      ${whereClause}
+      WHERE r.status = ?
       ORDER BY r.created_at DESC
       LIMIT ? OFFSET ?
-    `).all(Number(limit), Number(offset));
+    `).all(statusParam, Number(limit), Number(offset));
 
-    const total = db.prepare(`SELECT COUNT(*) as c FROM reports r ${whereClause}`).get().c;
+    const total = db.prepare(`SELECT COUNT(*) as c FROM reports r WHERE r.status = ?`).get(statusParam).c;
 
     // Fetch target content for display
     const enriched = reports.map(r => {

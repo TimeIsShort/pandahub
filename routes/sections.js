@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../models/database');
 const { getCache, setCache, clearCache } = require('../utils/cache');
+const { authMiddleware } = require('../middleware/auth');
 
 // GET /api/sections - 获取所有版块（带标签统计）
 router.get('/', (req, res) => {
@@ -75,7 +76,8 @@ router.get('/:id', (req, res) => {
 });
 
 // POST /api/sections - 创建版块（管理员）
-router.post('/', (req, res) => {
+router.post('/', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: '需要管理员权限' });
   try {
     const { name, icon, description, cover_image, sort_order } = req.body;
     
@@ -98,7 +100,8 @@ router.post('/', (req, res) => {
 });
 
 // PUT /api/sections/:id - 更新版块（管理员）
-router.put('/:id', (req, res) => {
+router.put('/:id', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: '需要管理员权限' });
   try {
     const { name, icon, description, cover_image, sort_order } = req.body;
 
@@ -130,7 +133,8 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /api/sections/:id - 删除版块（管理员）
-router.delete('/:id', (req, res) => {
+router.delete('/:id', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: '需要管理员权限' });
   try {
     const existing = db.prepare('SELECT * FROM sections WHERE id = ?').get(req.params.id);
     if (!existing) {

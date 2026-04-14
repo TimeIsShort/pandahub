@@ -75,22 +75,38 @@ router.post('/redeem', authMiddleware, (req, res) => {
       });
     }
 
-    // Deduct points
-    db.prepare('UPDATE users SET points = points - ? WHERE id = ?').run(item.price, userId);
+    // Atomic redeem: deduct points, stock, record, apply effect
+    const redeemTx = db.transaction(() => {
+      // Deduct points
+      const deducted = db.prepare('UPDATE users SET points = points - ? WHERE id = ? AND points >= ?').run(item.price, userId, item.price);
+      if (deducted.changes === 0) {
+        return { error: '积分不足，兑换失败' };
+      }
 
-    // Decrease stock
-    if (item.stock !== null) {
-      db.prepare('UPDATE shop_items SET stock = stock - 1 WHERE id = ?').run(item_id);
+      // Decrease stock
+      if (item.stock !== null) {
+        const stockUpdated = db.prepare('UPDATE shop_items SET stock = stock - 1 WHERE id = ? AND (stock IS NULL OR stock > 0)').run(item_id);
+        if (stockUpdated.changes === 0) {
+          return { error: '该商品已售罄' };
+        }
+      }
+
+      // Record redemption
+      db.prepare(`
+        INSERT INTO shop_redemptions (user_id, item_id, points_spent, status)
+        VALUES (?, ?, ?, 'completed')
+      `).run(userId, item_id, item.price);
+
+      // Apply item effect
+      applyItemEffect(userId, item);
+
+      return { error: null };
+    });
+
+    const txResult = redeemTx();
+    if (txResult.error) {
+      return res.status(400).json({ error: txResult.error });
     }
-
-    // Record redemption
-    db.prepare(`
-      INSERT INTO shop_redemptions (user_id, item_id, points_spent, status)
-      VALUES (?, ?, ?, 'completed')
-    `).run(userId, item_id, item.price);
-
-    // Apply item effect
-    applyItemEffect(userId, item);
 
     const updatedUser = db.prepare('SELECT points FROM users WHERE id = ?').get(userId);
 

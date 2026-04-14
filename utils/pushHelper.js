@@ -23,7 +23,7 @@ function initPush() {
 function isInQuietHours(userId) {
   try {
     const db = require('../models/database');
-const SITE_URL = process.env.SITE_URL || 'https://your-domain.com';
+const SITE_URL = process.env.SITE_URL || 'https://pandahub.cloud';
     const user = db.prepare(
       'SELECT notification_quiet_hours, notification_quiet_start, notification_quiet_end FROM users WHERE id = ?'
     ).get(Number(userId));

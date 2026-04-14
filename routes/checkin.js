@@ -107,10 +107,11 @@ router.post('/checkin', authMiddleware, (req, res) => {
     // Determine streak
     let streakBefore = 0;
     if (yesterdayCheckin) {
-      // Get current streak from yesterday's checkin record
-      streakBefore = db.prepare(
-        'SELECT streak_before + 1 as new_streak FROM checkins WHERE user_id = ? AND checkin_date = ?'
-      ).get(req.user.id, yesterday).new_streak - 1;
+      // Get current streak from yesterday's checkin record (guard against null)
+      const yesterdayRecord = db.prepare(
+        'SELECT streak_before FROM checkins WHERE user_id = ? AND checkin_date = ?'
+      ).get(req.user.id, yesterday);
+      streakBefore = yesterdayRecord ? yesterdayRecord.streak_before : 0;
     }
 
     // Calculate new streak

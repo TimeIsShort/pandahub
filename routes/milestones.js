@@ -21,7 +21,7 @@ router.get('/stats', (req, res) => {
     const streak = db.prepare(`
       SELECT MAX(streak_days) as max_streak FROM (
         SELECT user_id, COUNT(*) as streak_days
-        FROM checkin_records
+        FROM checkins
         WHERE date(created_at) >= date('now', '-100 days')
         GROUP BY user_id
       )

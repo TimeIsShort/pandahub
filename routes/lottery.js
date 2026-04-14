@@ -76,13 +76,14 @@ router.post('/play', authMiddleware, (req, res) => {
     }
     if (!selectedPrize) selectedPrize = prizes[prizes.length - 1];
 
-    // Deduct points
-    db.prepare('UPDATE users SET points = points - ? WHERE id = ?').run(COST, userId);
-
-    // Record lottery
-    const recordResult = db.prepare(
-      'INSERT INTO lottery_records (user_id, prize_id, points_spent) VALUES (?, ?, ?)'
-    ).run(userId, selectedPrize.id, COST);
+    // Use transaction: deduct + record must succeed together
+    const lotteryTx = db.transaction(() => {
+      db.prepare('UPDATE users SET points = points - ? WHERE id = ?').run(COST, userId);
+      return db.prepare(
+        'INSERT INTO lottery_records (user_id, prize_id, points_spent) VALUES (?, ?, ?)'
+      ).run(userId, selectedPrize.id, COST);
+    });
+    const recordResult = lotteryTx();
 
     // Apply prize effect
     let prizeResult = null;

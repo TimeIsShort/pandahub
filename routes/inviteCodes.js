@@ -1,5 +1,5 @@
 const express = require('express');
-const SITE_URL = process.env.SITE_URL || 'https://your-domain.com';
+const SITE_URL = process.env.SITE_URL || 'https://pandahub.cloud';
 const router = express.Router();
 const db = require('../models/database');
 const crypto = require('crypto');
@@ -62,7 +62,7 @@ router.post('/generate', (req, res) => {
     cost: COST,
     reward: randomReward(),
     expiresAt: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
-    link: `https://your-domain.com/register?code=${code}`
+    link: `${SITE_URL}/register?code=${code}`
   });
 });
 

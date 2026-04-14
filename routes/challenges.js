@@ -85,8 +85,8 @@ function syncChallengeProgress(userId) {
     `).get(userId, weekStartStr).c;
 
     const checkinsThisWeek = db.prepare(`
-      SELECT COUNT(*) as c FROM checkin_log
-      WHERE user_id = ? AND date(created_at) >= ?
+      SELECT COUNT(*) as c FROM checkins
+      WHERE user_id = ? AND date(checkin_date) >= ?
     `).get(userId, weekStartStr).c;
 
     const reactionsThisWeek = db.prepare(`

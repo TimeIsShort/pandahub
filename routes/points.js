@@ -29,16 +29,20 @@ router.post('/transfer', authMiddleware, (req, res) => {
       return res.status(400).json({ error: '不能给自己转账' });
     }
 
-    // Check balance
-    const fromUser = db.prepare('SELECT points FROM users WHERE id = ?').get(fromUserId);
-    if (fromUser.points < amountNum) {
-      return res.status(403).json({ error: '积分不足，当前余额 ' + fromUser.points });
+    // Atomic transfer: check balance + deduct + add in a single transaction
+    const transferTx = db.transaction(() => {
+      const fromUser = db.prepare('SELECT points FROM users WHERE id = ?').get(fromUserId);
+      if (fromUser.points < amountNum) {
+        return { success: false, error: '积分不足，当前余额 ' + fromUser.points };
+      }
+      db.prepare('UPDATE users SET points = points - ? WHERE id = ?').run(amountNum, fromUserId);
+      db.prepare('UPDATE users SET points = points + ? WHERE id = ?').run(amountNum, toUser.id);
+      return { success: true };
+    });
+    const result = transferTx();
+    if (!result.success) {
+      return res.status(403).json({ error: result.error });
     }
-
-    // Deduct from sender
-    db.prepare('UPDATE users SET points = points - ? WHERE id = ?').run(amountNum, fromUserId);
-    // Add to receiver
-    db.prepare('UPDATE users SET points = points + ? WHERE id = ?').run(amountNum, toUser.id);
     // Check badges for receiver (points milestone)
     checkBadges(toUser.id);
     // Record transfer

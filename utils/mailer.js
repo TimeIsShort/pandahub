@@ -1,5 +1,5 @@
 const nodemailer = require('nodemailer');
-const SITE_URL = process.env.SITE_URL || 'https://your-domain.com';
+const SITE_URL = process.env.SITE_URL || 'https://pandahub.cloud';
 
 function getTransporter() {
   return nodemailer.createTransport({

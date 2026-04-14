@@ -1,5 +1,5 @@
 const express = require('express');
-const SITE_URL = process.env.SITE_URL || 'https://your-domain.com';
+const SITE_URL = process.env.SITE_URL || 'https://pandahub.cloud';
 const db = require('../models/database');
 const { authMiddleware } = require('../middleware/auth');
 const { sendPushToUser, sendEmailToUser, escapeHtml } = require('../utils/pushHelper');
@@ -60,7 +60,7 @@ router.post('/follow/:userId', authMiddleware, (req, res) => {
         '<p style="font-size:16px;color:#333;"><strong>' + escapeHtml(followerName) + '</strong> 关注了你</p>' +
         '<div style="background:#f0f7ff;border-radius:8px;padding:16px;margin:20px 0;font-size:15px;color:#1e3a5f;">' +
         '你的粉丝+1，继续活跃吧！💪</div>' +
-        '<a href="https://your-domain.com/profile/' + followerId + '" style="display:inline-block;background:#667eea;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;margin-top:12px;">查看Ta的主页 →</a></div>',
+        '<a href="' + SITE_URL + '/profile/' + followerId + '" style="display:inline-block;background:#667eea;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;margin-top:12px;">查看Ta的主页 →</a></div>',
     });
 
     res.json({ success: true, message: '关注成功' });

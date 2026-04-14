@@ -107,6 +107,7 @@ router.post('/reject', authMiddleware, (req, res) => {
       UPDATE applications SET status = 'rejected', processed_at = CURRENT_TIMESTAMP, processed_by = ? WHERE id = ?
     `).run(req.user.id, application_id);
 
+    const { reason } = req.body;
     logAction({ adminId: req.user.id, action: 'reject_application', targetType: 'application', targetId: application_id, reason: reason || '未说明原因', details: `拒绝申请: ${app.username}` });
 
     res.json({ success: true, message: '已拒绝申请' });

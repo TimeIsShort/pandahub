@@ -75,21 +75,27 @@ router.post('/:id/vote', authMiddleware, (req, res) => {
       return res.status(400).json({ error: '该投票为单选，请只选择一个选项' });
     }
 
-    // Check existing votes
-    const existing = db.prepare(
-      'SELECT option_id FROM poll_votes WHERE poll_id = ? AND user_id = ?'
-    ).all(pollId, userId);
+    // Atomic: check + insert in a transaction to prevent double-vote race
+    const voteTx = db.transaction(() => {
+      const existing = db.prepare(
+        'SELECT option_id FROM poll_votes WHERE poll_id = ? AND user_id = ?'
+      ).all(pollId, userId);
 
-    if (existing.length > 0) {
-      return res.status(400).json({ error: '您已经投过票了' });
-    }
+      if (existing.length > 0) {
+        return { error: '您已经投过票了' };
+      }
 
-    // Insert votes
-    const insertVote = db.prepare(
-      'INSERT INTO poll_votes (poll_id, option_id, user_id) VALUES (?, ?, ?)'
-    );
-    for (const optionId of option_ids) {
-      insertVote.run(pollId, optionId, userId);
+      const insertVote = db.prepare(
+        'INSERT INTO poll_votes (poll_id, option_id, user_id) VALUES (?, ?, ?)'
+      );
+      for (const optionId of option_ids) {
+        insertVote.run(pollId, optionId, userId);
+      }
+      return { error: null };
+    });
+    const txResult = voteTx();
+    if (txResult.error) {
+      return res.status(400).json({ error: txResult.error });
     }
 
     // Return updated poll data

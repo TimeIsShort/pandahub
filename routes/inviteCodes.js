@@ -50,17 +50,20 @@ router.post('/generate', (req, res) => {
   // Deduct points
   db.prepare('UPDATE users SET points = points - ? WHERE id = ?').run(COST, user.id);
 
+  // Generate reward once and reuse
+  const rewardPoints = randomReward();
+
   // Insert
   const result = db.prepare(`
     INSERT INTO invite_codes (code, creator_id, creator_username, uses_remaining, uses_total, reward_points, expires_at)
     VALUES (?, ?, ?, 1, 1, ?, datetime('now', '+30 days'))
-  `).run(code, user.id, user.username, randomReward());
+  `).run(code, user.id, user.username, rewardPoints);
 
   res.json({
     success: true,
     code,
     cost: COST,
-    reward: randomReward(),
+    reward: rewardPoints,
     expiresAt: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
     link: `${SITE_URL}/register?code=${code}`
   });

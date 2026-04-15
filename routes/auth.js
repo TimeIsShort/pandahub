@@ -359,8 +359,9 @@ router.post('/verify-register', async (req, res) => {
     if (user?.invite_code) {
       const invite = db.prepare('SELECT * FROM invite_codes WHERE code = ?').get(user.invite_code);
       if (invite && invite.uses_remaining > 0 && (!invite.expires_at || new Date(invite.expires_at) > new Date()) && invite.creator_id !== user.id) {
-        // Use invite code
-        db.prepare('UPDATE invite_codes SET uses_remaining = uses_remaining - 1, claimed_by_id = ?, claimed_by_username = ?, claimed_at = datetime("now") WHERE code = ?').run(user.id, user.username, user.invite_code);
+        // Atomic: decrement only if uses_remaining > 0 (prevents race to -1)
+        const used = db.prepare('UPDATE invite_codes SET uses_remaining = uses_remaining - 1, claimed_by_id = ?, claimed_by_username = ?, claimed_at = datetime("now") WHERE code = ? AND uses_remaining > 0').run(user.id, user.username, user.invite_code);
+        if (used.changes === 0) return; // already used by concurrent request
         // Reward inviter
         db.prepare('UPDATE users SET points = points + ? WHERE id = ?').run(invite.reward_points, invite.creator_id);
         // Reward invitee (new user)

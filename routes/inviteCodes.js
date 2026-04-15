@@ -39,7 +39,8 @@ router.post('/generate', (req, res) => {
     return res.status(400).json({ error: '每天最多生成3个邀请码，明天再来吧～' });
   }
 
-  // Generate unique code
+  // Generate code — INSERT will UNIQUE-violate if collision (extremely rare with 8 chars)
+  // Retry loop as belt-and-suspenders; DB constraint is the real guard
   let code, attempts = 0;
   do {
     code = generateCode();
@@ -141,15 +142,19 @@ router.post('/use', (req, res) => {
     return res.status(400).json({ error: '不能使用自己的邀请码' });
   }
 
-  // Mark as used
-  db.prepare(`
+  // Atomic: decrement uses_remaining only if still > 0 (prevents race to -1)
+  const updateResult = db.prepare(`
     UPDATE invite_codes
     SET uses_remaining = uses_remaining - 1,
         claimed_by_id = ?,
         claimed_by_username = ?,
         claimed_at = datetime('now')
-    WHERE code = ?
+    WHERE code = ? AND uses_remaining > 0
   `).run(inviteeId, inviteeUsername, code);
+
+  if (updateResult.changes === 0) {
+    return res.status(400).json({ error: '邀请码已用完' });
+  }
 
   // Reward inviter
   const INVITEE_BONUS = 20;

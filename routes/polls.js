@@ -75,27 +75,23 @@ router.post('/:id/vote', authMiddleware, (req, res) => {
       return res.status(400).json({ error: '该投票为单选，请只选择一个选项' });
     }
 
-    // Atomic: check + insert in a transaction to prevent double-vote race
+    // Atomic: INSERT with UNIQUE constraint — let DB handle race, we catch constraint error
     const voteTx = db.transaction(() => {
-      const existing = db.prepare(
-        'SELECT option_id FROM poll_votes WHERE poll_id = ? AND user_id = ?'
-      ).all(pollId, userId);
-
-      if (existing.length > 0) {
-        return { error: '您已经投过票了' };
-      }
-
       const insertVote = db.prepare(
         'INSERT INTO poll_votes (poll_id, option_id, user_id) VALUES (?, ?, ?)'
       );
       for (const optionId of option_ids) {
         insertVote.run(pollId, optionId, userId);
       }
-      return { error: null };
     });
-    const txResult = voteTx();
-    if (txResult.error) {
-      return res.status(400).json({ error: txResult.error });
+    try {
+      voteTx();
+    } catch (voteErr) {
+      // UNIQUE constraint violation = already voted
+      if (voteErr.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        return res.status(400).json({ error: '您已经投过票了' });
+      }
+      throw voteErr; // re-throw unexpected errors
     }
 
     // Return updated poll data

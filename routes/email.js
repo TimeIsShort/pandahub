@@ -8,10 +8,14 @@ const router = express.Router();
 
 // Get SMTP config from env
 function getTransporter() {
+  const host = process.env.SMTP_HOST;
+  if (!host) {
+    throw new Error('SMTP_HOST environment variable is not configured');
+  }
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-    port: process.env.SMTP_PORT || 587,
-    secure: false,
+    host,
+    port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
+    secure: Number(process.env.SMTP_PORT) === 465,
     auth: {
       user: process.env.SMTP_USER || '',
       pass: process.env.SMTP_PASS || '',

@@ -66,7 +66,8 @@ cp .env.example .env
 docker-compose up -d
 
 # Visit http://localhost:3000
-# Demo account: demo / demo123 (admin)
+# Demo data (optional): SEED_DEMO_PASSWORD=<your-password> npm run db:seed
+# No admin account is seeded by default — see "🔐 Accounts" below.
 ```
 
 ### 💻 Local Development
@@ -152,6 +153,9 @@ pandahub/
 | `SMTP_PASS` | SMTP password | Auth code |
 | `SITE_URL` | Site URL (no trailing slash) | `https://pandahub.cloud` |
 | `PORT` | Server port (default 3000) | `3000` |
+| `SEED_DEMO_PASSWORD` | Password for seed demo users (`npm run db:seed`); if unset, a random one is generated and printed once to the console | Your own password |
+| `SEED_ADMIN_USERNAME` | Admin username created by the seed script (only when set together with `SEED_ADMIN_PASSWORD`) | `admin` |
+| `SEED_ADMIN_PASSWORD` | Admin password created by the seed script | Strong password |
 
 Generate VAPID keys:
 ```bash
@@ -160,11 +164,15 @@ npx web-push generate-vapid-keys
 
 ---
 
-## 🔐 Default Account
+## 🔐 Accounts
 
-| Role | Username | Password |
-|---|---|---|
-| Admin | `demo` | `demo123` |
+**No default admin account is seeded.** To create one, set both `SEED_ADMIN_USERNAME` and `SEED_ADMIN_PASSWORD` before running the seed:
+
+```bash
+SEED_ADMIN_USERNAME=admin SEED_ADMIN_PASSWORD=<strong-password> npm run db:seed
+```
+
+Seed demo users (`demo`, `alice`, `bob`, …) use the password from `SEED_DEMO_PASSWORD`; if unset, a random password is generated and printed once to the console. Never commit real passwords to the repo.
 
 ---
 
@@ -259,7 +267,8 @@ cd pandahub
 cp .env.example .env   # 填入 MINIMAX_API_KEY 和 JWT_SECRET
 docker-compose up -d
 # 访问 http://localhost:3000
-# 示例账号: demo / demo123（管理员）
+# 演示数据（可选）：SEED_DEMO_PASSWORD=<你的密码> npm run db:seed
+# 默认不创建管理员账号，见下方「账号说明」。
 ```
 
 ### 💻 本地开发
@@ -270,6 +279,16 @@ cp .env.example .env
 npm run db:seed   # 初始化示例数据（6 用户 + 6 帖子）
 npm start
 ```
+
+## 账号说明
+
+**默认不创建管理员账号。** 需要管理员时，在执行种子前同时设置 `SEED_ADMIN_USERNAME` 与 `SEED_ADMIN_PASSWORD`：
+
+```bash
+SEED_ADMIN_USERNAME=admin SEED_ADMIN_PASSWORD=<强口令> npm run db:seed
+```
+
+种子生成的演示用户（`demo`、`alice`、`bob` 等）口令来自 `SEED_DEMO_PASSWORD`；未设置时随机生成并在终端输出一次。请勿把真实口令提交到仓库。
 
 ## 技术栈
 

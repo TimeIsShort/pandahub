@@ -55,7 +55,7 @@ cd pandahub
 cp .env.example .env   # 填入 API Key
 docker-compose up -d
 # 访问 http://localhost:3000
-# 示例账号: demo / demo123
+# 演示账号：运行种子脚本时通过环境变量设置（见 README「账号说明」）
 ```
 
 ---

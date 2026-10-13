@@ -1,7 +1,7 @@
 {
   "name": "forum",
   "version": "1.0.0",
-  "description": "",
+  "description": "PandaHub — a lightweight, full-stack forum for tech communities with AI-powered features, gamification, and modern UX.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -15,9 +15,17 @@
     "db:seed": "node scripts/seed.js",
     "db:seed:clean": "node scripts/seed.js --clean"
   },
-  "keywords": [],
+  "keywords": [
+    "forum",
+    "community",
+    "nodejs",
+    "express",
+    "sqlite",
+    "ai",
+    "gamification"
+  ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.8.0",

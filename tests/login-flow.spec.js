@@ -1,13 +1,17 @@
 /**
  * PandaHub E2E Tests - Simplified
- * Usage: BASE_URL=https://pandahub.cloud npm run test:login-flow
+ * Usage: BASE_URL=https://pandahub.cloud TEST_USERNAME=<user> TEST_PASSWORD=<password> npm run test:login-flow
+ * NOTE: no default credentials — TEST_USERNAME / TEST_PASSWORD must be set.
  */
 
 const { test, expect, chromium } = require('@playwright/test');
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-const USERNAME = process.env.TEST_USERNAME || 'admin';
-const PASSWORD = process.env.TEST_PASSWORD || 'admin123';
+const USERNAME = process.env.TEST_USERNAME;
+const PASSWORD = process.env.TEST_PASSWORD;
+if (!USERNAME || !PASSWORD) {
+  throw new Error('请设置 TEST_USERNAME / TEST_PASSWORD 环境变量（测试不再提供默认账号口令）');
+}
 
 test.describe('PandaHub E2E', () => {
   let browser;
